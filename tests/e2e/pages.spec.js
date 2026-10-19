@@ -50,8 +50,9 @@ test.describe('player pictures', () => {
     const rows = await page.evaluate(() => [...document.querySelectorAll('#gm-box tr[data-pid]')].map(tr => [tr.dataset.pid, tr.querySelector('.face img')?.getAttribute('src')]));
     expect(rows.length).toBeGreaterThan(0);
     for (const [pid, src] of rows) expect(src).toBe(`https://cdn.nba.com/headshots/nba/latest/260x190/${pid}.png`);
+    // a club not opened yet, so its player's picture is not already in the browser's cache
     await page.route('https://cdn.nba.com/headshots/**', r => r.abort());
-    await go(page, '#BOS', ROUTES[0][2]);
+    await go(page, '#LAL', () => document.body.dataset.page === 'player' && !!document.querySelector('#hero .face'));
     await page.waitForFunction(() => !document.querySelector('#hero .face img'));
     expect(await page.locator('#hero .face span').isVisible()).toBe(true);
     expect(problems.filter(p => !p.includes('Failed to load resource')), 'the page reported errors').toEqual([]);
