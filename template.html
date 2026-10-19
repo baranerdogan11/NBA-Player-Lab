@@ -188,7 +188,7 @@ a.card:active{transform:scale(.98)}
 @media (max-width:760px){.board{padding:18px 12px;gap:8px;border-radius:18px;background-size:auto,auto,auto}.board .side small,.board .full{display:none}.board .abbr{display:inline}.board .side b{font-size:22px}.board .side .crest{width:42px;height:42px;font-size:11px}.board .side .crest img{inset:6px;width:30px;height:30px}.board .score{font-size:36px;gap:20px}}
 
 /* the opening page: centre court at tip-off, the house orange running into walnut, the centre circle painted over the grain;
-   then the latest night's cards, three leader boards and both conferences in standings order */
+   then the latest night's cards and three leader boards */
 .intro{--cx:82%;background:radial-gradient(circle at var(--cx) 50%,rgba(255,255,255,.3) 0 30px,transparent 30.5px),radial-gradient(circle at var(--cx) 50%,transparent 0 104px,rgba(255,255,255,.35) 104px 106.5px,transparent 107px),
   linear-gradient(90deg,transparent calc(var(--cx) - 1.25px),rgba(255,255,255,.35) 0 calc(var(--cx) + 1.25px),transparent 0),linear-gradient(115deg,var(--orange) 0%,#b8470e 32%,#3a1d0c 74%,#15100c 100%);border-bottom-color:var(--orange)}
 @media (max-width:760px){.intro{--cx:100%}}
@@ -198,11 +198,9 @@ a.card:active{transform:scale(.98)}
 .sec-h.on-floor::before{box-shadow:0 0 0 2.5px var(--solid),0 0 0 4px rgba(232,97,26,.35)}
 .sec-h .more{margin-left:auto;font:650 14px/1 var(--sans);letter-spacing:0;color:var(--orange);text-decoration:none}
 .sec-h .more:hover{text-decoration:underline;text-underline-offset:2px}
-.duo,.trio{display:grid;gap:12px 16px;grid-template-columns:repeat(2,minmax(0,1fr))}
-.trio{grid-template-columns:repeat(3,minmax(0,1fr))}
-.duo>.panel,.trio>.panel{margin-top:14px}
+.trio{display:grid;gap:12px 16px;grid-template-columns:repeat(3,minmax(0,1fr))}
+.trio>.panel{margin-top:14px}
 @media (max-width:900px){.trio{grid-template-columns:minmax(0,1fr)}}
-@media (max-width:760px){.duo{grid-template-columns:minmax(0,1fr)}}
 .list a{display:flex;align-items:center;gap:10px;min-height:46px;padding:7px 16px;border-top:1px solid var(--line);text-decoration:none;transition:background .15s}
 .list a:hover{background:var(--panel2)}
 .list a:active{background:var(--panel2)}
@@ -213,7 +211,6 @@ a.card:active{transform:scale(.98)}
 .list .face{width:32px;height:32px;font-size:12px}
 .list .v{font:750 17px/1 var(--sans);letter-spacing:-.02em}
 .list a:first-child .v{color:var(--orange)}
-.club{box-shadow:inset 3px 0 0 var(--c1)}
 @media (max-width:760px){#hm-games{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:82%;overflow-x:auto;scroll-snap-type:x mandatory;margin:14px -12px 0;padding:0 12px 6px;scroll-padding:0 12px;scrollbar-width:none}#hm-games::-webkit-scrollbar{display:none}#hm-games>.card{scroll-snap-align:start}}
 
 /* compare: the two players meet on a court in their clubs' colours */
@@ -274,8 +271,6 @@ a.card:active{transform:scale(.98)}
     <div class="cards" id="hm-games"></div>
     <h2 class="sec-h on-floor"><span data-t="Leaders">Leaders</span><a class="more" href="#leaders" data-t="See all">See all</a></h2>
     <div class="trio" id="hm-leaders"></div>
-    <h2 class="sec-h on-floor"><span data-t="Standings">Standings</span><a class="more" href="#standings" data-t="See all">See all</a></h2>
-    <div class="duo" id="hm-teams"></div>
   </section>
   <section class="pg" id="pg-player" hidden>
     <div class="hero" id="hero"></div>
@@ -472,8 +467,11 @@ async function renderCompare(a, b, my) {
 $('#cmp-a').addEventListener('change', () => { location.hash = `compare/${$('#cmp-a').value}/${$('#cmp-b').value}`; });
 $('#cmp-b').addEventListener('change', () => { location.hash = `compare/${$('#cmp-a').value}/${$('#cmp-b').value}`; });
 
-// ---- every club's record from the finals in the schedule, in standings order: win percentage, then wins, then point difference
-const records = G => {
+// ---- Standings, from the finals in the schedule: win percentage, then wins, then point difference
+async function renderStandings(view, my) {
+  const G = (await get('games.json')).games;
+  if (stale(my)) return;
+  view = ['east', 'west', 'league'].includes(view) ? view : 'conf';
   const R = Object.fromEntries(IDX.teams.map(T => [T.code, {code: T.code, conf: T.conf, w: 0, l: 0, pf: 0, pa: 0, hw: 0, hl: 0, aw: 0, al: 0, seq: []}]));
   for (const g of G) {
     if (g.hs == null) continue;
@@ -486,14 +484,6 @@ const records = G => {
     }
   }
   const order = (x, y) => (y.w * (x.w + x.l) - x.w * (y.w + y.l)) || (y.w - x.w) || ((y.pf - y.pa) - (x.pf - x.pa)) || x.code.localeCompare(y.code);
-  return Object.values(R).sort(order);
-};
-
-// ---- Standings
-async function renderStandings(view, my) {
-  const G = (await get('games.json')).games;
-  if (stale(my)) return;
-  view = ['east', 'west', 'league'].includes(view) ? view : 'conf';
   const winPct = (w, gp) => { const v = rdiv(w * 1000, gp, 0); return v == null ? '–' : N(v === '1000' ? '1.000' : `.${v.padStart(3, '0')}`); };
   const streak = s => { if (!s.length) return '–'; const last = s[s.length - 1]; let n = 0; for (let i = s.length - 1; i >= 0 && s[i] === last; i--) n++; return `${last ? t('W') : t('L')}${n}`; };
   const l10 = s => { const x = s.slice(-10); return `${x.filter(Boolean).length}-${x.filter(v => !v).length}`; };
@@ -505,7 +495,7 @@ async function renderStandings(view, my) {
       return `<tr data-team="${r.code}"><td>${i + 1}</td><td class="l"><a href="#${r.code}">${logo(r.code)}${EN(tname(r.code))}</a></td><td class="k">${r.w}</td><td>${r.l}</td><td>${winPct(r.w, gp)}</td><td>${gb(r)}</td><td>${r.hw}-${r.hl}</td><td>${r.aw}-${r.al}</td><td>${l10(r.seq)}</td><td>${streak(r.seq)}</td><td>${avg(r.pf, gp)}</td><td>${avg(r.pa, gp)}</td><td class="${d[0] === '+' ? 'w' : d[0] === '−' ? 'lo' : ''}">${N(d)}</td></tr>`;
     }).join('')}</tbody></table></div></section>`;
   };
-  const all = records(G);
+  const all = Object.values(R).sort(order);
   const views = [['conf', 'Conferences'], ['east', 'East'], ['west', 'West'], ['league', 'League']];
   $('#st-tabs').innerHTML = views.map(([k, l]) => `<a href="#standings/${k}" aria-current="${k === view}">${t(l)}</a>`).join('');
   const east = all.filter(r => r.conf === 'E'), west = all.filter(r => r.conf === 'W');
@@ -586,8 +576,8 @@ async function renderLeaders(stat, my) {
   ).join('') : `<tr><td class="empty l" colspan="6">${t('No player qualifies yet.')}</td></tr>`}</tbody>`;
 }
 
-// ---- Home: the season so far, the latest night with a final (or the first night to come), the top five on three boards
-// and both conferences in standings order; every value is drawn by the same code as its own page
+// ---- Home: the season so far, the latest night with a final (or the first night to come) and the top five on three
+// boards; every value is drawn by the same code as its own page
 async function renderHome(my) {
   const [G, L] = await Promise.all([get('games.json').then(d => d.games), get('leaders.json').then(d => d.players)]);
   if (stale(my)) return;
@@ -603,12 +593,6 @@ async function renderHome(my) {
       `<a href="#${esc(p.team)}/${esc(p.pid)}" data-pid="${esc(p.pid)}"><span class="rk">${rank}</span>${face(p.pid, p.name)}<span class="nm">${EN(p.name)}<small>${esc(p.team)}</small></span><b class="v">${v}</b></a>`
     ).join('') : `<p class="empty">${t('No player qualifies yet.')}</p>`}</div></section>`;
   }).join('');
-  const all = records(G);
-  $('#hm-teams').innerHTML = [['E', 'Eastern Conference', 'east'], ['W', 'Western Conference', 'west']].map(([conf, title, view]) =>
-    `<section class="panel"><h2>${t(title)}</h2><div class="list">${all.filter(r => r.conf === conf).map((r, i) =>
-      `<a class="club" href="#${r.code}" data-team="${r.code}" style="${colours(r.code)}"><span class="rk">${i + 1}</span>${logo(r.code)}<span class="nm">${EN(tname(r.code))}</span><b class="v">${r.w}-${r.l}</b></a>`
-    ).join('')}</div></section>`
-  ).join('');
   document.title = 'NBA Player Lab';
 }
 

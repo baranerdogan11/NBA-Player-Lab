@@ -10,7 +10,7 @@ const ROUTES = [
   ['games', '#games', () => document.body.dataset.page === 'games' && !!document.querySelector('#gm-list .card')],
   ['game', '#game/0022600001', () => document.body.dataset.page === 'game' && document.querySelectorAll('#gm-box table').length === 2],
   ['leaders', '#leaders', () => document.body.dataset.page === 'leaders' && document.querySelectorAll('#ld tbody tr').length > 0],
-  ['home', '#home', () => document.body.dataset.page === 'home' && document.querySelectorAll('#hm-teams .club').length === 30],
+  ['home', '#home', () => document.body.dataset.page === 'home' && document.querySelectorAll('#hm-leaders .panel').length === 3],
 ];
 
 for (const [device, size] of [['phone', PHONE], ['desktop', DESKTOP]]) {
@@ -85,7 +85,7 @@ test.describe('player pictures', () => {
 
 test.describe('opening page', () => {
   test.use(DESKTOP);
-  test('no hash opens it; its cards, leaders and records match the Games, Leaders and Standings pages', async ({page}) => {
+  test('no hash opens it; its cards and leaders match the Games and Leaders pages', async ({page}) => {
     const problems = await prepare(page);
     await page.goto('./');
     await settled(page);
@@ -95,7 +95,6 @@ test.describe('opening page', () => {
       gids: [...document.querySelectorAll('#hm-games a.card')].map(a => a.dataset.gid),
       day: document.querySelector('#hm-games-h a.more').getAttribute('href'),
       pts: [...document.querySelectorAll('#hm-leaders [data-stat="pts"] a')].map(a => [a.dataset.pid, a.querySelector('.v').textContent]),
-      clubs: Object.fromEntries([...document.querySelectorAll('#hm-teams .club')].map(a => [a.dataset.team, a.querySelector('.v').textContent])),
     }));
     expect(home.gids.length).toBeGreaterThan(0);
     expect(home.pts.length).toBe(5);
@@ -103,9 +102,6 @@ test.describe('opening page', () => {
     expect(await page.evaluate(() => [...document.querySelectorAll('#gm-list a.card')].map(a => a.dataset.gid))).toEqual(home.gids);
     await go(page, '#leaders/pts', () => document.querySelectorAll('#ld tbody tr').length > 0);
     expect(await page.evaluate(() => [...document.querySelectorAll('#ld tbody tr')].slice(0, 5).map(tr => [tr.dataset.pid, tr.querySelector('.k').textContent]))).toEqual(home.pts);
-    await go(page, '#standings/league', () => document.querySelectorAll('#st-body tbody tr').length === 30);
-    const st = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('#st-body tr[data-team]')].map(tr => [tr.dataset.team, `${tr.cells[2].textContent}-${tr.cells[3].textContent}`])));
-    expect(home.clubs).toEqual(st);
     await page.click('.top .id');
     await page.waitForFunction(() => document.body.dataset.page === 'home');
     expect(problems, 'the page reported errors').toEqual([]);
@@ -122,9 +118,9 @@ test.describe('opening page', () => {
       await settled(page);
       const got = await page.evaluate(() => ({
         cards: document.querySelectorAll('#hm-games .card').length, links: document.querySelectorAll('#hm-games a.card').length,
-        empty: document.querySelectorAll('#hm-leaders .empty').length, records: [...new Set([...document.querySelectorAll('#hm-teams .club .v')].map(b => b.textContent))],
+        empty: document.querySelectorAll('#hm-leaders .empty').length,
       }));
-      expect(got).toEqual({cards: 15, links: 0, empty: 3, records: ['0-0']});
+      expect(got).toEqual({cards: 15, links: 0, empty: 3});
       await noSidewaysScroll(page, `empty opening page (${lang})`);
       if (lang === 'tr') expect(await page.evaluate(() => [...MISSING])).toEqual([]);
       expect(problems, 'the page reported errors').toEqual([]);
