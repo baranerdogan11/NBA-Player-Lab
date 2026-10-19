@@ -55,6 +55,25 @@ write_site(read, *ARGS, teams, *from_warehouse(wh))
 cmp = filecmp.dircmp(direct, read)
 diff = [*cmp.left_only, *cmp.right_only, *cmp.diff_files, *(f"games/{f}" for f in cmp.subdirs["games"].diff_files + cmp.subdirs["games"].left_only)]
 checks = {"warehouse tables give the same site JSON" + (f" (differs: {diff[:5]})" if diff else ""): not diff and len(os.listdir(read)) == 34}
+
+# with a roster: a signed player who has not played is listed under his club with an empty log, and a player who has
+# played moves to the club that rosters him now, keeping his game log and taking the roster's height
+moved = players[0]
+to = next(t["code"] for t in teams if t["code"] != moved["team"])
+with open(os.path.join(wh, "roster.jsonl"), "w") as f:
+    f.write(json.dumps({"player": 98, "team": "BOS", "name": "New Signing", "jersey": "7", "position": "G", "height": "6-3"}) + "\n")
+    f.write(json.dumps({"player": int(moved["pid"]), "team": to, "name": moved["name"], "jersey": None, "position": None, "height": "6-11"}) + "\n")
+con.execute(f"copy (select * from read_json_auto('{wh}/roster.jsonl')) to '{wh}/roster.parquet' (format parquet)")
+rost = tempfile.mkdtemp()
+write_site(rost, *ARGS, teams, *from_warehouse(wh))
+bos = {p["pid"]: p for p in json.load(open(os.path.join(rost, "BOS.json")))["players"]}
+dest = {p["pid"]: p for p in json.load(open(os.path.join(rost, f"{to}.json")))["players"]}
+old = json.load(open(os.path.join(read, f"{moved['team']}.json")))["players"]
+checks["a rostered player without a game is listed with an empty log"] = bos.get("98", {}).get("log") == [] and bos["98"]["height"] == "6'3\""
+checks["a rostered player is under his current club with his log"] = (
+    moved["pid"] in dest and dest[moved["pid"]]["log"] == next(p["log"] for p in old if p["pid"] == moved["pid"])
+    and dest[moved["pid"]]["jersey"] == moved["jersey"] and dest[moved["pid"]]["height"] == "6'11\""
+    and (to == moved["team"] or moved["pid"] not in {p["pid"] for p in json.load(open(os.path.join(rost, f"{moved['team']}.json")))["players"]}))
 for name, passed in checks.items():
     print(("PASS " if passed else "FAIL ") + name)
 sys.exit(0 if all(checks.values()) else 1)

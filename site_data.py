@@ -13,7 +13,8 @@ Files under <out>/ (out is teams/<season>/):
 
 from_warehouse() turns the warehouse tables (warehouse/<season>/*.parquet, see warehouse.py) into those rows: regular
 season games only, and box lines of every player who was active (a coach's decision is a line with 0 seconds; inactive
-players have none).
+players have none). Every player on a club's roster is listed under that club, with an empty log until his first game;
+a player no longer on any roster stays under the club of his last box score.
 usage: python site_data.py [2026-27]   (reads warehouse/<season>/, writes teams/<season>/)
 """
 import json
@@ -96,6 +97,10 @@ def from_warehouse(wh):
     con = duckdb.connect()
     for t in ("games", "box", "players", "periods"):
         con.execute(f"create view {t} as select * from read_parquet('{os.path.join(wh, t + '.parquet')}')")
+    if os.path.exists(os.path.join(wh, "roster.parquet")):
+        con.execute(f"create view roster as select * from read_parquet('{os.path.join(wh, 'roster.parquet')}')")
+    else:   # an earlier season, or a warehouse built before rosters were fetched: players come from box scores only
+        con.execute("create view roster as select null::int as player, '' as team, '' as name, '' as jersey, '' as position, '' as height where false")
 
     def rows(sql):
         cur = con.execute(sql)
@@ -112,10 +117,17 @@ def from_warehouse(wh):
                            "home, away, final, home_score as hs, away_score as \"as\" from games where game_type = 'regular'")]
     stat = ", ".join(f"coalesce(b.{'plus_minus' if k == 'pm' else k}, 0) as {k}" for k in STATS)
     lines = rows(f"select b.game as gid, b.team, b.player::varchar as pid, p.name, b.starter as start, round(b.seconds)::int as sec, {stat} {played}")
-    players = rows("select b.player::varchar as pid, arg_max(b.team, g.tipoff_utc) as team, any_value(p.name) as \"name\", "
-                   "arg_max(b.jersey, g.tipoff_utc) as jersey, arg_max(b.position, g.tipoff_utc) filter (where b.position is not null) as pos, "
-                   f"null as height, null as born {played} group by b.player order by pid")
-    return players, games, lines
+    boxed = rows("select b.player::varchar as pid, arg_max(b.team, g.tipoff_utc) as team, any_value(p.name) as \"name\", "
+                 "arg_max(b.jersey, g.tipoff_utc) as jersey, arg_max(b.position, g.tipoff_utc) filter (where b.position is not null) as pos, "
+                 f"null as height, null as born {played} group by b.player")
+    # the roster gives the current club, the jersey and the height (6-8 in the feed, shown as 6'8"); box scores have no height
+    players = {p["pid"]: p for p in boxed}
+    for r in rows("select player::varchar as pid, team, name, jersey, position as pos, height from roster"):
+        b = players.get(r["pid"], {})
+        ft, _, inch = (r["height"] or "").partition("-")
+        players[r["pid"]] = {**r, "jersey": r["jersey"] or b.get("jersey"), "pos": r["pos"] or b.get("pos"),
+                             "height": f"{ft}'{inch}\"" if inch else r["height"], "born": None}
+    return sorted(players.values(), key=lambda p: p["pid"]), games, lines
 
 
 if __name__ == "__main__":
