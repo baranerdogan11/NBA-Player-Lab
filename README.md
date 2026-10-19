@@ -43,9 +43,8 @@ CHROME=/path/to/chrome npm run test:e2e   # or: npx playwright install chromium
 Nothing needs a human on game nights:
 
 - `.github/workflows/update.yml` checks every 5 minutes from 17:00 to 09:59 UTC whether a game has gone final since the
-  last build (`due.py`, reading the NBA CDN schedule), and runs once a night after 10:00 UTC for late corrections.
-  cdn.nba.com refuses GitHub's runners, so the check and the fetch run on a self-hosted runner (Settings, Actions,
-  Runners); while it is offline those jobs wait and the site keeps its last good build. A run fetches, passes every gate (self-tests, the warehouse gates including play-by-play against the box score, the Playwright smoke test on the built
+  last build (`due.py`, reading the NBA schedule from the S3 origin behind cdn.nba.com, which refuses scripted
+  clients), and runs once a night after 10:00 UTC for late corrections. A run fetches, passes every gate (self-tests, the warehouse gates including play-by-play against the box score, the Playwright smoke test on the built
   site), commits and deploys. A failed gate stops the run before anything is committed, so the last good build stays
   live, and GitHub emails the failure.
 - `.github/workflows/pages.yml` deploys one tested commit to GitHub Pages (Settings, Pages, Source: GitHub Actions) and
