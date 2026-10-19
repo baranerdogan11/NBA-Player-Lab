@@ -51,6 +51,32 @@ test('a game, the players in it, their pages, compare and leaders agree', async 
   expect(problems, 'the page reported errors').toEqual([]);
 });
 
+// Usage is the page's formula over the totals in leaders.json; RAPM, O-RAPM and D-RAPM are the values site_data.py wrote
+// (already rounded by rounding.rnd), signed; every board runs from best to worst
+test('usage and RAPM boards show the written values, best first', async ({page}) => {
+  const problems = await prepare(page);
+  await page.goto('./');
+  await settled(page);
+  const lead = await page.evaluate(() => fetch(`${META.base}leaders.json`).then(r => r.json()).then(d => Object.fromEntries(d.players.map(p => [p.pid, p]))));
+  for (const stat of ['usg', 'rapm', 'orapm', 'drapm']) {
+    await go(page, `#leaders/${stat}`, s => document.querySelector('#ld-tabs [aria-current="true"]')?.getAttribute('href') === `#leaders/${s}` && document.querySelectorAll('#ld tbody tr[data-pid]').length > 0, stat);
+    const rows = await page.evaluate(() => [...document.querySelectorAll('#ld tbody tr[data-pid]')].map(tr => [tr.dataset.pid, tr.lastElementChild.textContent]));
+    const vals = rows.map(([pid, v]) => {
+      const p = lead[pid], shown = Number(v.replace('−', '-'));
+      if (stat === 'usg') {
+        const exact = 100 * (p.fga + 0.44 * p.fta + p.tov) * (p.tm_sec / 5) / (p.sec * (p.tm_fga + 0.44 * p.tm_fta + p.tm_tov));
+        expect(Math.abs(shown - exact), `${p.name} USG%`).toBeLessThanOrEqual(0.05 + 1e-9);
+      } else {
+        expect(v, `${p.name} ${stat}`).toBe((p[stat] > 0 ? '+' : p[stat] < 0 ? '−' : '') + Math.abs(p[stat]).toFixed(1));
+        expect(p.sec, `${p.name} plays 15 minutes a game`).toBeGreaterThanOrEqual(900 * p.gp);
+      }
+      return shown;
+    });
+    expect(vals, `${stat} best first`).toEqual([...vals].sort((x, y) => y - x));
+  }
+  expect(problems, 'the page reported errors').toEqual([]);
+});
+
 // The page rounds as rounding.avg does in Python (half up, exact): these answers are rounding.avg's, halves included.
 test('the page rounds as rounding.py does', async ({page}) => {
   await prepare(page);

@@ -205,8 +205,9 @@ def main(season, w=None):
             if abs(on.get((b.team, b.player), 0) - (b.seconds or 0)) > 60:
                 problems.append(f"game {g}: {b.player} on the floor {on.get((b.team, b.player), 0):.0f} s, box {b.seconds:.0f} s")
         rows += [{"game": g, **s} for s in sts]
-    st = pd.DataFrame(rows)
-    lu, oo = season_tables(st)
+    cols = ["game", "team", "stint", "players", "opp_players", "sec", "pts", "opp_pts", *COUNTS, *(f"opp_{k}" for k in COUNTS)]
+    st = pd.DataFrame(rows, columns=cols)       # before opening night there are no games: the tables are written empty
+    lu, oo = season_tables(st) if len(st) else (pd.DataFrame(columns=["team", "players"]), pd.DataFrame(columns=["team", "player"]))
     st.to_parquet(os.path.join(w, "stints.parquet"), index=False)
     lu.to_parquet(os.path.join(w, "lineups.parquet"), index=False)
     oo.to_parquet(os.path.join(w, "onoff.parquet"), index=False)

@@ -14,6 +14,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "tests", "fixtures"))
 import site_fixture  # noqa: E402
+from rounding import rnd  # noqa: E402
 from site_data import STATS, write_site  # noqa: E402
 
 checks = {}
@@ -42,6 +43,14 @@ checks["every log row is the player's box line"] = all(
 checks["leaders' totals are the sums of the logs"] = all(
     p["gp"] == sum(r["sec"] > 0 for r in logs[p["pid"]]) and all(p[k] == sum(r[k] for r in logs[p["pid"]] if r["sec"] > 0) for k in STATS)
     for p in lead)
+box_of = {(gid, x["pid"]): side for b in boxes.values() for side in b["box"].values() for x in side for gid in [b["gid"]]}
+checks["usage totals are his clubs' totals over his games"] = all(
+    p[f"tm_{k}"] == sum(sum(y[k] for y in box_of[(r["gid"], p["pid"])]) for r in logs[p["pid"]] if r["sec"] > 0)
+    for p in lead for k in ("fga", "fta", "tov", "sec"))
+src = {p["pid"]: p for p in players}
+checks["RAPM is written once rounded, null without one"] = all(
+    (p["rapm"], p["orapm"], p["drapm"]) == ((rnd(src[p["pid"]]["o_rapm"] + src[p["pid"]]["d_rapm"]), rnd(src[p["pid"]]["o_rapm"]), rnd(src[p["pid"]]["d_rapm"]))
+                                            if "o_rapm" in src[p["pid"]] else (None, None, None)) for p in lead) and any(p["rapm"] is None for p in lead)
 
 for name, passed in checks.items():
     print(("PASS " if passed else "FAIL ") + name)
