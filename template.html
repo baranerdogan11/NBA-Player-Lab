@@ -120,11 +120,29 @@ a,button,select,.card{-webkit-tap-highlight-color:transparent}
 .mark{width:22px;height:22px;margin-right:7px;border-radius:50%;background:rgba(255,255,255,.94)}
 .mark img{inset:3px;width:16px;height:16px}
 
-/* controls: rounded selects and segmented controls inside a page */
-select{appearance:none;-webkit-appearance:none;background:var(--solid) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5l4.5 4.5 4.5-4.5' fill='none' stroke='%23e8611a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center/12px 8px;border:0;border-radius:var(--rs);box-shadow:var(--sh);padding:11px 36px 11px 14px;min-width:0;max-width:100%;font-weight:600;cursor:pointer}
-select:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(--orange);outline-offset:2px;border-radius:var(--rs)}
+/* pickers: each <select> keeps its options and value but is drawn as a rounded button that opens a frosted menu of its own */
+.sel{display:flex;align-items:center;gap:10px;flex:1 1 220px;min-width:0;max-width:100%;border:0;border-radius:var(--rs);box-shadow:var(--sh);padding:9px 36px 9px 12px;font-weight:600;text-align:left;cursor:pointer;color:var(--ink);transition:transform .1s ease-out,box-shadow .2s;
+  background:var(--solid) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5l4.5 4.5 4.5-4.5' fill='none' stroke='%23e8611a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center/12px 8px}
+.sel>span:last-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sel:active{transform:scale(.985)}
+.sel[aria-expanded="true"]{box-shadow:var(--sh),0 0 0 2px var(--orange)}
+.sel:disabled{opacity:.5;cursor:default}
+.sel .face,.menu .face{flex:none;width:26px;height:26px;font-size:10px}
+.sel:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(--orange);outline-offset:2px;border-radius:var(--rs)}
 .pick{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-.pick select{flex:1 1 220px}
+.veil{position:fixed;inset:0;z-index:59}
+.menu{position:fixed;z-index:60;display:flex;flex-direction:column;max-height:min(420px,70vh);background:var(--panel);-webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);border-radius:var(--r);box-shadow:var(--sh),0 0 0 1px var(--line);overflow:hidden;animation:rise .25s var(--spring)}
+.menu input{margin:10px 10px 4px;padding:9px 14px;border:0;border-radius:999px;background:var(--seg);font:inherit;color:inherit;outline:0}
+.menu input:focus-visible{box-shadow:0 0 0 2px var(--orange)}
+.menu ul{list-style:none;margin:0;padding:6px;overflow-y:auto;overscroll-behavior:contain;outline:0}
+.menu li{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;cursor:pointer;font-weight:600}
+.menu li>span:last-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.menu li.h{padding:12px 10px 4px;font:600 11px/1 var(--sans);text-transform:uppercase;letter-spacing:.07em;color:var(--muted);cursor:default}
+.menu li.on{background:var(--panel2)}
+.menu li[aria-selected="true"]{color:var(--orange)}
+.menu li[aria-selected="true"]::after{content:"\2713";font-weight:800}
+.menu .empty{padding:10px}
+@media (max-width:760px){.veil{background:rgba(0,0,0,.35)}.menu{left:10px!important;right:10px;width:auto!important;top:auto!important;bottom:calc(10px + env(safe-area-inset-bottom));max-height:60vh!important;border-radius:22px}}
 .tabs,.dates{display:flex;gap:2px;overflow-x:auto;padding:4px;border-radius:14px;background:var(--panel);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:var(--sh);scrollbar-width:none}
 .tabs::-webkit-scrollbar,.dates::-webkit-scrollbar{display:none}
 .tabs button,.tabs a,.dates a{flex:none;border:0;background:none;padding:9px 14px;border-radius:10px;cursor:pointer;font:600 14px/1 var(--sans);color:var(--muted);text-decoration:none;transition:background .2s,color .2s,transform .1s ease-out}
@@ -263,7 +281,7 @@ html.swap,html.swap *{transition:background-color .35s,color .35s}
 /* accessibility: gentler motion, solid surfaces, stronger edges */
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}a:active,button:active,.card:active{transform:none!important}}
 @media (prefers-reduced-transparency:reduce){.top,.tabbar,.panel,.card,.tabs,.dates{background:var(--solid);-webkit-backdrop-filter:none;backdrop-filter:none}}
-@media (prefers-contrast:more){:root{--line:rgba(92,58,26,.4)}html[data-theme="dark"]{--line:rgba(255,232,206,.35)}.top,.tabbar,.panel,.card,.tabs,.dates,.tiles,select{background:var(--solid);box-shadow:0 0 0 1px var(--ink)}}
+@media (prefers-contrast:more){:root{--line:rgba(92,58,26,.4)}html[data-theme="dark"]{--line:rgba(255,232,206,.35)}.top,.tabbar,.panel,.card,.tabs,.dates,.tiles,.sel,.menu{background:var(--solid);box-shadow:0 0 0 1px var(--ink)}}
 </style>
 <header class="top">
   <a class="id" href="#" title="NBA Player Lab"><i></i>NBA Player Lab <span id="tag-season"></span></a>
@@ -299,12 +317,12 @@ html.swap,html.swap *{transition:background-color .35s,color .35s}
   </section>
   <section class="pg" id="pg-player" hidden>
     <div class="hero" id="hero"></div>
-    <div class="pick"><select id="team" aria-label="Team" data-ta="Team"></select><select id="player" aria-label="Player" data-ta="Player"></select></div>
+    <div class="pick"><select id="team" data-kind="team" aria-label="Team" data-ta="Team"></select><select id="player" data-kind="player" aria-label="Player" data-ta="Player"></select></div>
     <div class="tiles" id="tiles"></div>
     <section class="panel"><h2 data-t="Game log">Game log</h2><div class="scroll"><table class="tbl" id="log"></table></div></section>
   </section>
   <section class="pg" id="pg-compare" hidden>
-    <div class="pick"><select id="cmp-a" aria-label="First player" data-ta="First player"></select><select id="cmp-b" aria-label="Second player" data-ta="Second player"></select></div>
+    <div class="pick"><select id="cmp-a" data-kind="player" aria-label="First player" data-ta="First player"></select><select id="cmp-b" data-kind="player" aria-label="Second player" data-ta="Second player"></select></div>
     <div class="vs" id="cmp-vs"></div>
     <section class="panel"><div class="scroll"><table class="tbl cmp" id="cmp"></table></div></section>
   </section>
@@ -327,6 +345,8 @@ html.swap,html.swap *{transition:background-color .35s,color .35s}
   </section>
 </main>
 <footer class="foot" id="foot"></footer>
+<div class="veil" id="veil" hidden></div>
+<div class="menu" id="menu" hidden><input type="search" autocomplete="off" aria-label="Search" data-ta="Search"><ul role="listbox" tabindex="-1"></ul></div>
 <script>
 const META = /*META*/;
 const TR = /*TR*/{};
@@ -655,6 +675,63 @@ $('#theme').addEventListener('click', () => {
   setTimeout(() => document.documentElement.classList.remove('swap'), 400);
   setTheme(dark);
   try { localStorage.setItem('pl-theme', dark ? 'dark' : 'light'); } catch (e) {}
+});
+
+// ---- pickers: a button in the select's place and one shared menu; the select keeps the options, the value and the change event
+const MENU = $('#menu'), VEIL = $('#veil'), Q = $('#menu input'), LIST = $('#menu ul');
+let OPEN = null;
+const icon = (sel, v, name) => sel.dataset.kind === 'team' ? logo(v) : face(v, name);
+const item = (sel, o) => `<li role="option" id="mo-${esc(o.value)}" data-v="${esc(o.value)}" aria-selected="${o.selected}">${icon(sel, o.value, o.textContent)}<span>${esc(o.textContent)}</span></li>`;
+const activate = li => { for (const x of $$('.on', LIST)) x.classList.remove('on'); if (li) { li.classList.add('on'); LIST.setAttribute('aria-activedescendant', li.id); } };
+function fillMenu(sel, q = '') {
+  const f = q.trim().toLocaleLowerCase(loc()), hit = o => !f || o.textContent.toLocaleLowerCase(loc()).includes(f);
+  const groups = $$('optgroup', sel);
+  LIST.innerHTML = (groups.length ? groups.map(g => { const rows = $$('option', g).filter(o => hit(o) || g.label.toLocaleLowerCase(loc()).includes(f)); return rows.length ? `<li class="h">${esc(g.label)}</li>${rows.map(o => item(sel, o)).join('')}` : ''; }).join('')
+    : $$('option', sel).filter(hit).map(o => item(sel, o)).join('')) || `<li class="empty">${t('No matches')}</li>`;
+  activate($('[aria-selected="true"]', LIST) || $('[role="option"]', LIST));
+}
+function closeMenu() {
+  if (!OPEN) return;
+  MENU.hidden = VEIL.hidden = true;
+  OPEN.btn.setAttribute('aria-expanded', 'false');
+  OPEN.btn.focus({preventScroll: true});
+  OPEN = null;
+}
+function openMenu(sel, btn) {
+  OPEN = {sel, btn};
+  btn.setAttribute('aria-expanded', 'true');
+  Q.value = ''; Q.placeholder = t('Search'); Q.hidden = sel.options.length <= 12;
+  fillMenu(sel);
+  MENU.hidden = VEIL.hidden = false;
+  const r = btn.getBoundingClientRect(), w = Math.max(r.width, 260);
+  MENU.style.left = `${Math.max(10, Math.min(r.left, innerWidth - w - 10))}px`; MENU.style.width = `${w}px`; MENU.style.top = `${r.bottom + 6}px`;
+  MENU.style.maxHeight = `${Math.max(220, Math.min(420, innerHeight - r.bottom - 16))}px`;
+  (Q.hidden || !matchMedia('(hover:hover)').matches ? LIST : Q).focus({preventScroll: true});   // no keyboard popping up over a phone's sheet
+  const on = $('.on', LIST); if (on) on.scrollIntoView({block: 'center'});
+}
+const choose = v => { const {sel} = OPEN; closeMenu(); if (sel.value !== v) { sel.value = v; sel.dispatchEvent(new Event('change', {bubbles: true})); } };
+for (const sel of $$('select')) {
+  const btn = document.createElement('button');
+  btn.type = 'button'; btn.className = 'sel'; btn.setAttribute('aria-haspopup', 'listbox'); btn.setAttribute('aria-expanded', 'false');
+  sel.after(btn); sel.hidden = true;
+  const sync = () => { const o = sel.selectedOptions[0]; btn.innerHTML = o ? `${icon(sel, o.value, o.textContent)}<span>${esc(o.textContent)}</span>` : '<span>–</span>'; btn.disabled = sel.disabled; btn.setAttribute('aria-label', sel.getAttribute('aria-label')); };
+  new MutationObserver(sync).observe(sel, {childList: true, attributes: true});
+  sel.addEventListener('change', sync);
+  btn.addEventListener('click', () => OPEN && OPEN.sel === sel ? closeMenu() : openMenu(sel, btn));
+}
+VEIL.addEventListener('click', closeMenu);
+window.addEventListener('resize', closeMenu);
+window.addEventListener('scroll', closeMenu, {passive: true});
+Q.addEventListener('input', () => fillMenu(OPEN.sel, Q.value));
+LIST.addEventListener('click', e => { const li = e.target.closest('[role="option"]'); if (li) choose(li.dataset.v); });
+LIST.addEventListener('mousemove', e => { const li = e.target.closest('[role="option"]'); if (li && !li.classList.contains('on')) activate(li); });
+MENU.addEventListener('keydown', e => {
+  const rows = $$('[role="option"]', LIST), i = rows.findIndex(x => x.classList.contains('on'));
+  if (e.key === 'Escape') closeMenu();
+  else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { const li = rows[Math.max(0, Math.min(rows.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)))]; if (li) { activate(li); li.scrollIntoView({block: 'nearest'}); } }
+  else if (e.key === 'Enter') { if (rows[i]) choose(rows[i].dataset.v); }
+  else return;
+  e.preventDefault();
 });
 
 async function boot() {
