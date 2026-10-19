@@ -544,7 +544,12 @@ async function renderGame(gid, my) {
 }
 
 // ---- Leaders: per game, or a percentage with the league's own minimums prorated to the games played (FG 300 makes,
-// 3P 82, FT 125 over 82 games); per-game boards need 70% of the club's games
+// 3P 82, FT 125 over 82 games); per-game boards need 70% of the club's games, usage and RAPM also 15 minutes a game.
+// Usage: (FGA + 0.44 FTA + TOV) × (club minutes / 5) / (minutes × the club's FGA + 0.44 FTA + TOV), over his games, in integers.
+// RAPM comes from rapm.py already rounded; the boards rank and show that value
+const usg = s => rdiv(100 * (25 * s.fga + 11 * s.fta + 25 * s.tov) * s.tm_sec, 5 * s.sec * (25 * s.tm_fga + 11 * s.tm_fta + 25 * s.tm_tov));
+const busy = (s, tg) => 10 * s.gp >= 7 * tg && s.sec >= 900 * s.gp;
+const rapm = k => [s => s[k], s => N(signed(s[k].toFixed(1))), (s, tg) => s[k] != null && busy(s, tg)];
 const LEAD = {
   pts: ['Points', s => s.pts / s.gp, s => avg(s.pts, s.gp)], reb: ['Rebounds', s => s.reb / s.gp, s => avg(s.reb, s.gp)],
   ast: ['Assists', s => s.ast / s.gp, s => avg(s.ast, s.gp)], stl: ['Steals', s => s.stl / s.gp, s => avg(s.stl, s.gp)],
@@ -554,6 +559,8 @@ const LEAD = {
   fg3: ['3P%', s => s.fg3m / s.fg3a, s => pct(s.fg3m, s.fg3a), (s, tg) => 82 * s.fg3m >= 82 * tg, s => `${s.fg3m}-${s.fg3a}`],
   ft: ['FT%', s => s.ftm / s.fta, s => pct(s.ftm, s.fta), (s, tg) => 82 * s.ftm >= 125 * tg, s => `${s.ftm}-${s.fta}`],
   ts: ['TS%', s => s.pts / (s.fga + 0.44 * s.fta), s => ts(s.pts, s.fga, s.fta), (s, tg) => 82 * s.fgm >= 300 * tg, s => String(s.pts)],
+  usg: ['USG%', s => Number(usg(s)), s => N(usg(s)), busy],
+  rapm: ['RAPM', ...rapm('rapm')], orapm: ['O-RAPM', ...rapm('orapm')], drapm: ['D-RAPM', ...rapm('drapm')],
 };
 // the top 25 who qualify for a board, each with the shown value and a rank that ties on it
 const board = (L, stat) => {

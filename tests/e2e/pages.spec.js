@@ -10,6 +10,7 @@ const ROUTES = [
   ['games', '#games', () => document.body.dataset.page === 'games' && !!document.querySelector('#gm-list .card')],
   ['game', '#game/0022600001', () => document.body.dataset.page === 'game' && document.querySelectorAll('#gm-box table').length === 2],
   ['leaders', '#leaders', () => document.body.dataset.page === 'leaders' && document.querySelectorAll('#ld tbody tr').length > 0],
+  ['leaders-rapm', '#leaders/rapm', () => document.body.dataset.page === 'leaders' && document.querySelector('#ld-tabs [aria-current="true"]')?.getAttribute('href') === '#leaders/rapm' && document.querySelectorAll('#ld tbody tr').length > 0],
   ['home', '#home', () => document.body.dataset.page === 'home' && document.querySelectorAll('#hm-leaders .panel').length === 3],
 ];
 

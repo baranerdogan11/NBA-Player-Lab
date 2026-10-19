@@ -108,6 +108,10 @@ jobs:
         if: hashFiles('warehouse_tests.py') != ''
         run: python warehouse_tests.py
 
+      - name: Lineups and RAPM (stints from the substitution log; checks every game's five, seconds and points)
+        if: hashFiles('warehouse.py') != ''
+        run: python lineups.py && python rapm.py
+
       - name: Site JSON (teams/<season>/ from the warehouse tables)
         if: hashFiles('warehouse.py') != ''
         run: python site_data.py

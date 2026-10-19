@@ -24,6 +24,9 @@ def make(rng):
             players.append({"pid": f"{1630000 + i * 10 + j}", "team": t["code"], "name": f"{FIRST[(i + j) % 12]} {LAST[(i * 3 + j) % 12]}",
                             "jersey": str((j * 7 + i) % 45), "pos": POS[j], "height": f"6-{2 + j % 9}",
                             "born": f"{1996 + (i + j) % 9}-0{1 + j % 9}-1{j % 9}"})
+    other = random.Random(11)   # RAPM from its own generator, so the box scores stay as they were
+    for p in players[:-5]:      # the last club's bench has none
+        p["o_rapm"], p["d_rapm"] = other.gauss(0, 2), other.gauss(0, 2)
     games, lines, n = [], [], 0
     codes = [t["code"] for t in teams]
     for day in range(6):

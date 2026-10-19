@@ -39,6 +39,7 @@ t = {
             for x in lines]
     + [{"game": lines[0]["gid"], "player": 99, "team": lines[0]["team"], "status": "INACTIVE", "seconds": 0.0},
        {"game": "0012600001", "player": int(players[0]["pid"]), "team": "BOS", "status": "ACTIVE", "seconds": 60.0, "pts": 2}],
+    "rapm": [{"player": int(p["pid"]), "o": p["o_rapm"], "d": p["d_rapm"]} for p in players if "o_rapm" in p],
     "periods": [{"game": g["gid"], "team": c, "period": i + 1, "pts": q[side]} for g in games if g["final"]
                 for i, q in enumerate(g["periods"]) for side, c in enumerate((g["home"], g["away"]))],
 }
