@@ -1,0 +1,13 @@
+{
+ "season": "2025-26",
+ "tables": {
+  "teams": 30,
+  "games": 1230,
+  "players": 603,
+  "box": 43265,
+  "team_box": 2460,
+  "periods": 9964,
+  "events": 708266,
+  "shots": 219158
+ }
+}

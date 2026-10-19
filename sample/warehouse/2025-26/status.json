@@ -1,0 +1,19 @@
+{
+ "season": "2025-26",
+ "checked_at": "2026-10-19T21:19:22Z",
+ "rows": {
+  "teams": 30,
+  "games": 1230,
+  "players": 603,
+  "box": 43265,
+  "team_box": 2460,
+  "periods": 9964,
+  "events": 708266,
+  "shots": 219158
+ },
+ "games": 1230,
+ "tests": 36,
+ "failures": 9,
+ "warnings": 0,
+ "ok": false
+}

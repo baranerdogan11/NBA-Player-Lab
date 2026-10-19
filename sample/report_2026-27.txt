@@ -1,0 +1,40 @@
+PASS games: each team plays 80 to 82 regular-season games
+PASS games: final games have a box score cached
+PASS teams: 30 rows, unique codes and ids
+PASS games: unique ids
+PASS games: named teams are known outside the preseason
+PASS games: final games have both teams
+PASS games: final games have a winner
+PASS games: final games are not in the future
+PASS box: every cached game is a final game on the schedule
+PASS box: both teams of the game
+PASS box: one line per player per game
+PASS box: makes never exceed attempts
+PASS box: points reconcile with makes
+PASS box: rebounds add up
+PASS team_box: two teams per game
+PASS team_box: score is the schedule's final score
+PASS team_box: player lines add up to the team totals
+PASS periods: points by period add up to the final score
+PASS events: every final game has its play-by-play
+PASS shots: both teams of the game
+PASS play-by-play pts per player per game equals the box score
+PASS play-by-play fgm per player per game equals the box score
+PASS play-by-play fga per player per game equals the box score
+PASS play-by-play fg3m per player per game equals the box score
+PASS play-by-play fg3a per player per game equals the box score
+PASS play-by-play ftm per player per game equals the box score
+PASS play-by-play fta per player per game equals the box score
+PASS play-by-play oreb per player per game equals the box score
+PASS play-by-play dreb per player per game equals the box score
+PASS play-by-play reb per player per game equals the box score
+PASS play-by-play ast per player per game equals the box score
+PASS play-by-play stl per player per game equals the box score
+PASS play-by-play blk per player per game equals the box score
+PASS play-by-play blka per player per game equals the box score
+PASS play-by-play tov per player per game equals the box score
+PASS play-by-play pf per player per game equals the box score
+PASS play-by-play: every player with a stat in the play-by-play has a box line
+PASS play-by-play: the last score equals the final score
+rows: {'teams': 30, 'games': 1274, 'players': 0, 'box': 0, 'team_box': 0, 'periods': 0, 'events': 0, 'shots': 0}
+RESULT: OK

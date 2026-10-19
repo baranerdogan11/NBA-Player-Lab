@@ -1,0 +1,69 @@
+PASS games: each team plays 80 to 82 regular-season games
+PASS games: final games have a box score cached
+PASS teams: 30 rows, unique codes and ids
+PASS games: unique ids
+PASS games: named teams are known outside the preseason
+PASS games: final games have both teams
+PASS games: final games have a winner
+PASS games: final games are not in the future
+PASS box: every cached game is a final game on the schedule
+PASS box: both teams of the game
+PASS box: one line per player per game
+PASS box: makes never exceed attempts
+PASS box: points reconcile with makes
+PASS box: rebounds add up
+PASS team_box: two teams per game
+PASS team_box: score is the schedule's final score
+FAIL team_box: player lines add up to the team totals  (2459 rows)
+        ('0022500002', 'LAL')
+        ('0022500003', 'NYK')
+        ('0022500003', 'CLE')
+        ('0022500004', 'DAL')
+        ('0022500005', 'OKC')
+PASS periods: points by period add up to the final score
+PASS events: every final game has its play-by-play
+PASS shots: both teams of the game
+PASS play-by-play pts per player per game equals the box score
+PASS play-by-play fgm per player per game equals the box score
+FAIL play-by-play fga per player per game equals the box score  (2 rows)
+        ('0022500132', 1642269, 'SAC', 2, 3)
+        ('0022500338', 1631169, 'BOS', 4, 3)
+PASS play-by-play fg3m per player per game equals the box score
+FAIL play-by-play fg3a per player per game equals the box score  (3 rows)
+        ('0022500081', 1630217, 'ORL', 7, 6)
+        ('0022500116', 1641730, 'BKN', 3, 4)
+        ('0022500132', 1642269, 'SAC', 1, 2)
+PASS play-by-play ftm per player per game equals the box score
+PASS play-by-play fta per player per game equals the box score
+FAIL play-by-play oreb per player per game equals the box score  (2 rows)
+        ('0022500132', 201942, 'SAC', 0, 1)
+        ('0022500338', 1631169, 'BOS', 1, 0)
+FAIL play-by-play dreb per player per game equals the box score  (4 rows)
+        ('0022500045', 1630530, 'NOP', 4, 5)
+        ('0022500045', 1630529, 'NOP', 4, 3)
+        ('0022500166', 1630532, 'ORL', 2, 3)
+        ('0022500166', 1628371, 'ORL', 3, 2)
+FAIL play-by-play reb per player per game equals the box score  (6 rows)
+        ('0022500045', 1630530, 'NOP', 6, 7)
+        ('0022500045', 1630529, 'NOP', 6, 5)
+        ('0022500132', 201942, 'SAC', 5, 6)
+        ('0022500166', 1630532, 'ORL', 5, 6)
+        ('0022500166', 1628371, 'ORL', 3, 2)
+PASS play-by-play ast per player per game equals the box score
+FAIL play-by-play stl per player per game equals the box score  (2 rows)
+        ('0022500587', 1630171, 'CHI', 3, 4)
+        ('0022500587', 1630200, 'CHI', 2, 1)
+PASS play-by-play blk per player per game equals the box score
+FAIL play-by-play blka per player per game equals the box score  (29 rows)
+        ('0022500032', 1630578, 'HOU', 1, 2)
+        ('0022500071', 1629632, 'CHI', 5, 6)
+        ('0022500082', 204001, 'ATL', 1, 2)
+        ('0022500086', 1642273, 'WAS', 1, 2)
+        ('0022500111', 1630572, 'TOR', 0, 1)
+FAIL play-by-play tov per player per game equals the box score  (1 rows)
+        ('0022500805', 1629638, 'ATL', 3, 4)
+PASS play-by-play pf per player per game equals the box score
+PASS play-by-play: every player with a stat in the play-by-play has a box line
+PASS play-by-play: the last score equals the final score
+rows: {'teams': 30, 'games': 1230, 'players': 603, 'box': 43265, 'team_box': 2460, 'periods': 9964, 'events': 708266, 'shots': 219158}
+RESULT: 9 test(s) failed
