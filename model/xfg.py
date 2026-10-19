@@ -43,7 +43,7 @@ def load_seasons(seasons):
         if not os.path.exists(path):
             raise SystemExit(f"{path} missing: run python model/archive.py {s}")
         parts.append(pd.read_parquet(path))
-    return pd.concat(parts, ignore_index=True).sort_values(["date", "game", "order"], kind="stable").reset_index(drop=True)
+    return pd.concat(parts, ignore_index=True).sort_values(["date", "game", "order_no"], kind="stable").reset_index(drop=True)
 
 
 def make_model(feats, seed=SEED):

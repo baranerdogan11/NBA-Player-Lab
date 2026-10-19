@@ -1,21 +1,54 @@
-"""Shots from NBA CDN play-by-play actions (cdn.nba.com/static/json/liveData/playbyplay), with the possession context
-known before each shot. The same code reads the live feed and the shufinskiy/nba_data `cdnnba` archive, which stores
-those actions verbatim as CSV, so the model is trained on exactly the fields it scores. No I/O here.
+"""Shots from the play-by-play, with the possession context known before each shot. Works on the warehouse's events
+table (warehouse.py: the CDN liveData actions with snake_case names, shot geometry joined from shots) and on the
+shufinskiy/nba_data `cdnnba` archive, which stores the same CDN actions verbatim as CSV; from_archive renames the
+archive's columns to the warehouse's, so the model is trained on exactly the fields it scores. No I/O here.
 
-Possession context: the feed's `possession` field names the team with the ball on every action. A possession starts
-when that team changes, or on an offensive rebound (the shot clock resets); poss_start says how it began and
+Possession context: the feed's `possession` field names the team (by id) with the ball on every action. A possession
+starts when that team changes, or on an offensive rebound (the shot clock resets); poss_start says how it began and
 poss_sec is the game-clock seconds from that start to the shot.
 """
 import re
 import pandas as pd
 
+# archive (CDN) column -> warehouse column
+ARCHIVE = {"gameId": "game", "actionNumber": "action", "orderNumber": "order_no", "period": "period", "clock": "clock", "teamTricode": "team",
+           "personId": "player", "actionType": "action_type", "subType": "sub_type", "descriptor": "descriptor", "qualifiers": "qualifiers",
+           "shotResult": "result", "assistPersonId": "assist_player", "blockPersonId": "block_player", "stealPersonId": "steal_player",
+           "foulDrawnPersonId": "foul_drawn_player", "jumpBallWonPersonId": "jump_won_player", "jumpBallLostPersonId": "jump_lost_player",
+           "teamId": "team_id", "possession": "possession", "scoreHome": "score_home", "scoreAway": "score_away",
+           "xLegacy": "x", "yLegacy": "y", "shotDistance": "distance", "area": "area", "timeActual": "time_actual"}
+IDS = ["player", "assist_player", "block_player", "steal_player", "foul_drawn_player", "jump_won_player", "jump_lost_player", "team_id", "possession"]
+INTS = ["action", "order_no", "period", "score_home", "score_away"]
 CLOCK = re.compile(r"PT(\d+)M([\d.]+)S")
 
 
 def clock_sec(s):
     """'PT07M42.00S' -> 462.0 seconds left in the period."""
     m = CLOCK.match(s or "")
-    return int(m.group(1)) * 60 + float(m.group(2)) if m else None
+    return round(int(m.group(1)) * 60 + float(m.group(2)), 2) if m else None
+
+
+def from_archive(raw):
+    """The archive's CSV (all strings) as warehouse events: same names and types; ids of 0 (team actions) become null."""
+    d = raw[[c for c in ARCHIVE if c in raw]].rename(columns=ARCHIVE)
+    d["game"] = d.game.str.zfill(10)
+    d["clock"] = d.clock.map(clock_sec)
+    for c in INTS + IDS:
+        if c in d:
+            d[c] = pd.to_numeric(d[c], errors="coerce").astype("Int64")
+            if c in IDS:
+                d[c] = d[c].replace(0, pd.NA)
+    for c in ("x", "y", "distance"):
+        d[c] = pd.to_numeric(d[c], errors="coerce")
+    d["qualifiers"] = d.qualifiers.map(lambda q: [s.strip() for s in q.split(",") if s.strip()])
+    for c in ("team", "sub_type", "descriptor", "result", "area"):
+        d[c] = d[c].replace("", None)
+    return d
+
+
+def _v(x):
+    """A value from a row, with pandas' missing markers as None."""
+    return None if x is None or x is pd.NA or (isinstance(x, float) and x != x) else x
 
 
 def _cause(a, prev):
@@ -25,63 +58,55 @@ def _cause(a, prev):
     for x in (a, prev):
         if x is None:
             continue
-        t, sub = x["actionType"], x.get("subType")
+        t, sub = x["action_type"], x.get("sub_type")
         if t == "rebound":
-            return ("oreb" if sub == "offensive" else "dreb"), clock_sec(x.get("clock"))
+            return ("oreb" if sub == "offensive" else "dreb"), _v(x.get("clock"))
         if t == "steal":
-            return "steal", clock_sec(x.get("clock"))
+            return "steal", _v(x.get("clock"))
         if t == "turnover":
-            return "tov", clock_sec(x.get("clock"))
+            return "tov", _v(x.get("clock"))
         if t in ("period", "jumpball"):
-            return "period", clock_sec(x.get("clock"))
+            return "period", _v(x.get("clock"))
         if t in ("2pt", "3pt", "freethrow") and x is prev:
-            return "make", clock_sec(x.get("clock"))
-    return "?", clock_sec(a.get("clock"))
+            return "make", _v(x.get("clock"))
+    return "?", _v(a.get("clock"))
 
 
-def shots_from_actions(actions, game):
-    """One row per field-goal attempt of one game. `actions` is the feed's list of action dicts (any order)."""
-    acts = sorted(actions, key=lambda a: int(a["orderNumber"]))
+def shots_from_actions(actions):
+    """One row per field-goal attempt of one game, from its events as dicts (any order)."""
+    acts = sorted(actions, key=lambda a: int(a["order_no"]))
     out, team, start_clock, kind, period, prev = [], None, 720.0, "period", 0, None
     for a in acts:
-        t = a["actionType"]
+        t = a["action_type"]
         if t in ("substitution", "timeout"):
             continue
-        per, c = int(a["period"]), clock_sec(a.get("clock"))
+        per, c = int(a["period"]), _v(a.get("clock"))
         if per != period:
             period, team, kind, prev = per, None, "period", None
             start_clock = 720.0 if per <= 4 else 300.0
-        pos = str(a.get("possession") or "0")
-        if pos not in ("0", "") and pos != team:
+        pos = _v(a.get("possession"))
+        if pos is not None and pos != team:
             if team is not None:
                 kind, sc = _cause(a, prev)
                 start_clock = sc if sc is not None else start_clock
             team = pos
-        elif t == "rebound" and a.get("subType") == "offensive":
+        elif t == "rebound" and a.get("sub_type") == "offensive":
             kind, start_clock = "oreb", c if c is not None else start_clock
-        if str(a.get("isFieldGoal")) in ("1", "True", "true") and t in ("2pt", "3pt"):
-            q = a.get("qualifiers") or ""
-            q = q if isinstance(q, str) else ", ".join(q)
-            out.append({"game": game, "action": int(a["actionNumber"]), "order": int(a["orderNumber"]), "player": str(a["personId"]),
-                        "team": str(a["teamId"]), "period": per, "clock_sec": c, "x": _num(a.get("xLegacy")), "y": _num(a.get("yLegacy")),
-                        "dist_ft": _num(a.get("shotDistance")), "area": a.get("area") or "?", "shot_type": a.get("subType") or "?",
-                        "descriptor": a.get("descriptor") or "", "qualifiers": q, "pts": 3 if t == "3pt" else 2,
-                        "made": a.get("shotResult") == "Made", "score_home": _num(a.get("scoreHome")), "score_away": _num(a.get("scoreAway")),
+        if t in ("2pt", "3pt"):
+            q = _v(a.get("qualifiers"))
+            out.append({"game": a["game"], "action": int(a["action"]), "order_no": int(a["order_no"]), "player": _v(a.get("player")),
+                        "team": _v(a.get("team")), "period": per, "clock": c, "x": _v(a.get("x")), "y": _v(a.get("y")),
+                        "distance": _v(a.get("distance")), "area": _v(a.get("area")), "sub_type": _v(a.get("sub_type")),
+                        "descriptor": _v(a.get("descriptor")), "qualifiers": list(q) if q is not None else [], "pts": 3 if t == "3pt" else 2,
+                        "made": a.get("result") == "Made", "score_home": _v(a.get("score_home")), "score_away": _v(a.get("score_away")),
                         "poss_sec": None if c is None or start_clock is None else max(start_clock - c, 0.0), "poss_start": kind})
         prev = a
     return out
 
 
-def _num(v):
-    try:
-        return None if v is None or v == "" else float(v)
-    except (TypeError, ValueError):
-        return None
-
-
-def shots_frame(actions_by_game, home_team):
-    """DataFrame of shots for many games; home_team maps game id -> home teamId (the archive has no game header)."""
-    rows = [r for g, acts in actions_by_game.items() for r in shots_from_actions(acts, g)]
+def shots_frame(events, home):
+    """Shots of many games from an events frame; home maps game -> home team tricode."""
+    rows = [r for _, g in events.groupby("game", sort=False) for r in shots_from_actions(g.to_dict("records"))]
     df = pd.DataFrame(rows)
-    df["home_team"] = df.game.map(home_team)
+    df["home"] = df.game.map(home)
     return df
