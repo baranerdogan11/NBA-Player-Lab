@@ -78,7 +78,7 @@ def stints(actions, starters):
             return
         for t in teams:
             o = teams[1] if t == teams[0] else teams[0]
-            out.append({"club": t, "stint": idx, "players": sorted(on[t]), "opp_players": sorted(on[o]), "sec": round(sec, 1),
+            out.append({"team": t, "stint": idx, "players": sorted(on[t]), "opp_players": sorted(on[o]), "sec": round(sec, 1),
                         "pts": cur[t]["pts"], "opp_pts": cur[o]["pts"], **{k: cur[t][k] for k in ("fga", "oreb", "tov", "fta")},
                         **{f"opp_{k}": cur[o][k] for k in ("fga", "oreb", "tov", "fta")}})
         idx += 1
@@ -132,11 +132,11 @@ def stints(actions, starters):
 
 
 def seconds_on(game_stints):
-    """{(club, player): seconds on the floor} from one game's stints."""
+    """{(team, player): seconds on the floor} from one game's stints."""
     secs = {}
     for s in game_stints:
         for p in s["players"]:
-            secs[(s["club"], p)] = secs.get((s["club"], p), 0.0) + s["sec"]
+            secs[(s["team"], p)] = secs.get((s["team"], p), 0.0) + s["sec"]
     return secs
 
 
@@ -163,16 +163,16 @@ def season_tables(st):
     sums = {"g": ("game", "nunique"), "sec": ("sec", "sum"), "pts": ("pts", "sum"), "opp_pts": ("opp_pts", "sum"),
             **{k: (k, "sum") for k in COUNTS}, **{f"opp_{k}": (f"opp_{k}", "sum") for k in COUNTS}}
     st = st.assign(five=st.players.map(lambda p: ",".join(map(str, sorted(p)))))
-    lu = ratings(st.groupby(["club", "five"], as_index=False).agg(**sums))
+    lu = ratings(st.groupby(["team", "five"], as_index=False).agg(**sums))
     lu["players"] = lu.five.map(lambda f: [int(p) for p in f.split(",")])
-    team = st.groupby("club").agg(**sums)
-    per = st.explode("players").rename(columns={"players": "player"}).groupby(["club", "player"], as_index=False).agg(**sums)
+    tot = st.groupby("team").agg(**sums)
+    per = st.explode("players").rename(columns={"players": "player"}).groupby(["team", "player"], as_index=False).agg(**sums)
     on = ratings(per)
     off = per.copy()
     for k in [c for c in sums if c != "g"]:
-        off[k] = team.loc[off.club, k].values - off[k].values
+        off[k] = tot.loc[off.team, k].values - off[k].values
     off = ratings(off)
-    oo = on[["club", "player", "g", "sec", "pts", "opp_pts", "poss", "opp_poss", "ortg", "drtg", "net"]].copy()
+    oo = on[["team", "player", "g", "sec", "pts", "opp_pts", "poss", "opp_poss", "ortg", "drtg", "net"]].copy()
     for k in ("sec", "pts", "opp_pts", "poss", "opp_poss", "ortg", "drtg", "net"):
         oo[f"off_{k}"] = off[k].values
     oo["onoff"] = oo.net - oo.off_net
@@ -197,7 +197,7 @@ def main(season, w=None):
         n_per = max(int(a["period"]) for a in acts)
         if abs(sum(s["sec"] for s in sts) / 2 - (2880 + 300 * max(n_per - 4, 0))) > 1:
             problems.append(f"game {g}: stints cover {sum(s['sec'] for s in sts) / 2:.0f} s")
-        pts = sorted(sum(s["pts"] for s in sts if s["club"] == c) for c in {s["club"] for s in sts})
+        pts = sorted(sum(s["pts"] for s in sts if s["team"] == c) for c in {s["team"] for s in sts})
         if g in final and pts != final[g]:
             problems.append(f"game {g}: stint points {pts}, final {final[g]}")
         on = seconds_on(sts)

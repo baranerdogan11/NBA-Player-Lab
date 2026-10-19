@@ -27,7 +27,7 @@ for path in sorted(glob.glob(os.path.join(ROOT, "tests", "fixtures", "events_*.j
     checks[f"{g}: five starters each"] = sorted(len(v) for v in starters.values()) == [5, 5]
     checks[f"{g}: no problems"] = problems == []
     checks[f"{g}: five on the floor in every stint"] = all(len(s["players"]) == 5 and len(s["opp_players"]) == 5 for s in sts)
-    checks[f"{g}: points add up to the final"] = sorted(sum(s["pts"] for s in sts if s["club"] == c) for c in starters) == sorted([last["score_home"], last["score_away"]])
+    checks[f"{g}: points add up to the final"] = sorted(sum(s["pts"] for s in sts if s["team"] == c) for c in starters) == sorted([last["score_home"], last["score_away"]])
     checks[f"{g}: seconds add up to the game"] = abs(sum(s["sec"] for s in sts) / 2 - (2880 + 300 * (periods - 4))) < 0.5
     checks[f"{g}: each side's counts mirror the other's"] = all(a["pts"] == b["opp_pts"] and a["fga"] == b["opp_fga"] for a, b in zip(sts[0::2], sts[1::2]))
     sec = lineups.seconds_on(sts)
@@ -36,10 +36,10 @@ for path in sorted(glob.glob(os.path.join(ROOT, "tests", "fixtures", "events_*.j
 
 st = pd.DataFrame(rows)
 lu, oo = lineups.season_tables(st)
-team = st.groupby("club")[["sec", "pts", "opp_pts"]].sum()
+team = st.groupby("team")[["sec", "pts", "opp_pts"]].sum()
 for k in ("sec", "pts", "opp_pts"):
-    checks[f"on + off = club total ({k})"] = bool(((oo[k] + oo[f"off_{k}"]) - team.loc[oo.club, k].values).abs().max() < 1e-6)
-checks["lineup seconds = club seconds x 1"] = bool((lu.groupby("club").sec.sum() - team.sec).abs().max() < 1e-6)
+    checks[f"on + off = club total ({k})"] = bool(((oo[k] + oo[f"off_{k}"]) - team.loc[oo.team, k].values).abs().max() < 1e-6)
+checks["lineup seconds = club seconds x 1"] = bool((lu.groupby("team").sec.sum() - team.sec).abs().max() < 1e-6)
 checks["on/off is net on minus net off"] = bool(((oo.net - oo.off_net) - oo.onoff).abs().max() < 1e-9)
 
 # the whole run on a scratch warehouse built from the two games: events, box (starters and seconds) and games
