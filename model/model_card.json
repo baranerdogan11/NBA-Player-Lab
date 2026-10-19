@@ -61,78 +61,78 @@
   },
   "xfg_context_plus_shooter": {
    "logloss": 0.6342,
-   "brier": 0.2229,
-   "auc": 0.6691
+   "brier": 0.2228,
+   "auc": 0.669
   }
  },
  "calibration_test": [
   {
    "n": 5571,
-   "pred": 0.298,
-   "actual": 0.301
+   "pred": 0.299,
+   "actual": 0.296
   },
   {
    "n": 5571,
    "pred": 0.345,
-   "actual": 0.348
+   "actual": 0.349
   },
   {
    "n": 5571,
-   "pred": 0.36,
-   "actual": 0.36
+   "pred": 0.361,
+   "actual": 0.369
   },
   {
    "n": 5570,
    "pred": 0.376,
-   "actual": 0.386
+   "actual": 0.385
   },
   {
    "n": 5571,
    "pred": 0.4,
-   "actual": 0.407
+   "actual": 0.412
   },
   {
    "n": 5571,
    "pred": 0.431,
-   "actual": 0.433
+   "actual": 0.422
   },
   {
    "n": 5570,
    "pred": 0.47,
-   "actual": 0.47
+   "actual": 0.473
   },
   {
    "n": 5571,
    "pred": 0.538,
-   "actual": 0.539
+   "actual": 0.534
   },
   {
    "n": 5571,
    "pred": 0.662,
-   "actual": 0.654
+   "actual": 0.656
   },
   {
    "n": 5571,
-   "pred": 0.86,
-   "actual": 0.856
+   "pred": 0.859,
+   "actual": 0.857
   }
  ],
  "permutation_importance": [
   [
    "dist",
-   0.0733
+   0.074
   ],
   [
    "shot_type",
-   0.0147
+   0.015
   ],
   [
    "move",
-   0.0121
+   0.013
   ],
   [
    "shooter",
-   0.003
+   0.0032
   ],
   [
    "poss_sec",
@@ -140,26 +140,26 @@
   ],
   [
    "clock_sec",
-   0.0012
-  ],
-  [
-   "y",
-   0.0009
-  ],
-  [
-   "fastbreak",
-   0.0008
+   0.0011
   ],
   [
    "area",
+   0.0008
+  ],
+  [
+   "y",
    0.0007
   ],
   [
-   "angle",
+   "x",
    0.0005
   ],
   [
-   "x",
+   "fastbreak",
+   0.0005
+  ],
+  [
+   "angle",
    0.0004
   ],
   [
@@ -175,20 +175,20 @@
    0.0001
   ],
   [
-   "home",
-   0.0001
-  ],
-  [
    "second_chance",
    0.0001
   ],
   [
    "three",
-   -0.0
+   0.0
+  ],
+  [
+   "home",
+   0.0
   ],
   [
    "from_tov",
-   0.0
+   -0.0
   ]
  ],
  "shooter_shrinkage_k": 300.0,
