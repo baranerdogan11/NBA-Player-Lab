@@ -13,7 +13,8 @@ LAMBDA was picked on 2025-26: fitted on the first three quarters of the season's
 best (see tune()). Values are stored unrounded; the site rounds them once, with rounding.rnd.
 
 usage: python rapm.py [season]          # warehouse/<season>/stints.parquet -> warehouse/<season>/rapm.parquet
-       python rapm.py --prior 2025-26   # the archive's season, with a zero prior -> model/rapm_prior_2025-26.parquet
+       python rapm.py --prior 2025-26   # the archive's season, with a zero prior -> model/rapm_prior_2025-26.parquet,
+                                        # printing the out-of-sample error of each lambda
 """
 import os
 import sys
@@ -79,6 +80,22 @@ def tune(st, lams=(250, 500, 1000, 2000, 3000, 5000, 8000)):
     return out
 
 
+def archive_stints(season):
+    """The stints of a past regular season, rebuilt from the play-by-play archive (model/archive.py) by lineups.py."""
+    sys.path.insert(0, os.path.join(ROOT, "model"))
+    import lineups
+    from actions import from_archive
+    from archive import fetch
+    ev = from_archive(fetch(f"cdnnba_{season[:4]}"))
+    rows = []
+    for g, acts in ev.groupby("game"):
+        acts = acts.to_dict("records")
+        rows += [{"game": g, **s} for s in lineups.stints(acts, lineups.infer_starters(acts))[0]]
+    st = pd.DataFrame(rows)
+    st["date"] = st.game.map(ev[ev.time_actual != ""].groupby("game").time_actual.min())
+    return st
+
+
 def previous(season):
     """'2026-27' -> '2025-26'."""
     y = int(season[:4]) - 1
@@ -101,7 +118,8 @@ def main(season, w=None):
 if __name__ == "__main__":
     sys.path.insert(0, ROOT)
     if sys.argv[1:2] == ["--prior"]:
-        st = pd.read_parquet(sys.argv[3]) if len(sys.argv) > 3 else None   # stints built from the archive
+        st = archive_stints(sys.argv[2])
+        print(f"{sys.argv[2]}: lambda by out-of-sample error {tune(st)}")
         out = fit(st)
         out.to_parquet(PRIOR.format(season=sys.argv[2]), index=False)
         print(f"{sys.argv[2]}: prior for {len(out)} players")
