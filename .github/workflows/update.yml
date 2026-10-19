@@ -27,21 +27,52 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  check:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
+  # cdn.nba.com refuses GitHub-hosted runners, so everything that reads it runs on the self-hosted runner (Baran's
+  # computer): the check, and the fetch when a run is due. The gates, the build and the deploy run on GitHub's runners.
+  # While the computer is off, these jobs wait in the queue and the site keeps its last good build.
+  fetch:
+    runs-on: self-hosted
+    timeout-minutes: 20
     outputs:
       run: ${{ steps.due.outputs.run }}
       final: ${{ steps.due.outputs.final }}
     steps:
       - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: .python-version
+
       - name: Has a game gone final since the last build, or is the nightly due?
         id: due
         run: python due.py
 
+      - name: Restore feed cache
+        if: steps.due.outputs.run == 'true' || github.event.inputs.force == 'true'
+        uses: actions/cache@v6
+        with:
+          path: cache
+          key: feeds-${{ github.run_id }}
+          restore-keys: feeds-
+
+      - name: Fetch new games (schedule, box scores, play-by-play)
+        if: (steps.due.outputs.run == 'true' || github.event.inputs.force == 'true') && hashFiles('fetch_season.py') != ''
+        run: |
+          pip install -r requirements.txt
+          python fetch_season.py
+
+      - name: Hand the fetched feeds to the update job
+        if: steps.due.outputs.run == 'true' || github.event.inputs.force == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: feeds-${{ github.run_id }}
+          path: cache/
+          if-no-files-found: ignore
+          retention-days: 3
+
   update:
-    needs: check
-    if: needs.check.outputs.run == 'true' || github.event.inputs.force == 'true'
+    needs: fetch
+    if: needs.fetch.outputs.run == 'true' || github.event.inputs.force == 'true'
     permissions:
       contents: write
     runs-on: ubuntu-24.04
@@ -62,18 +93,14 @@ jobs:
       - name: Python self-tests (every tests/test_*.py)
         run: python tests/run_all.py
 
-      - name: Restore feed cache
-        uses: actions/cache@v6
+      - name: Fetched feeds
+        uses: actions/download-artifact@v8
+        continue-on-error: true      # no artifact until fetch_season.py lands
         with:
-          path: cache
-          key: feeds-${{ github.run_id }}
-          restore-keys: feeds-
+          name: feeds-${{ github.run_id }}
+          path: cache/
 
       # the pipeline stages run as they land in the repository; each one that exists must pass
-      - name: Fetch new games (schedule, box scores, play-by-play)
-        if: hashFiles('fetch_season.py') != ''
-        run: python fetch_season.py
-
       - name: Build warehouse
         if: hashFiles('warehouse.py') != ''
         run: python warehouse.py
@@ -87,7 +114,7 @@ jobs:
 
       - name: Record the build (until warehouse_tests.py lands and writes status.json itself)
         if: hashFiles('warehouse_tests.py') == ''
-        run: python due.py --record=${{ needs.check.outputs.final }}
+        run: python due.py --record=${{ needs.fetch.outputs.final }}
 
       # smoke test: the built site, exactly as it will deploy, must draw every page without an error
       - uses: actions/setup-node@v7
@@ -116,7 +143,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes."
           else
-            git commit -m "Update $(date -u +%Y-%m-%d\ %H:%M) UTC: ${{ needs.check.outputs.final }} games"
+            git commit -m "Update $(date -u +%Y-%m-%d\ %H:%M) UTC: ${{ needs.fetch.outputs.final }} games"
             git push
             echo "pushed=true" >> "$GITHUB_OUTPUT"
             echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
