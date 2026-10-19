@@ -33,3 +33,33 @@ for (const [device, size] of [['phone', PHONE], ['desktop', DESKTOP]]) {
     }
   }
 }
+
+test.describe('player pictures', () => {
+  test.use(DESKTOP);
+  test('the hero, Compare and box scores show the NBA headshot for the player id, over his initials', async ({page}) => {
+    const problems = await prepare(page);
+    await page.goto('./');
+    await settled(page);
+    await go(page, '#BOS', ROUTES[0][2]);
+    const hero = await page.evaluate(() => ({img: document.querySelector('#hero .face img')?.getAttribute('src'), ini: document.querySelector('#hero .face span')?.textContent, pid: document.querySelector('#player').value}));
+    expect(hero.img).toBe(`https://cdn.nba.com/headshots/nba/latest/1040x760/${hero.pid}.png`);
+    expect(hero.ini).toMatch(/^[A-Z]{1,2}$/);
+    await go(page, '#compare', ROUTES[1][2]);
+    expect(await page.locator('#cmp-vs .face img').count()).toBe(2);
+    await go(page, '#game/0022600001', ROUTES[4][2]);
+    const rows = await page.evaluate(() => [...document.querySelectorAll('#gm-box tr[data-pid]')].map(tr => [tr.dataset.pid, tr.querySelector('.face img')?.getAttribute('src')]));
+    expect(rows.length).toBeGreaterThan(0);
+    for (const [pid, src] of rows) expect(src).toBe(`https://cdn.nba.com/headshots/nba/latest/260x190/${pid}.png`);
+    expect(problems, 'the page reported errors').toEqual([]);
+  });
+  test('a picture that fails to load leaves the initials', async ({page}) => {
+    const problems = await prepare(page);
+    await page.route('https://cdn.nba.com/headshots/**', r => r.abort());
+    await page.goto('./');
+    await settled(page);
+    await go(page, '#BOS', ROUTES[0][2]);
+    await page.waitForFunction(() => !document.querySelector('#hero .face img'));
+    expect(await page.locator('#hero .face span').isVisible()).toBe(true);
+    expect(problems.filter(p => !p.includes('Failed to load resource')), 'the page reported errors').toEqual([]);
+  });
+});

@@ -9,6 +9,8 @@ export async function prepare(page, {lang = 'en', theme = 'light'} = {}) {
   await page.addInitScript(([l, th]) => {
     try { localStorage.setItem('pl-lang', l); localStorage.setItem('pl-theme', th); } catch (e) {}
   }, [lang, theme]);
+  // headshots come from NBA's CDN; the made-up players have none, so every request gets a stand-in picture
+  await page.route('https://cdn.nba.com/headshots/**', r => r.fulfill({contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 3"><rect width="4" height="3" fill="#888"/></svg>'}));
   const problems = [];
   page.on('pageerror', e => problems.push(`uncaught: ${e.message}`));
   page.on('console', m => { if (m.type() === 'error' || m.type() === 'warning') problems.push(`console.${m.type()}: ${m.text()}`); });

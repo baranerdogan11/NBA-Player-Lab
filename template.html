@@ -103,6 +103,11 @@ a,button,select,.card{-webkit-tap-highlight-color:transparent}
 .tbl .lo{color:var(--bad);font-weight:650}
 .tbl .dim{color:var(--muted)}
 .tbl .st{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--orange);margin-right:7px;vertical-align:middle}
+/* a player's face: the NBA headshot on top of his initials, so a missing picture leaves the initials showing */
+.face{position:relative;display:inline-grid;place-items:center;flex:none;width:28px;height:28px;border-radius:50%;overflow:hidden;vertical-align:middle;background:color-mix(in srgb,var(--c1,var(--tc,var(--hd))) 80%,#000);color:#fff;font:700 11px/1 var(--sans);box-shadow:inset 0 0 0 1.5px var(--c2,transparent)}
+.face.on>span{visibility:hidden}
+.face img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 12%}
+.tbl .face{margin-right:9px;width:26px;height:26px;font-size:10px}
 .chip{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px;vertical-align:-1px;background:linear-gradient(135deg,var(--c1) 55%,var(--c2) 55%);box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
 
 /* controls: rounded selects and segmented controls inside a page */
@@ -118,11 +123,12 @@ select:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(
 .tabs [aria-pressed="true"],.tabs [aria-current="true"],.dates a[aria-current="true"]{background:var(--orange);color:#fff;box-shadow:0 2px 8px rgba(232,97,26,.35)}
 
 /* the hero: the club's painted key, wood grain showing through the paint, court lines over it;
-   initials and number, never a photo or a logo */
+   the player's NBA headshot over his initials (the initials stay when there is no picture), never a logo */
 .hero{position:relative;isolation:isolate;display:flex;align-items:center;gap:22px;padding:24px 24px 22px;border-radius:22px;color:#fff;overflow:hidden;box-shadow:var(--sh);
   background:var(--court) right -6px center/auto 118% no-repeat,linear-gradient(115deg,var(--c1) 0%,var(--c1) 30%,color-mix(in srgb,var(--c1) 35%,#120c08) 75%);border-bottom:5px solid var(--c2)}
 .hero::before,.board::before,.vs>div::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--wood);mix-blend-mode:overlay;opacity:.45;pointer-events:none}
-.hero .badge{flex:none;width:96px;height:96px;display:grid;place-items:center;border-radius:50%;background:rgba(18,12,8,.55);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:inset 0 0 0 3px var(--c2),0 6px 18px rgba(0,0,0,.25);font:800 36px/1 var(--sans);letter-spacing:-.03em}
+.hero .badge{flex:none;width:96px;height:96px;display:grid;place-items:center;border-radius:50%;overflow:hidden;background:rgba(18,12,8,.55);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:inset 0 0 0 3px var(--c2),0 6px 18px rgba(0,0,0,.25);font:800 36px/1 var(--sans);letter-spacing:-.03em}
+.hero .badge .face{width:100%;height:100%;font:inherit;background:none;box-shadow:none}
 .hero .who{min-width:0}
 .hero .tag{font:600 13px/1.2 var(--sans);text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.82)}
 .hero h1{font-size:44px;line-height:1.02;letter-spacing:-.03em;margin:6px 0 10px;font-weight:800;overflow-wrap:anywhere;text-shadow:0 2px 12px rgba(0,0,0,.25)}
@@ -171,7 +177,10 @@ a.card:active{transform:scale(.98)}
 
 /* compare: the two players meet on a court in their clubs' colours */
 .vs{display:grid;grid-template-columns:1fr 1fr;gap:2px;color:#fff;margin-top:14px;border-radius:var(--r);overflow:hidden;box-shadow:var(--sh)}
-.vs>div{position:relative;isolation:isolate;padding:18px;min-width:0;border-bottom:5px solid var(--c2)}
+.vs>div{position:relative;isolation:isolate;display:flex;align-items:center;gap:14px;padding:18px;min-width:0;border-bottom:5px solid var(--c2)}
+.vs>div>div{min-width:0}
+.vs>div:last-child{flex-direction:row-reverse}
+.vs .face{width:64px;height:64px;font-size:22px;box-shadow:inset 0 0 0 2.5px var(--c2),0 4px 12px rgba(0,0,0,.25)}
 .vs>div:first-child{background:linear-gradient(90deg,var(--c1),color-mix(in srgb,var(--c1) 40%,#120c08))}
 .vs>div:last-child{background:linear-gradient(270deg,var(--c1),color-mix(in srgb,var(--c1) 40%,#120c08));text-align:right}
 .vs h2{font-size:28px;font-weight:800;letter-spacing:-.025em;margin-top:4px;overflow-wrap:anywhere}
@@ -181,7 +190,7 @@ a.card:active{transform:scale(.98)}
 .cmp td:last-child{text-align:left}
 .cmp td.best{color:var(--orange);font-weight:800}
 .cmp td:first-child{text-align:right}
-@media (max-width:760px){.vs h2{font-size:20px}}
+@media (max-width:760px){.vs h2{font-size:20px}.vs>div{flex-direction:column;align-items:flex-start;gap:10px;padding:14px}.vs>div:last-child{flex-direction:column;align-items:flex-end}.vs .face{width:48px;height:48px;font-size:17px}}
 
 .fail{margin-top:16px;padding:14px 16px;background:var(--solid);border-radius:var(--r);box-shadow:var(--sh),inset 4px 0 0 var(--bad);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .fail button{border:0;border-radius:999px;background:var(--orange);color:#fff;font-weight:600;padding:8px 16px;cursor:pointer;transition:transform .1s ease-out}
@@ -291,6 +300,8 @@ const loc = () => LANG === 'tr' ? 'tr-TR' : 'en-US';
 const fmtDate = (d, long) => new Intl.DateTimeFormat(loc(), long ? {weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC'} : {month: 'short', day: 'numeric', timeZone: 'UTC'}).format(new Date(`${d}T12:00:00Z`));
 const fmtTime = iso => new Intl.DateTimeFormat(loc(), {hour: '2-digit', minute: '2-digit'}).format(new Date(iso));
 const initials = n => n.split(/\s+/).filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+// a player's face: the NBA headshot (by his NBA person id) over his initials; the initials hide once the picture is in, and a picture that fails to load removes itself
+const face = (pid, name, big) => `<span class="face"><span>${esc(initials(name))}</span><img src="https://cdn.nba.com/headshots/nba/latest/${big ? '1040x760' : '260x190'}/${encodeURIComponent(pid)}.png" alt="" loading="lazy" onload="this.parentNode.classList.add('on')" onerror="this.remove()"></span>`;
 const age = born => { if (!born) return null; const b = new Date(born + 'T00:00:00Z'), n = new Date(); let a = n.getUTCFullYear() - b.getUTCFullYear(); if (n.getUTCMonth() < b.getUTCMonth() || (n.getUTCMonth() === b.getUTCMonth() && n.getUTCDate() < b.getUTCDate())) a--; return a; };
 
 // ---- data: every file once per page load, cache-busted by the build time
@@ -364,7 +375,7 @@ async function renderPlayer(code, pid, my) {
   }
   remember(`${code}/${p.pid}`);
   const s = p.s, a = age(p.born);
-  hero.innerHTML = `<div class="badge">${esc(initials(p.name))}</div><div class="who"><div class="tag">${EN(tname(code))}${p.pos ? ` · ${esc(p.pos)}` : ''}</div><h1>${EN(p.name)}</h1><div class="facts">${p.height ? `<span>${t('Height')} <b>${esc(p.height)}</b></span>` : ''}${a != null ? `<span>${t('Age')} <b>${a}</b></span>` : ''}<span>${t('Games')} <b>${s.gp}</b></span><span>${t('Minutes')} <b>${mpg(s.sec, s.gp)}</b></span></div></div>${p.jersey !== '' && p.jersey != null ? `<div class="num" aria-hidden="true">${esc(p.jersey)}</div>` : ''}`;
+  hero.innerHTML = `<div class="badge">${face(p.pid, p.name, true)}</div><div class="who"><div class="tag">${EN(tname(code))}${p.pos ? ` · ${esc(p.pos)}` : ''}</div><h1>${EN(p.name)}</h1><div class="facts">${p.height ? `<span>${t('Height')} <b>${esc(p.height)}</b></span>` : ''}${a != null ? `<span>${t('Age')} <b>${a}</b></span>` : ''}<span>${t('Games')} <b>${s.gp}</b></span><span>${t('Minutes')} <b>${mpg(s.sec, s.gp)}</b></span></div></div>${p.jersey !== '' && p.jersey != null ? `<div class="num" aria-hidden="true">${esc(p.jersey)}</div>` : ''}`;
   const tiles = [['PTS', avg(s.pts, s.gp)], ['REB', avg(s.reb, s.gp)], ['AST', avg(s.ast, s.gp)], ['STL', avg(s.stl, s.gp)], ['BLK', avg(s.blk, s.gp)], ['TOV', avg(s.tov, s.gp)],
     ['FG%', pct(s.fgm, s.fga)], ['3P%', pct(s.fg3m, s.fg3a)], ['FT%', pct(s.ftm, s.fta)], ['TS%', ts(s.pts, s.fga, s.fta)], ['+/-', N(signed(rdiv(s.pm, s.gp)))], ['MIN', mpg(s.sec, s.gp)]];
   $('#tiles').innerHTML = tiles.map(([k, v], i) => `<div class="tile${i === 0 ? ' lead' : ''}" data-k="${k}"><b>${v}</b><span>${t(k + '@stat')}</span></div>`).join('');
@@ -397,7 +408,7 @@ async function renderCompare(a, b, my) {
   const opts = sel => IDX.teams.map(T => `<optgroup label="${esc(T.city)} ${esc(T.name)}">${L.filter(p => p.team === T.code).sort((x, y) => x.name.localeCompare(y.name)).map(p => `<option value="${esc(p.pid)}"${p === sel ? ' selected' : ''}>${esc(p.name)}</option>`).join('')}</optgroup>`).join('');
   $('#cmp-a').innerHTML = opts(A);
   $('#cmp-b').innerHTML = opts(B);
-  const card = p => `<div style="${colours(p.team)}"><small>${EN(tname(p.team))}${p.pos ? ` · ${esc(p.pos)}` : ''}</small><h2>${EN(p.name)}</h2></div>`;
+  const card = p => `<div style="${colours(p.team)}">${face(p.pid, p.name, true)}<div><small>${EN(tname(p.team))}${p.pos ? ` · ${esc(p.pos)}` : ''}</small><h2>${EN(p.name)}</h2></div></div>`;
   $('#cmp-vs').innerHTML = card(A) + card(B);
   $('#cmp').innerHTML = `<tbody>${CMP_ROWS.map(({k, v, f}) => {
     const va = v(A), vb = v(B), better = k === 'Games' ? 0 : va > vb ? 1 : vb > va ? 2 : 0;
@@ -475,7 +486,7 @@ async function renderGame(gid, my) {
   const box = code => {
     const rows = g.box[code] || [], s = sum(rows);
     for (const k of STATS) s[k] = rows.reduce((a, x) => a + x[k], 0);
-    return `<section class="panel"><h2>${EN(tname(code))}</h2><div class="scroll"><table class="tbl" data-team="${esc(code)}" style="${tc(code)}"><thead><tr>${head.map(h => `<th>${t(h + '@stat')}</th>`).join('')}</tr></thead><tbody>${rows.map(x => `<tr data-pid="${esc(x.pid)}"><td class="l"><a href="#${esc(code)}/${esc(x.pid)}">${x.start ? '<i class="st"></i>' : ''}${esc(x.name)}</a></td>${x.sec > 0 ? `<td>${clock(x.sec)}</td><td class="k">${x.pts}</td><td>${x.reb}</td><td>${x.oreb}</td><td>${x.dreb}</td><td>${x.ast}</td><td>${x.stl}</td><td>${x.blk}</td><td>${x.tov}</td><td>${x.pf}</td><td>${x.fgm}-${x.fga}</td><td>${x.fg3m}-${x.fg3a}</td><td>${x.ftm}-${x.fta}</td><td>${N(signed(String(x.pm)))}</td>` : `<td class="dim l" colspan="14">${t('Did not play')}</td>`}</tr>`).join('')}<tr class="tot"><td class="l">${t('Totals')}</td><td></td><td class="k" data-k="pts">${s.pts}</td><td>${s.reb}</td><td>${s.oreb}</td><td>${s.dreb}</td><td>${s.ast}</td><td>${s.stl}</td><td>${s.blk}</td><td>${s.tov}</td><td>${s.pf}</td><td>${s.fgm}-${s.fga}</td><td>${s.fg3m}-${s.fg3a}</td><td>${s.ftm}-${s.fta}</td><td></td></tr></tbody></table></div></section>`;
+    return `<section class="panel"><h2>${EN(tname(code))}</h2><div class="scroll"><table class="tbl" data-team="${esc(code)}" style="${tc(code)}"><thead><tr>${head.map(h => `<th>${t(h + '@stat')}</th>`).join('')}</tr></thead><tbody>${rows.map(x => `<tr data-pid="${esc(x.pid)}"><td class="l"><a href="#${esc(code)}/${esc(x.pid)}">${x.start ? '<i class="st"></i>' : ''}${face(x.pid, x.name)}${esc(x.name)}</a></td>${x.sec > 0 ? `<td>${clock(x.sec)}</td><td class="k">${x.pts}</td><td>${x.reb}</td><td>${x.oreb}</td><td>${x.dreb}</td><td>${x.ast}</td><td>${x.stl}</td><td>${x.blk}</td><td>${x.tov}</td><td>${x.pf}</td><td>${x.fgm}-${x.fga}</td><td>${x.fg3m}-${x.fg3a}</td><td>${x.ftm}-${x.fta}</td><td>${N(signed(String(x.pm)))}</td>` : `<td class="dim l" colspan="14">${t('Did not play')}</td>`}</tr>`).join('')}<tr class="tot"><td class="l">${t('Totals')}</td><td></td><td class="k" data-k="pts">${s.pts}</td><td>${s.reb}</td><td>${s.oreb}</td><td>${s.dreb}</td><td>${s.ast}</td><td>${s.stl}</td><td>${s.blk}</td><td>${s.tov}</td><td>${s.pf}</td><td>${s.fgm}-${s.fga}</td><td>${s.fg3m}-${s.fg3a}</td><td>${s.ftm}-${s.fta}</td><td></td></tr></tbody></table></div></section>`;
   };
   $('#gm-box').innerHTML = box(g.away) + box(g.home);
   document.title = `${g.away} ${g.as} · ${g.home} ${g.hs} · NBA Player Lab`;
