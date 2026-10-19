@@ -1,8 +1,7 @@
-"""The site's JSON and its one rounding rule.
+"""The site's JSON.
 
-rdiv must round half away from zero exactly (no binary float at the halves), and the files written from the fixture
-league must agree with each other: every box score adds up to its final, every player's log is his box lines, and the
-leaders' totals are the sums of the logs.
+The files written from the fixture league agree with each other: every box score adds up to its final, every player's
+log is his box lines, and the leaders' totals are the sums of the logs.
 usage: python tests/test_site_data.py
 """
 import json
@@ -15,14 +14,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "tests", "fixtures"))
 import site_fixture  # noqa: E402
-from site_data import STATS, rdiv, write_site  # noqa: E402
+from site_data import STATS, write_site  # noqa: E402
 
 checks = {}
-cases = [((1985, 100), "19.9"), ((1, 4), "0.3"), ((-1, 4), "-0.3"), ((21, 2), "10.5"), ((119, 6), "19.8"), ((0, 3), "0.0"),
-         ((-1, 40), "0.0"), ((2, 3, 0), "1"), ((5, 8, 2), "0.63"), ((625, 1000, 0), "1"), ((7, 0), None)]
-bad = [(a, rdiv(*a), want) for a, want in cases if rdiv(*a) != want]
-checks["rdiv rounds half away from zero" + (f" (wrong: {bad})" if bad else "")] = not bad
-
 out = tempfile.mkdtemp()
 teams, players, games, lines = site_fixture.make(random.Random(7))
 write_site(out, "2026-27", "2026-27", "2026-10-26T06:00:00Z", teams, players, games, lines)

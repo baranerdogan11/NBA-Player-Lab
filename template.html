@@ -230,13 +230,13 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;',
 // a club or player name keeps English capitals inside a Turkish page (CAVALIERS, not CAVALİERS)
 const EN = s => `<span lang="en">${esc(s)}</span>`;
 
-// ---- numbers. Every average and percentage on the site goes through rdiv: num/den to d decimals, half away from zero, in
-// exact integer arithmetic (site_data.rdiv in Python is the same formula), so a number reads the same on every page.
+// ---- numbers. Every average and percentage on the site goes through rdiv: num/den to d decimals, half up, in exact
+// integer arithmetic (rounding.avg in Python is the same formula), so a number reads the same on every page.
 const rdiv = (num, den, d = 1) => {
   if (!den) return null;
-  const p = 10 ** d, q = Math.floor((2 * Math.abs(num) * p + den) / (2 * den));
-  const s = String(q).padStart(d + 1, '0'), out = d ? `${s.slice(0, -d)}.${s.slice(-d)}` : s;
-  return num < 0 && q ? `-${out}` : out;
+  const p = 10 ** d, q = Math.floor((2 * num * p + den) / (2 * den));
+  const s = String(Math.abs(q)).padStart(d + 1, '0'), out = d ? `${s.slice(0, -d)}.${s.slice(-d)}` : s;
+  return q < 0 ? `-${out}` : out;
 };
 // Turkish takes a decimal comma
 const N = s => s == null ? '–' : LANG === 'tr' ? s.replace('.', ',') : s;

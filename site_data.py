@@ -2,7 +2,7 @@
 
 Every file is derived from the same box-score lines, so a player's game log, his season row, the game page and the
 leaders agree by construction. Only integer totals are written; the page turns them into averages and percentages
-with one rounding rule, rdiv below, which has an exact twin in template.html.
+with rdiv in template.html, the same formula as rounding.avg, the site's one rounding rule.
 
 Files under <out>/ (out is teams/<season>/):
   index.json        season, label, build time, the 30 clubs with colours and games played
@@ -22,19 +22,6 @@ import os
 STATS = ["pts", "oreb", "dreb", "reb", "ast", "stl", "blk", "tov", "pf",
          "fgm", "fga", "fg3m", "fg3a", "ftm", "fta", "pm"]
 HERE = os.path.dirname(os.path.abspath(__file__))
-
-
-def rdiv(num, den, d=1):
-    """num/den to d decimals, half away from zero, in exact integer arithmetic; None when den is 0.
-
-    The page's rdiv() in template.html is the same formula, so Python and the page never disagree on a digit."""
-    if not den:
-        return None
-    p = 10 ** d
-    q = (2 * abs(num) * p + den) // (2 * den)
-    s = str(q).rjust(d + 1, "0")
-    out = s[:-d] + "." + s[-d:] if d else s
-    return "-" + out if num < 0 and q else out
 
 
 def load_teams():
