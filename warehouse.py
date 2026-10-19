@@ -80,7 +80,8 @@ for path in sorted(glob.glob(os.path.join(CACHE, "pbp_*.json"))):
              "team": a.get("teamTricode") or None, "player": a.get("personId") or None, "action_type": a["actionType"], "sub_type": a.get("subType") or None,
              "descriptor": a.get("descriptor") or None, "qualifiers": a.get("qualifiers") or [], "result": a.get("shotResult"),
              "assist_player": a.get("assistPersonId"), "block_player": a.get("blockPersonId"), "steal_player": a.get("stealPersonId"),
-             "foul_drawn_player": a.get("foulDrawnPersonId"), "score_home": num(a.get("scoreHome")), "score_away": num(a.get("scoreAway")),
+             "foul_drawn_player": a.get("foulDrawnPersonId"), "jump_won_player": a.get("jumpBallWonPersonId"), "jump_lost_player": a.get("jumpBallLostPersonId"),
+             "team_id": a.get("teamId") or None, "possession": a.get("possession") or None, "score_home": num(a.get("scoreHome")), "score_away": num(a.get("scoreAway")),
              "description": a.get("description")}
         events.append(e)
         if a.get("isFieldGoal") == 1:
@@ -120,7 +121,7 @@ counts = {
     "events": to_parquet("events", events, [("game", V), ("action", I), ("order_no", "BIGINT"), ("period", I), ("clock", D), ("team", V), ("player", I),
                                             ("action_type", V), ("sub_type", V), ("descriptor", V), ("qualifiers", "VARCHAR[]"), ("result", V),
                                             ("assist_player", I), ("block_player", I), ("steal_player", I), ("foul_drawn_player", I),
-                                            ("score_home", I), ("score_away", I), ("description", V)]),
+                                            ("jump_won_player", I), ("jump_lost_player", I), ("team_id", I), ("possession", I), ("score_home", I), ("score_away", I), ("description", V)]),
     "shots": to_parquet("shots", shots, [("game", V), ("action", I), ("player", I), ("team", V), ("period", I), ("clock", D), ("made", B), ("pts", I),
                                          ("x", I), ("y", I), ("distance", D), ("area", V), ("area_detail", V), ("sub_type", V), ("descriptor", V),
                                          ("qualifiers", "VARCHAR[]"), ("assist_player", I), ("block_player", I), ("score_home", I), ("score_away", I)]),
