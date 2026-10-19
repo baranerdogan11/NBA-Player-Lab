@@ -12,7 +12,9 @@ A port of [Euroleague Player Lab](https://github.com/baranerdogan11/Euroleague-P
   player's hero painted in the club's colours with court lines, a centre-court scoreboard, club-colour table headers;
   the dark theme dims the arena lights). Five pages, on the header rail and on the phone's bottom bar: Player
   (`#BOS/<pid>`), Compare (`#compare/<a>/<b>`), Standings (`#standings`), Games (`#games/<date>`, a final at `#game/<gid>`)
-  and Leaders (`#leaders/<stat>`). Turkish strings are in `lang/tr.json`; no logos or headshots, only `teams.json`'s colours
+  and Leaders (`#leaders/<stat>`). Turkish strings are in `lang/tr.json`; no logos, only `teams.json`'s colours. Player pictures are NBA's headshots
+  (`cdn.nba.com/headshots/...<person id>.png`), loaded by the reader's browser over the player's initials, which stay when
+  there is no picture
 - `site_data.py`: writes the JSON the page reads under `teams/<season>/`: `index.json` (clubs), `games.json` (schedule
   and finals), `<CODE>.json` (each player's log of box-score lines), `games/<gid>.json` (both box scores) and
   `leaders.json` (season totals), all from the same box-score lines. The page turns integer totals into averages and
