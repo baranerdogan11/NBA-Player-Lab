@@ -50,3 +50,14 @@ test('a game, the players in it, their pages, compare and leaders agree', async 
   }
   expect(problems, 'the page reported errors').toEqual([]);
 });
+
+// The page rounds as rounding.avg does in Python (half up, exact): these answers are rounding.avg's, halves included.
+test('the page rounds as rounding.py does', async ({page}) => {
+  await prepare(page);
+  await page.goto('./');
+  await settled(page);
+  const cases = [[1985, 100, 1, '19.9'], [1, 4, 1, '0.3'], [-1, 4, 1, '-0.2'], [5, 2, 0, '3'], [-5, 2, 0, '-2'], [-25, 100, 1, '-0.2'],
+    [-1, 40, 1, '0.0'], [-3, 40, 1, '-0.1'], [5, 8, 2, '0.63'], [-5, 8, 2, '-0.62'], [2675, 1000, 2, '2.68'], [7, 0, 1, null]];
+  const got = await page.evaluate(cs => cs.map(([n, d, k]) => /** @type {any} */ (window).eval(`rdiv(${n}, ${d}, ${k})`)), cases);
+  expect(got).toEqual(cases.map(c => c[3]));
+});
