@@ -23,7 +23,9 @@ differs = lambda a, b: " or ".join(f"{a}.{s} is distinct from {b}.{s}" for s in 
 TESTS = [
     ("teams: 30 rows, unique codes and ids", "select * from (select count(*) n, count(distinct team) t, count(distinct team_id) i from teams) where n != 30 or t != 30 or i != 30"),
     ("games: unique ids", "select game from games group by game having count(*) > 1"),
-    ("games: both teams known in regular-season games", "select * from games where game_type = 'regular' and (home not in (select team from teams) or away not in (select team from teams))"),
+    # preseason games against non-NBA clubs are kept as scheduled, with the visitor's code as the feed gives it
+    ("games: named teams are known outside the preseason", "select * from games where game_type != 'preseason' and ((home is not null and home not in (select team from teams)) or (away is not null and away not in (select team from teams)))"),
+    ("games: final games have both teams", "select * from games where final and (home is null or away is null)"),
     ("games: final games have a winner", "select * from games where final and home_score = away_score"),
     ("games: final games are not in the future", "select * from games where final and tipoff_utc > now()::timestamp"),
     ("box: every cached game is a final game on the schedule", "select distinct b.game from box b left join games g using (game) where g.game is null or not g.final"),
@@ -68,7 +70,7 @@ for s in STATS:
                   f"select p.game, p.player, p.team, p.{s} pbp, b.{s} box from pbp_box p join box b using (game, player) where p.{s} != b.{s}"))
 TESTS += [
     ("play-by-play: every player with a stat in the play-by-play has a box line", """
-        select distinct e.game, e.player from events e join team_box t on t.game = e.game and t.team = e.team left join box b using (game, player)
+        select distinct e.game, e.player from events e join team_box t on t.game = e.game and t.team = e.team left join box b on b.game = e.game and b.player = e.player
         where e.player is not null and b.player is null and e.action_type in ('2pt', '3pt', 'freethrow', 'rebound', 'steal', 'block', 'turnover')"""),
     ("play-by-play: the last score equals the final score", """
         select t.game, t.team, t.score, case when t.home then e.h else e.a end pbp
