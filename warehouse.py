@@ -68,9 +68,10 @@ for path in sorted(glob.glob(os.path.join(CACHE, "box_*.json"))):
                         "not_playing_reason": p.get("notPlayingReason"), "seconds": secs(s.get("minutes")) or 0.0,
                         **{k: num(s.get(v)) for k, v in STAT.items()}})
         s = t["statistics"]
+        # the team's reboundsTotal includes team rebounds; reb here is the players' sum, like every other column, and team_reb the rest
         team_box.append({"game": gid, "team": team, "opponent": b["awayTeam" if side == "homeTeam" else "homeTeam"]["teamTricode"], "home": side == "homeTeam",
                          "score": t["score"], "seconds": secs(s.get("minutes")), **{k: num(s.get(v)) for k, v in STAT.items() if k != "plus_minus"},
-                         **{k: num(s.get(v)) for k, v in TEAM_ONLY.items()}})
+                         "reb": num(s.get("reboundsPersonal")), **{k: num(s.get(v)) for k, v in TEAM_ONLY.items()}})
         for q in t.get("periods", []):
             periods.append({"game": gid, "team": team, "period": q["period"], "period_type": q.get("periodType"), "pts": q["score"]})
 
