@@ -55,9 +55,17 @@ def main():
         json.dump(status, open(path, "w"), indent=1)
         print(f"recorded {path}: {status}")
         return
+    now = datetime.now(timezone.utc)
     req = urllib.request.Request(SCHEDULE, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://www.nba.com/"})
-    final = len(final_games(json.load(urllib.request.urlopen(req, timeout=60)), season()))
-    run, reason = decide(final, status, datetime.now(timezone.utc))
+    try:
+        final = len(final_games(json.load(urllib.request.urlopen(req, timeout=60)), season()))
+    except OSError as e:
+        # an unreachable schedule fails the run once a day (when the nightly is due), not on every 5-minute check
+        if decide(-1, status, now)[0]:
+            raise SystemExit(f"the NBA CDN schedule could not be read: {e}")
+        print(f"::warning::the NBA CDN schedule could not be read ({e}); trying again at the next check")
+        final, now = -1, None
+    run, reason = decide(final, status, now) if now else (False, "schedule unreadable: no run")
     print(reason)
     if os.environ.get("GITHUB_OUTPUT"):
         open(os.environ["GITHUB_OUTPUT"], "a").write(f"run={'true' if run else 'false'}\nfinal={final}\n")
