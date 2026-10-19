@@ -129,3 +129,26 @@ test.describe('opening page', () => {
     });
   }
 });
+
+test.describe('roster', () => {
+  test.use(DESKTOP);
+  test('the player picker lists the club by jersey number and the arrows step through it, wrapping at the ends', async ({page}) => {
+    const problems = await prepare(page);
+    await page.goto('./');
+    await settled(page);
+    await go(page, '#BOS', () => !!document.querySelector('#player option'));
+    const roster = await page.evaluate(() => [...document.querySelectorAll('#player option')].map(o => [o.dataset.j, o.value]));
+    const nums = roster.map(([j]) => Number(j));
+    expect(nums).toEqual([...nums].sort((a, b) => a - b));
+    expect(roster.length).toBeGreaterThan(2);
+    const first = roster[0][1], second = roster[1][1], last = roster[roster.length - 1][1];
+    await go(page, `#BOS/${first}`, p => document.querySelector('#player').value === p, first);
+    expect(await page.getAttribute('#next', 'href')).toBe(`#BOS/${second}`);
+    expect(await page.getAttribute('#prev', 'href')).toBe(`#BOS/${last}`);
+    await page.keyboard.press('ArrowRight');
+    await page.waitForFunction(p => document.querySelector('#player').value === p, second);
+    await page.click('#prev');
+    await page.waitForFunction(p => document.querySelector('#player').value === p, first);
+    expect(problems, 'the page reported errors').toEqual([]);
+  });
+});
