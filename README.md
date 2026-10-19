@@ -8,8 +8,9 @@ A port of [Euroleague Player Lab](https://github.com/baranerdogan11/Euroleague-P
 
 - `config.json`: the season every script works on (`2026-27`); any script also takes the season as its first argument
 - `build.py`: renders `index.html` from `template.html` with the build's metadata and the Turkish strings in `lang/tr.json`
-- `template.html`: the whole site, one page in the Game Center look (dark hero in the club's colours, orange tab rail,
-  square panels, club-colour table headers). Five pages, on the header rail and on the phone's bottom bar: Player
+- `template.html`: the whole site, one page in the hardwood look (a maple court floor under frosted rounded panels, the
+  player's hero painted in the club's colours with court lines, a centre-court scoreboard, club-colour table headers;
+  the dark theme dims the arena lights). Five pages, on the header rail and on the phone's bottom bar: Player
   (`#BOS/<pid>`), Compare (`#compare/<a>/<b>`), Standings (`#standings`), Games (`#games/<date>`, a final at `#game/<gid>`)
   and Leaders (`#leaders/<stat>`). Turkish strings are in `lang/tr.json`; no logos or headshots, only `teams.json`'s colours
 - `site_data.py`: writes the JSON the page reads under `teams/<season>/`: `index.json` (clubs), `games.json` (schedule
