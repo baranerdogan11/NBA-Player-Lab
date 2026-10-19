@@ -1,5 +1,5 @@
 {
-  "_": "The 30 clubs: NBA CDN tricode and team id, conference, division, and the two colours the page dresses them in (no logos).",
+  "_": "The 30 clubs: NBA CDN tricode and team id, conference, division, and the two colours the page dresses them in; the page loads each logo from NBA's CDN by the team id.",
   "teams": [
     {"code": "ATL", "id": 1610612737, "city": "Atlanta", "name": "Hawks", "conf": "E", "div": "Southeast", "colors": ["#C8102E", "#FDB927"]},
     {"code": "BOS", "id": 1610612738, "city": "Boston", "name": "Celtics", "conf": "E", "div": "Atlantic", "colors": ["#007A33", "#BA9653"]},

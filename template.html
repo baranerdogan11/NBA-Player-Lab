@@ -108,7 +108,17 @@ a,button,select,.card{-webkit-tap-highlight-color:transparent}
 .face.on>span{visibility:hidden}
 .face img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 12%}
 .tbl .face{margin-right:9px;width:26px;height:26px;font-size:10px}
-.chip{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px;vertical-align:-1px;background:linear-gradient(135deg,var(--c1) 55%,var(--c2) 55%);box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+/* a club's logo from NBA's CDN; until it loads (or if it never does) the club's two colours, or its code on a crest */
+.chip,.crest,.mark{position:relative;display:inline-grid;place-items:center;flex:none;vertical-align:middle}
+.chip{width:18px;height:18px;margin-right:8px;border-radius:50%;background:linear-gradient(135deg,var(--c1) 55%,var(--c2) 55%);box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.chip img,.crest img,.mark img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.chip b,.mark b{display:none}
+.chip.on{background:none;box-shadow:none}
+.crest{width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.94);box-shadow:inset 0 0 0 2px var(--c2,transparent),0 4px 14px rgba(0,0,0,.25);color:#1e1711;font:800 15px/1 var(--sans);letter-spacing:.02em}
+.crest img{inset:9px;width:calc(100% - 18px);height:calc(100% - 18px)}
+.crest.on b{visibility:hidden}
+.mark{width:22px;height:22px;margin-right:7px;border-radius:50%;background:rgba(255,255,255,.94)}
+.mark img{inset:3px;width:16px;height:16px}
 
 /* controls: rounded selects and segmented controls inside a page */
 select{appearance:none;-webkit-appearance:none;background:var(--solid) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5l4.5 4.5 4.5-4.5' fill='none' stroke='%23e8611a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center/12px 8px;border:0;border-radius:var(--rs);box-shadow:var(--sh);padding:11px 36px 11px 14px;min-width:0;max-width:100%;font-weight:600;cursor:pointer}
@@ -123,7 +133,7 @@ select:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(
 .tabs [aria-pressed="true"],.tabs [aria-current="true"],.dates a[aria-current="true"]{background:var(--orange);color:#fff;box-shadow:0 2px 8px rgba(232,97,26,.35)}
 
 /* the hero: the club's painted key, wood grain showing through the paint, court lines over it;
-   the player's NBA headshot over his initials (the initials stay when there is no picture), never a logo */
+   the player's NBA headshot over his initials (the initials stay when there is no picture), the club's logo beside its name */
 .hero{position:relative;isolation:isolate;display:flex;align-items:center;gap:22px;padding:24px 24px 22px;border-radius:22px;color:#fff;overflow:hidden;box-shadow:var(--sh);
   background:var(--court) right -6px center/auto 118% no-repeat,linear-gradient(115deg,var(--c1) 0%,var(--c1) 30%,color-mix(in srgb,var(--c1) 35%,#120c08) 75%);border-bottom:5px solid var(--c2)}
 .hero::before,.board::before,.vs>div::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--wood);mix-blend-mode:overlay;opacity:.45;pointer-events:none}
@@ -150,7 +160,7 @@ select:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:14px}
 .card{display:block;background:var(--panel);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-radius:var(--r);box-shadow:var(--sh);text-decoration:none;overflow:hidden;transition:transform .12s ease-out,box-shadow .2s}
 .card .row{display:flex;align-items:center;gap:10px;padding:12px 14px}
-.card .row::before{content:"";flex:none;width:12px;height:12px;border-radius:50%;background:linear-gradient(135deg,var(--c1) 55%,var(--c2) 55%);box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.card .row .chip{width:24px;height:24px;margin:0}
 .card .row+.row{border-top:1px solid var(--line)}
 .card .nm{flex:1;font:600 16px/1.1 var(--sans);letter-spacing:-.01em}
 .card .sc{font:750 22px/1 var(--sans);letter-spacing:-.02em;color:var(--muted)}
@@ -165,6 +175,8 @@ a.card:active{transform:scale(.98)}
   background:radial-gradient(circle at 50% 50%,transparent 0 62px,rgba(255,255,255,.35) 62px 64.5px,transparent 65px),linear-gradient(90deg,transparent calc(50% - 1.25px),rgba(255,255,255,.35) 0 calc(50% + 1.25px),transparent 0),
   linear-gradient(90deg,var(--ca) 0%,color-mix(in srgb,var(--ca) 40%,#120c08) 50%,color-mix(in srgb,var(--ch) 40%,#120c08) 50%,var(--ch) 100%);border-bottom:5px solid var(--orange)}
 .board .side{display:flex;flex-direction:column;gap:5px;min-width:0}
+.board .side .crest{margin-bottom:6px}
+.hero .badge .crest{width:100%;height:100%;box-shadow:none;font-size:26px}
 .board .side.h{align-items:flex-end;text-align:right}
 .board .side small{font:600 12px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.75)}
 .board .side b{font:800 30px/1.05 var(--sans);letter-spacing:-.025em}
@@ -173,7 +185,7 @@ a.card:active{transform:scale(.98)}
 .board .score .lose{color:rgba(255,255,255,.55)}
 .board .mid{text-align:center}
 .board .mid small{display:inline-block;margin-top:8px;padding:5px 10px;border-radius:999px;background:rgba(0,0,0,.35);font:650 11px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:#ffb27f}
-@media (max-width:760px){.board{padding:18px 12px;gap:8px;border-radius:18px;background-size:auto,auto,auto}.board .side small,.board .full{display:none}.board .abbr{display:inline}.board .side b{font-size:22px}.board .score{font-size:36px;gap:20px}}
+@media (max-width:760px){.board{padding:18px 12px;gap:8px;border-radius:18px;background-size:auto,auto,auto}.board .side small,.board .full{display:none}.board .abbr{display:inline}.board .side b{font-size:22px}.board .side .crest{width:42px;height:42px;font-size:11px}.board .side .crest img{inset:6px;width:30px;height:30px}.board .score{font-size:36px;gap:20px}}
 
 /* compare: the two players meet on a court in their clubs' colours */
 .vs{display:grid;grid-template-columns:1fr 1fr;gap:2px;color:#fff;margin-top:14px;border-radius:var(--r);overflow:hidden;box-shadow:var(--sh)}
@@ -299,6 +311,8 @@ const sum = log => { const s = {gp: 0, sec: 0}; for (const k of STATS) s[k] = 0;
 const loc = () => LANG === 'tr' ? 'tr-TR' : 'en-US';
 const fmtDate = (d, long) => new Intl.DateTimeFormat(loc(), long ? {weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC'} : {month: 'short', day: 'numeric', timeZone: 'UTC'}).format(new Date(`${d}T12:00:00Z`));
 const fmtTime = iso => new Intl.DateTimeFormat(loc(), {hour: '2-digit', minute: '2-digit'}).format(new Date(iso));
+// a club's logo by its NBA team id (cls: chip in tables and cards, crest on the boards, mark beside a name on colour)
+const logo = (code, cls = 'chip') => team(code) ? `<i class="${cls}" style="${colours(code)}"><b>${esc(code)}</b><img src="https://cdn.nba.com/logos/nba/${team(code).id}/primary/L/logo.svg" alt="" loading="lazy" onload="this.parentNode.classList.add('on')" onerror="this.remove()"></i>` : '';
 const initials = n => n.split(/\s+/).filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase();
 // a player's face: the NBA headshot (by his NBA person id) over his initials; the initials hide once the picture is in, and a picture that fails to load removes itself
 const face = (pid, name, big) => `<span class="face"><span>${esc(initials(name))}</span><img src="https://cdn.nba.com/headshots/nba/latest/${big ? '1040x760' : '260x190'}/${encodeURIComponent(pid)}.png" alt="" loading="lazy" onload="this.parentNode.classList.add('on')" onerror="this.remove()"></span>`;
@@ -367,7 +381,7 @@ async function renderPlayer(code, pid, my) {
   const hero = $('#hero');
   hero.setAttribute('style', colours(code));
   if (!p) {
-    hero.innerHTML = `<div class="badge">${esc(code)}</div><div class="who"><div class="tag">${EN(tname(code))}</div><h1>${EN(T.name)}</h1></div>`;
+    hero.innerHTML = `<div class="badge">${logo(code, 'crest')}</div><div class="who"><div class="tag">${logo(code, 'mark')}${EN(tname(code))}</div><h1>${EN(T.name)}</h1></div>`;
     $('#tiles').innerHTML = '';
     $('#log').innerHTML = `<tbody><tr><td class="empty">${t('No players yet.')}</td></tr></tbody>`;
     remember(code);
@@ -375,7 +389,7 @@ async function renderPlayer(code, pid, my) {
   }
   remember(`${code}/${p.pid}`);
   const s = p.s, a = age(p.born);
-  hero.innerHTML = `<div class="badge">${face(p.pid, p.name, true)}</div><div class="who"><div class="tag">${EN(tname(code))}${p.pos ? ` · ${esc(p.pos)}` : ''}</div><h1>${EN(p.name)}</h1><div class="facts">${p.height ? `<span>${t('Height')} <b>${esc(p.height)}</b></span>` : ''}${a != null ? `<span>${t('Age')} <b>${a}</b></span>` : ''}<span>${t('Games')} <b>${s.gp}</b></span><span>${t('Minutes')} <b>${mpg(s.sec, s.gp)}</b></span></div></div>${p.jersey !== '' && p.jersey != null ? `<div class="num" aria-hidden="true">${esc(p.jersey)}</div>` : ''}`;
+  hero.innerHTML = `<div class="badge">${face(p.pid, p.name, true)}</div><div class="who"><div class="tag">${logo(code, 'mark')}${EN(tname(code))}${p.pos ? ` · ${esc(p.pos)}` : ''}</div><h1>${EN(p.name)}</h1><div class="facts">${p.height ? `<span>${t('Height')} <b>${esc(p.height)}</b></span>` : ''}${a != null ? `<span>${t('Age')} <b>${a}</b></span>` : ''}<span>${t('Games')} <b>${s.gp}</b></span><span>${t('Minutes')} <b>${mpg(s.sec, s.gp)}</b></span></div></div>${p.jersey !== '' && p.jersey != null ? `<div class="num" aria-hidden="true">${esc(p.jersey)}</div>` : ''}`;
   const tiles = [['PTS', avg(s.pts, s.gp)], ['REB', avg(s.reb, s.gp)], ['AST', avg(s.ast, s.gp)], ['STL', avg(s.stl, s.gp)], ['BLK', avg(s.blk, s.gp)], ['TOV', avg(s.tov, s.gp)],
     ['FG%', pct(s.fgm, s.fga)], ['3P%', pct(s.fg3m, s.fg3a)], ['FT%', pct(s.ftm, s.fta)], ['TS%', ts(s.pts, s.fga, s.fta)], ['+/-', N(signed(rdiv(s.pm, s.gp)))], ['MIN', mpg(s.sec, s.gp)]];
   $('#tiles').innerHTML = tiles.map(([k, v], i) => `<div class="tile${i === 0 ? ' lead' : ''}" data-k="${k}"><b>${v}</b><span>${t(k + '@stat')}</span></div>`).join('');
@@ -408,7 +422,7 @@ async function renderCompare(a, b, my) {
   const opts = sel => IDX.teams.map(T => `<optgroup label="${esc(T.city)} ${esc(T.name)}">${L.filter(p => p.team === T.code).sort((x, y) => x.name.localeCompare(y.name)).map(p => `<option value="${esc(p.pid)}"${p === sel ? ' selected' : ''}>${esc(p.name)}</option>`).join('')}</optgroup>`).join('');
   $('#cmp-a').innerHTML = opts(A);
   $('#cmp-b').innerHTML = opts(B);
-  const card = p => `<div style="${colours(p.team)}">${face(p.pid, p.name, true)}<div><small>${EN(tname(p.team))}${p.pos ? ` · ${esc(p.pos)}` : ''}</small><h2>${EN(p.name)}</h2></div></div>`;
+  const card = p => `<div style="${colours(p.team)}">${face(p.pid, p.name, true)}<div><small>${logo(p.team, 'mark')}${EN(tname(p.team))}${p.pos ? ` · ${esc(p.pos)}` : ''}</small><h2>${EN(p.name)}</h2></div></div>`;
   $('#cmp-vs').innerHTML = card(A) + card(B);
   $('#cmp').innerHTML = `<tbody>${CMP_ROWS.map(({k, v, f}) => {
     const va = v(A), vb = v(B), better = k === 'Games' ? 0 : va > vb ? 1 : vb > va ? 2 : 0;
@@ -444,7 +458,7 @@ async function renderStandings(view, my) {
     const gb = r => { const v = (lead.w - r.w) + (r.l - lead.l); return v === 0 ? '–' : N(rdiv(v, 2)); };
     return `<section class="panel">${title ? `<h2>${title}</h2>` : ''}<div class="scroll"><table class="tbl"><thead><tr><th>#</th><th class="l">${t('Team')}</th><th>${t('W@stat')}</th><th>${t('L@stat')}</th><th>${t('PCT@stat')}</th><th>${t('GB@stat')}</th><th>${t('Home')}</th><th>${t('Away')}</th><th>${t('L10@stat')}</th><th>${t('STRK@stat')}</th><th>${t('PPG@stat')}</th><th>${t('OPP PPG@stat')}</th><th>${t('DIFF@stat')}</th></tr></thead><tbody>${rows.map((r, i) => {
       const gp = r.w + r.l, d = signed(rdiv(r.pf - r.pa, gp));
-      return `<tr data-team="${r.code}"><td>${i + 1}</td><td class="l"><a href="#${r.code}"><i class="chip" style="${colours(r.code)}"></i>${EN(tname(r.code))}</a></td><td class="k">${r.w}</td><td>${r.l}</td><td>${winPct(r.w, gp)}</td><td>${gb(r)}</td><td>${r.hw}-${r.hl}</td><td>${r.aw}-${r.al}</td><td>${l10(r.seq)}</td><td>${streak(r.seq)}</td><td>${avg(r.pf, gp)}</td><td>${avg(r.pa, gp)}</td><td class="${d[0] === '+' ? 'w' : d[0] === '−' ? 'lo' : ''}">${N(d)}</td></tr>`;
+      return `<tr data-team="${r.code}"><td>${i + 1}</td><td class="l"><a href="#${r.code}">${logo(r.code)}${EN(tname(r.code))}</a></td><td class="k">${r.w}</td><td>${r.l}</td><td>${winPct(r.w, gp)}</td><td>${gb(r)}</td><td>${r.hw}-${r.hl}</td><td>${r.aw}-${r.al}</td><td>${l10(r.seq)}</td><td>${streak(r.seq)}</td><td>${avg(r.pf, gp)}</td><td>${avg(r.pa, gp)}</td><td class="${d[0] === '+' ? 'w' : d[0] === '−' ? 'lo' : ''}">${N(d)}</td></tr>`;
     }).join('')}</tbody></table></div></section>`;
   };
   const all = Object.values(R).sort(order);
@@ -465,7 +479,7 @@ async function renderGames(date, my) {
   const cur = $('#gm-dates [aria-current="true"]');
   if (cur) $('#gm-dates').scrollLeft = cur.offsetLeft - 40;
   const today = G.filter(g => g.date === date);
-  const row = (code, score, win) => `<div class="row${win ? ' win' : ''}" style="${colours(code)}"><span class="nm">${EN(tname(code))}</span>${score != null ? `<span class="sc">${score}</span>` : ''}</div>`;
+  const row = (code, score, win) => `<div class="row${win ? ' win' : ''}">${logo(code)}<span class="nm">${EN(tname(code))}</span>${score != null ? `<span class="sc">${score}</span>` : ''}</div>`;
   $('#gm-list').innerHTML = today.length ? today.map(g => {
     const fin = g.hs != null, inner = `${row(g.away, g.as, fin && g.as > g.hs)}${row(g.home, g.hs, fin && g.hs > g.as)}<div class="ft">${fin ? t('Final') : fmtTime(g.time)}</div>`;
     return fin ? `<a class="card" href="#game/${esc(g.gid)}" data-gid="${esc(g.gid)}">${inner}</a>` : `<div class="card">${inner}</div>`;
@@ -479,9 +493,9 @@ async function renderGame(gid, my) {
   const H = team(g.home), A = team(g.away);
   const board = $('#gm-board');
   board.setAttribute('style', `--ch:${H ? H.colors[0] : '#333'};--ca:${A ? A.colors[0] : '#333'}`);
-  board.innerHTML = `<div class="side a"><small>${EN(A ? A.city : g.away)}</small><b><span class="full">${EN(A ? A.name : g.away)}</span><span class="abbr">${esc(g.away)}</span></b></div><div class="mid"><div class="score"><span class="${g.as < g.hs ? 'lose' : ''}">${g.as}</span><span class="${g.hs < g.as ? 'lose' : ''}">${g.hs}</span></div><small>${t('Final')}${g.periods.length > 4 ? ` · ${g.periods.length === 5 ? t('OT') : `${g.periods.length - 4}${t('OT')}`}` : ''} · ${fmtDate(g.date, true)}</small></div><div class="side h"><small>${EN(H ? H.city : g.home)}</small><b><span class="full">${EN(H ? H.name : g.home)}</span><span class="abbr">${esc(g.home)}</span></b></div>`;
+  board.innerHTML = `<div class="side a">${logo(g.away, 'crest')}<small>${EN(A ? A.city : g.away)}</small><b><span class="full">${EN(A ? A.name : g.away)}</span><span class="abbr">${esc(g.away)}</span></b></div><div class="mid"><div class="score"><span class="${g.as < g.hs ? 'lose' : ''}">${g.as}</span><span class="${g.hs < g.as ? 'lose' : ''}">${g.hs}</span></div><small>${t('Final')}${g.periods.length > 4 ? ` · ${g.periods.length === 5 ? t('OT') : `${g.periods.length - 4}${t('OT')}`}` : ''} · ${fmtDate(g.date, true)}</small></div><div class="side h">${logo(g.home, 'crest')}<small>${EN(H ? H.city : g.home)}</small><b><span class="full">${EN(H ? H.name : g.home)}</span><span class="abbr">${esc(g.home)}</span></b></div>`;
   const per = g.periods.map((_, i) => i < 4 ? `${t('Q')}${i + 1}` : g.periods.length === 5 ? t('OT') : `${t('OT')}${i - 3}`);
-  $('#gm-periods').innerHTML = `<thead><tr><th>${t('Team')}</th>${per.map(p => `<th>${p}</th>`).join('')}<th>${t('T@total')}</th></tr></thead><tbody>${[[g.away, 1, g.as], [g.home, 0, g.hs]].map(([c, i, tot]) => `<tr><td class="l"><a href="#${c}"><i class="chip" style="${colours(c)}"></i>${EN(tname(c))}</a></td>${g.periods.map(p => `<td>${p[i]}</td>`).join('')}<td class="k">${tot}</td></tr>`).join('')}</tbody>`;
+  $('#gm-periods').innerHTML = `<thead><tr><th>${t('Team')}</th>${per.map(p => `<th>${p}</th>`).join('')}<th>${t('T@total')}</th></tr></thead><tbody>${[[g.away, 1, g.as], [g.home, 0, g.hs]].map(([c, i, tot]) => `<tr><td class="l"><a href="#${c}">${logo(c)}${EN(tname(c))}</a></td>${g.periods.map(p => `<td>${p[i]}</td>`).join('')}<td class="k">${tot}</td></tr>`).join('')}</tbody>`;
   const head = ['Player', 'MIN', 'PTS', 'REB', 'OREB', 'DREB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'FG', '3P', 'FT', '+/-'];
   const box = code => {
     const rows = g.box[code] || [], s = sum(rows);
@@ -516,7 +530,7 @@ async function renderLeaders(stat, my) {
   $('#ld').innerHTML = `<thead><tr><th>#</th><th class="l">${t('Player')}</th><th class="l">${t('Team')}</th><th>${t('GP@stat')}</th>${extra ? `<th>${t(stat === 'ts' ? 'PTS@stat' : 'M-A@stat')}</th>` : ''}<th>${t(LEAD[stat][0])}</th></tr></thead><tbody>${rows.length ? rows.map((p, i) => {
     const v = fmt(p);
     if (v !== prev) { rank = i + 1; prev = v; }
-    return `<tr data-pid="${esc(p.pid)}"><td>${rank}</td><td class="l"><a href="#${esc(p.team)}/${esc(p.pid)}">${esc(p.name)}</a></td><td class="l"><i class="chip" style="${colours(p.team)}"></i>${esc(p.team)}</td><td>${p.gp}</td>${extra ? `<td>${extra(p)}</td>` : ''}<td class="k">${v}</td></tr>`;
+    return `<tr data-pid="${esc(p.pid)}"><td>${rank}</td><td class="l"><a href="#${esc(p.team)}/${esc(p.pid)}">${esc(p.name)}</a></td><td class="l">${logo(p.team)}${esc(p.team)}</td><td>${p.gp}</td>${extra ? `<td>${extra(p)}</td>` : ''}<td class="k">${v}</td></tr>`;
   }).join('') : `<tr><td class="empty l" colspan="6">${t('No player qualifies yet.')}</td></tr>`}</tbody>`;
 }
 

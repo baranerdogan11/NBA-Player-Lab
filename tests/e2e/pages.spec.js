@@ -62,4 +62,22 @@ test.describe('player pictures', () => {
     expect(await page.locator('#hero .face span').isVisible()).toBe(true);
     expect(problems.filter(p => !p.includes('Failed to load resource')), 'the page reported errors').toEqual([]);
   });
+  test('club logos come from NBA\'s CDN by team id on Standings, Games, the scoreboard and the hero', async ({page}) => {
+    const problems = await prepare(page);
+    await page.goto('./');
+    await settled(page);
+    const ids = await page.evaluate(() => Object.fromEntries(IDX.teams.map(T => [T.code, T.id])));
+    const url = code => `https://cdn.nba.com/logos/nba/${ids[code]}/primary/L/logo.svg`;
+    await go(page, '#standings', ROUTES[2][2]);
+    const rows = await page.evaluate(() => [...document.querySelectorAll('#st-body tr[data-team]')].map(tr => [tr.dataset.team, tr.querySelector('.chip img')?.getAttribute('src')]));
+    expect(rows.length).toBe(30);
+    for (const [code, src] of rows) expect(src).toBe(url(code));
+    await go(page, '#games', ROUTES[3][2]);
+    expect(await page.locator('#gm-list .card .row .chip img').count()).toBeGreaterThan(0);
+    await go(page, '#game/0022600001', ROUTES[4][2]);
+    expect(await page.locator('#gm-board .crest img').count()).toBe(2);
+    await go(page, '#BOS', ROUTES[0][2]);
+    expect(await page.locator('#hero .tag .mark img').getAttribute('src')).toBe(url('BOS'));
+    expect(problems, 'the page reported errors').toEqual([]);
+  });
 });
