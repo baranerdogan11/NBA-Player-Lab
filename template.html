@@ -235,6 +235,31 @@ a.card:active{transform:scale(.98)}
 .fail button:active{transform:scale(.95)}
 .foot{max-width:1180px;margin:0 auto;padding:4px 20px 28px;font-size:13px;color:var(--on-floor)}
 
+/* polish: form dots on Standings, a bar behind each leader's value, W/L pills in the game log, the winner's crest ringed */
+.form{display:inline-flex;gap:2.5px;margin-left:8px;vertical-align:middle}
+.form b{width:5px;height:5px;border-radius:50%;background:var(--good)}
+.form b.lo{background:var(--bad)}
+#ld td.k{position:relative;min-width:120px}
+#ld td.k .bar{position:absolute;right:12px;top:50%;height:24px;transform:translateY(-50%);border-radius:6px;background:color-mix(in srgb,var(--orange) 14%,transparent);transition:width .5s var(--spring)}
+#ld td.k .bar+*{position:relative}
+#ld tbody tr:nth-child(-n+3) td:first-child{color:var(--orange);font-weight:800}
+.tbl a.w,.tbl a.lo{display:inline-block;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--good) 13%,transparent)}
+.tbl a.lo{background:color-mix(in srgb,var(--bad) 12%,transparent)}
+.board .side.won .crest{box-shadow:inset 0 0 0 2px var(--c2,transparent),0 0 0 3px var(--orange),0 4px 14px rgba(0,0,0,.25)}
+.top.down{box-shadow:0 1px 0 var(--glass-line),0 10px 30px rgba(60,32,10,.14)}
+
+/* motion: each page rises onto the floor and its rows, tiles and cards follow a beat apart; a theme change fades */
+@keyframes rise{from{opacity:0;transform:translateY(10px)}}
+.pg.in{animation:rise .4s var(--spring) both}
+.pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a){animation:rise .45s var(--spring) both}
+.pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a):nth-child(2){animation-delay:.04s}
+.pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a):nth-child(3){animation-delay:.08s}
+.pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a):nth-child(4){animation-delay:.12s}
+.pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a):nth-child(5){animation-delay:.16s}
+.pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a):nth-child(6){animation-delay:.2s}
+.pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a):nth-child(n+7){animation-delay:.24s}
+html.swap,html.swap *{transition:background-color .35s,color .35s}
+
 /* accessibility: gentler motion, solid surfaces, stronger edges */
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}a:active,button:active,.card:active{transform:none!important}}
 @media (prefers-reduced-transparency:reduce){.top,.tabbar,.panel,.card,.tabs,.dates{background:var(--solid);-webkit-backdrop-filter:none;backdrop-filter:none}}
@@ -392,6 +417,8 @@ async function route() {
     const tab = page === 'game' ? 'games' : page;
     for (const el of $$('[data-pg]')) { if (el.dataset.pg === tab) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current'); }
     document.body.dataset.page = page;
+    const pg = $(`#pg-${page}`);
+    pg.classList.remove('in'); void pg.offsetWidth; pg.classList.add('in');
   } catch (e) {
     if (my !== seq) return;
     console.warn(e);
@@ -493,7 +520,7 @@ async function renderStandings(view, my) {
     const gb = r => { const v = (lead.w - r.w) + (r.l - lead.l); return v === 0 ? '–' : N(rdiv(v, 2)); };
     return `<section class="panel">${title ? `<h2>${title}</h2>` : ''}<div class="scroll"><table class="tbl"><thead><tr><th>#</th><th class="l">${t('Team')}</th><th>${t('W@stat')}</th><th>${t('L@stat')}</th><th>${t('PCT@stat')}</th><th>${t('GB@stat')}</th><th>${t('Home')}</th><th>${t('Away')}</th><th>${t('L10@stat')}</th><th>${t('STRK@stat')}</th><th>${t('PPG@stat')}</th><th>${t('OPP PPG@stat')}</th><th>${t('DIFF@stat')}</th></tr></thead><tbody>${rows.map((r, i) => {
       const gp = r.w + r.l, d = signed(rdiv(r.pf - r.pa, gp));
-      return `<tr data-team="${r.code}"><td>${i + 1}</td><td class="l"><a href="#${r.code}">${logo(r.code)}${EN(tname(r.code))}</a></td><td class="k">${r.w}</td><td>${r.l}</td><td>${winPct(r.w, gp)}</td><td>${gb(r)}</td><td>${r.hw}-${r.hl}</td><td>${r.aw}-${r.al}</td><td>${l10(r.seq)}</td><td>${streak(r.seq)}</td><td>${avg(r.pf, gp)}</td><td>${avg(r.pa, gp)}</td><td class="${d[0] === '+' ? 'w' : d[0] === '−' ? 'lo' : ''}">${N(d)}</td></tr>`;
+      return `<tr data-team="${r.code}"><td>${i + 1}</td><td class="l"><a href="#${r.code}">${logo(r.code)}${EN(tname(r.code))}</a></td><td class="k">${r.w}</td><td>${r.l}</td><td>${winPct(r.w, gp)}</td><td>${gb(r)}</td><td>${r.hw}-${r.hl}</td><td>${r.aw}-${r.al}</td><td>${l10(r.seq)}${r.seq.length ? `<i class="form">${r.seq.slice(-10).map(w => `<b class="${w ? 'w' : 'lo'}"></b>`).join('')}</i>` : ''}</td><td>${streak(r.seq)}</td><td>${avg(r.pf, gp)}</td><td>${avg(r.pa, gp)}</td><td class="${d[0] === '+' ? 'w' : d[0] === '−' ? 'lo' : ''}">${N(d)}</td></tr>`;
     }).join('')}</tbody></table></div></section>`;
   };
   const all = Object.values(R).sort(order);
@@ -530,7 +557,7 @@ async function renderGame(gid, my) {
   const H = team(g.home), A = team(g.away);
   const board = $('#gm-board');
   board.setAttribute('style', `--ch:${H ? H.colors[0] : '#333'};--ca:${A ? A.colors[0] : '#333'}`);
-  board.innerHTML = `<div class="side a">${logo(g.away, 'crest')}<small>${EN(A ? A.city : g.away)}</small><b><span class="full">${EN(A ? A.name : g.away)}</span><span class="abbr">${esc(g.away)}</span></b></div><div class="mid"><div class="score"><span class="${g.as < g.hs ? 'lose' : ''}">${g.as}</span><span class="${g.hs < g.as ? 'lose' : ''}">${g.hs}</span></div><small>${t('Final')}${g.periods.length > 4 ? ` · ${g.periods.length === 5 ? t('OT') : `${g.periods.length - 4}${t('OT')}`}` : ''} · ${fmtDate(g.date, true)}</small></div><div class="side h">${logo(g.home, 'crest')}<small>${EN(H ? H.city : g.home)}</small><b><span class="full">${EN(H ? H.name : g.home)}</span><span class="abbr">${esc(g.home)}</span></b></div>`;
+  board.innerHTML = `<div class="side a${g.as > g.hs ? ' won' : ''}">${logo(g.away, 'crest')}<small>${EN(A ? A.city : g.away)}</small><b><span class="full">${EN(A ? A.name : g.away)}</span><span class="abbr">${esc(g.away)}</span></b></div><div class="mid"><div class="score"><span class="${g.as < g.hs ? 'lose' : ''}">${g.as}</span><span class="${g.hs < g.as ? 'lose' : ''}">${g.hs}</span></div><small>${t('Final')}${g.periods.length > 4 ? ` · ${g.periods.length === 5 ? t('OT') : `${g.periods.length - 4}${t('OT')}`}` : ''} · ${fmtDate(g.date, true)}</small></div><div class="side h${g.hs > g.as ? ' won' : ''}">${logo(g.home, 'crest')}<small>${EN(H ? H.city : g.home)}</small><b><span class="full">${EN(H ? H.name : g.home)}</span><span class="abbr">${esc(g.home)}</span></b></div>`;
   const per = g.periods.map((_, i) => i < 4 ? `${t('Q')}${i + 1}` : g.periods.length === 5 ? t('OT') : `${t('OT')}${i - 3}`);
   $('#gm-periods').innerHTML = `<thead><tr><th>${t('Team')}</th>${per.map(p => `<th>${p}</th>`).join('')}<th>${t('T@total')}</th></tr></thead><tbody>${[[g.away, 1, g.as], [g.home, 0, g.hs]].map(([c, i, tot]) => `<tr><td class="l"><a href="#${c}">${logo(c)}${EN(tname(c))}</a></td>${g.periods.map(p => `<td>${p[i]}</td>`).join('')}<td class="k">${tot}</td></tr>`).join('')}</tbody>`;
   const head = ['Player', 'MIN', 'PTS', 'REB', 'OREB', 'DREB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'FG', '3P', 'FT', '+/-'];
@@ -570,10 +597,11 @@ async function renderLeaders(stat, my) {
   const L = (await get('leaders.json')).players;
   if (stale(my)) return;
   if (!LEAD[stat]) stat = 'pts';
-  const extra = LEAD[stat][4], rows = board(L, stat);
+  const extra = LEAD[stat][4], rows = board(L, stat), val = LEAD[stat][1], top = rows.length ? val(rows[0].p) : 0;
+  const bar = p => top > 0 ? `<i class="bar" style="width:${Math.max(0, Math.min(100, Math.round(100 * val(p) / top)))}%"></i>` : '';
   $('#ld-tabs').innerHTML = Object.entries(LEAD).map(([k, [l]]) => `<a href="#leaders/${k}" aria-current="${k === stat}">${t(l)}</a>`).join('');
   $('#ld').innerHTML = `<thead><tr><th>#</th><th class="l">${t('Player')}</th><th class="l">${t('Team')}</th><th>${t('GP@stat')}</th>${extra ? `<th>${t(stat === 'ts' ? 'PTS@stat' : 'M-A@stat')}</th>` : ''}<th>${t(LEAD[stat][0])}</th></tr></thead><tbody>${rows.length ? rows.map(({p, v, rank}) =>
-    `<tr data-pid="${esc(p.pid)}"><td>${rank}</td><td class="l"><a href="#${esc(p.team)}/${esc(p.pid)}">${esc(p.name)}</a></td><td class="l">${logo(p.team)}${esc(p.team)}</td><td>${p.gp}</td>${extra ? `<td>${extra(p)}</td>` : ''}<td class="k">${v}</td></tr>`
+    `<tr data-pid="${esc(p.pid)}"><td>${rank}</td><td class="l"><a href="#${esc(p.team)}/${esc(p.pid)}">${esc(p.name)}</a></td><td class="l">${logo(p.team)}${esc(p.team)}</td><td>${p.gp}</td>${extra ? `<td>${extra(p)}</td>` : ''}<td class="k">${bar(p)}<span>${v}</span></td></tr>`
   ).join('') : `<tr><td class="empty l" colspan="6">${t('No player qualifies yet.')}</td></tr>`}</tbody>`;
 }
 
@@ -612,9 +640,12 @@ for (const b of $$('[data-lang]')) b.addEventListener('click', () => {
   route();
 });
 const setTheme = dark => { document.documentElement.dataset.theme = dark ? 'dark' : 'light'; $('#theme').setAttribute('aria-pressed', String(dark)); };
+window.addEventListener('scroll', () => $('.top').classList.toggle('down', scrollY > 8), {passive: true});
 setTheme(document.documentElement.dataset.theme === 'dark');
 $('#theme').addEventListener('click', () => {
   const dark = document.documentElement.dataset.theme !== 'dark';
+  document.documentElement.classList.add('swap');
+  setTimeout(() => document.documentElement.classList.remove('swap'), 400);
   setTheme(dark);
   try { localStorage.setItem('pl-theme', dark ? 'dark' : 'light'); } catch (e) {}
 });
