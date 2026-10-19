@@ -311,11 +311,12 @@ const sum = log => { const s = {gp: 0, sec: 0}; for (const k of STATS) s[k] = 0;
 const loc = () => LANG === 'tr' ? 'tr-TR' : 'en-US';
 const fmtDate = (d, long) => new Intl.DateTimeFormat(loc(), long ? {weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC'} : {month: 'short', day: 'numeric', timeZone: 'UTC'}).format(new Date(`${d}T12:00:00Z`));
 const fmtTime = iso => new Intl.DateTimeFormat(loc(), {hour: '2-digit', minute: '2-digit'}).format(new Date(iso));
-// a club's logo by its NBA team id (cls: chip in tables and cards, crest on the boards, mark beside a name on colour)
-const logo = (code, cls = 'chip') => team(code) ? `<i class="${cls}" style="${colours(code)}"><b>${esc(code)}</b><img src="https://cdn.nba.com/logos/nba/${team(code).id}/primary/L/logo.svg" alt="" loading="lazy" onload="this.parentNode.classList.add('on')" onerror="this.remove()"></i>` : '';
+// a club's logo by its NBA team id (cls: chip in tables and cards, crest on the boards, mark beside a name on colour);
+// no referrer: NBA's CDN serves the file to a direct request but not to one that says it came from another site
+const logo = (code, cls = 'chip') => team(code) ? `<i class="${cls}" style="${colours(code)}"><b>${esc(code)}</b><img src="https://cdn.nba.com/logos/nba/${team(code).id}/primary/L/logo.svg" alt="" loading="lazy" referrerpolicy="no-referrer" onload="this.parentNode.classList.add('on')" onerror="this.remove()"></i>` : '';
 const initials = n => n.split(/\s+/).filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase();
 // a player's face: the NBA headshot (by his NBA person id) over his initials; the initials hide once the picture is in, and a picture that fails to load removes itself
-const face = (pid, name, big) => `<span class="face"><span>${esc(initials(name))}</span><img src="https://cdn.nba.com/headshots/nba/latest/${big ? '1040x760' : '260x190'}/${encodeURIComponent(pid)}.png" alt="" loading="lazy" onload="this.parentNode.classList.add('on')" onerror="this.remove()"></span>`;
+const face = (pid, name, big) => `<span class="face"><span>${esc(initials(name))}</span><img src="https://cdn.nba.com/headshots/nba/latest/${big ? '1040x760' : '260x190'}/${encodeURIComponent(pid)}.png" alt="" loading="lazy" referrerpolicy="no-referrer" onload="this.parentNode.classList.add('on')" onerror="this.remove()"></span>`;
 const age = born => { if (!born) return null; const b = new Date(born + 'T00:00:00Z'), n = new Date(); let a = n.getUTCFullYear() - b.getUTCFullYear(); if (n.getUTCMonth() < b.getUTCMonth() || (n.getUTCMonth() === b.getUTCMonth() && n.getUTCDate() < b.getUTCDate())) a--; return a; };
 
 // ---- data: every file once per page load, cache-busted by the build time
