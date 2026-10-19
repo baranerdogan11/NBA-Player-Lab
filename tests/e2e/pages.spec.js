@@ -68,6 +68,7 @@ test.describe('player pictures', () => {
     await page.goto('./');
     await settled(page);
     const ids = await page.evaluate(() => Object.fromEntries(IDX.teams.map(T => [T.code, T.id])));
+    for (const id of Object.values(ids)) expect(String(id), 'index.json carries each club\'s NBA team id').toMatch(/^\d{10}$/);
     const url = code => `https://cdn.nba.com/logos/nba/${ids[code]}/primary/L/logo.svg`;
     await go(page, '#standings', ROUTES[2][2]);
     const rows = await page.evaluate(() => [...document.querySelectorAll('#st-body tr[data-team]')].map(tr => [tr.dataset.team, tr.querySelector('.chip img')?.getAttribute('src')]));

@@ -51,7 +51,7 @@ def write_site(out, season, label, built, teams, players, games, lines):
         gp[g["away"]] += 1
     _dump(os.path.join(out, "index.json"), {
         "season": season, "label": label, "built": built,
-        "teams": [{**{k: t[k] for k in ("code", "city", "name", "conf", "div", "colors")}, "gp": gp[t["code"]]} for t in teams]})
+        "teams": [{**{k: t[k] for k in ("code", "id", "city", "name", "conf", "div", "colors")}, "gp": gp[t["code"]]} for t in teams]})
     _dump(os.path.join(out, "games.json"), {"games": [
         {"gid": g["gid"], "date": g["date"], "time": g["time"], "home": g["home"], "away": g["away"],
          "hs": g["hs"] if g["final"] else None, "as": g["as"] if g["final"] else None} for g in sorted(games, key=lambda g: (g["time"], g["gid"]))]})
