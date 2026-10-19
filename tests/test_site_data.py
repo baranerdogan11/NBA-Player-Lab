@@ -29,6 +29,7 @@ def load(name):
 idx, sched, lead = load("index.json"), load("games.json")["games"], load("leaders.json")["players"]
 finals = [g for g in sched if g["hs"] is not None]
 checks["index lists 30 clubs with two colours"] = len(idx["teams"]) == 30 and all(len(t["colors"]) == 2 for t in idx["teams"])
+checks["index carries each club's NBA team id for its logo"] = all(isinstance(t["id"], int) and t["id"] > 1610612736 for t in idx["teams"])
 checks["club games played match the finals"] = all(t["gp"] == sum(t["code"] in (g["home"], g["away"]) for g in finals) for t in idx["teams"])
 boxes = {g["gid"]: load(os.path.join("games", f"{g['gid']}.json")) for g in finals}
 checks["every box score adds up to its final"] = all(
