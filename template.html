@@ -187,6 +187,35 @@ a.card:active{transform:scale(.98)}
 .board .mid small{display:inline-block;margin-top:8px;padding:5px 10px;border-radius:999px;background:rgba(0,0,0,.35);font:650 11px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:#ffb27f}
 @media (max-width:760px){.board{padding:18px 12px;gap:8px;border-radius:18px;background-size:auto,auto,auto}.board .side small,.board .full{display:none}.board .abbr{display:inline}.board .side b{font-size:22px}.board .side .crest{width:42px;height:42px;font-size:11px}.board .side .crest img{inset:6px;width:30px;height:30px}.board .score{font-size:36px;gap:20px}}
 
+/* the opening page: centre court at tip-off, the house orange running into walnut, the centre circle painted over the grain;
+   then the latest night's cards, three leader boards and both conferences in standings order */
+.intro{--cx:82%;background:radial-gradient(circle at var(--cx) 50%,rgba(255,255,255,.3) 0 30px,transparent 30.5px),radial-gradient(circle at var(--cx) 50%,transparent 0 104px,rgba(255,255,255,.35) 104px 106.5px,transparent 107px),
+  linear-gradient(90deg,transparent calc(var(--cx) - 1.25px),rgba(255,255,255,.35) 0 calc(var(--cx) + 1.25px),transparent 0),linear-gradient(115deg,var(--orange) 0%,#b8470e 32%,#3a1d0c 74%,#15100c 100%);border-bottom-color:var(--orange)}
+@media (max-width:760px){.intro{--cx:100%}}
+.intro .badge{box-shadow:inset 0 0 0 3px rgba(255,255,255,.85),0 6px 18px rgba(0,0,0,.25)}
+.intro .badge i{width:62%;height:62%;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff9a52,var(--orange) 55%,#b8470e);box-shadow:inset 0 0 0 2px rgba(0,0,0,.2)}
+.sec-h.on-floor{padding:22px 4px 0}
+.sec-h.on-floor::before{box-shadow:0 0 0 2.5px var(--solid),0 0 0 4px rgba(232,97,26,.35)}
+.sec-h .more{margin-left:auto;font:650 14px/1 var(--sans);letter-spacing:0;color:var(--orange);text-decoration:none}
+.sec-h .more:hover{text-decoration:underline;text-underline-offset:2px}
+.duo,.trio{display:grid;gap:12px 16px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.trio{grid-template-columns:repeat(3,minmax(0,1fr))}
+.duo>.panel,.trio>.panel{margin-top:14px}
+@media (max-width:900px){.trio{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:760px){.duo{grid-template-columns:minmax(0,1fr)}}
+.list a{display:flex;align-items:center;gap:10px;min-height:46px;padding:7px 16px;border-top:1px solid var(--line);text-decoration:none;transition:background .15s}
+.list a:hover{background:var(--panel2)}
+.list a:active{background:var(--panel2)}
+.list .rk{flex:none;width:18px;color:var(--muted);font-weight:650;font-size:13px}
+.list .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.list .nm small{display:block;margin-top:2px;font:600 11.5px/1.2 var(--sans);color:var(--muted);letter-spacing:.04em}
+.list .chip{margin-right:0;width:22px;height:22px}
+.list .face{width:32px;height:32px;font-size:12px}
+.list .v{font:750 17px/1 var(--sans);letter-spacing:-.02em}
+.list a:first-child .v{color:var(--orange)}
+.club{box-shadow:inset 3px 0 0 var(--c1)}
+@media (max-width:760px){#hm-games{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:82%;overflow-x:auto;scroll-snap-type:x mandatory;margin:14px -12px 0;padding:0 12px 6px;scroll-padding:0 12px;scrollbar-width:none}#hm-games::-webkit-scrollbar{display:none}#hm-games>.card{scroll-snap-align:start}}
+
 /* compare: the two players meet on a court in their clubs' colours */
 .vs{display:grid;grid-template-columns:1fr 1fr;gap:2px;color:#fff;margin-top:14px;border-radius:var(--r);overflow:hidden;box-shadow:var(--sh)}
 .vs>div{position:relative;isolation:isolate;display:flex;align-items:center;gap:14px;padding:18px;min-width:0;border-bottom:5px solid var(--c2)}
@@ -215,9 +244,9 @@ a.card:active{transform:scale(.98)}
 @media (prefers-contrast:more){:root{--line:rgba(92,58,26,.4)}html[data-theme="dark"]{--line:rgba(255,232,206,.35)}.top,.tabbar,.panel,.card,.tabs,.dates,.tiles,select{background:var(--solid);box-shadow:0 0 0 1px var(--ink)}}
 </style>
 <header class="top">
-  <a class="id" href="#" title="Player Lab"><i></i>NBA Player Lab <span id="tag-season"></span></a>
+  <a class="id" href="#" title="NBA Player Lab"><i></i>NBA Player Lab <span id="tag-season"></span></a>
   <nav class="rail" id="rail" aria-label="Pages">
-    <a id="rl-player" href="#" data-pg="player" data-t="Player">Player</a>
+    <a id="rl-player" href="#player" data-pg="player" data-t="Player">Player</a>
     <a id="rl-compare" href="#compare" data-pg="compare" data-t="Compare">Compare</a>
     <a id="rl-standings" href="#standings" data-pg="standings" data-t="Standings">Standings</a>
     <a id="rl-games" href="#games" data-pg="games" data-t="Games@page">Games</a>
@@ -230,7 +259,7 @@ a.card:active{transform:scale(.98)}
   </div>
 </header>
 <nav class="tabbar" id="tabbar" aria-label="Pages">
-  <a id="tb-player" href="#" data-pg="player"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 20c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span data-t="Player">Player</span></a>
+  <a id="tb-player" href="#player" data-pg="player"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 20c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span data-t="Player">Player</span></a>
   <a id="tb-compare" href="#compare" data-pg="compare"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h13M14 4l4 4-4 4M20 16H7M10 12l-4 4 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-t="Compare">Compare</span></a>
   <a id="tb-standings" href="#standings" data-pg="standings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span data-t="Standings@tab">Standings</span></a>
   <a id="tb-games" href="#games" data-pg="games"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 5v14M7 10v4M17 10v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span data-t="Games@page">Games</span></a>
@@ -239,6 +268,15 @@ a.card:active{transform:scale(.98)}
 <div class="wipe" id="wipe" aria-hidden="true"></div>
 <main class="wrap">
   <div class="fail" id="fail" hidden><b data-t="Data unavailable">Data unavailable</b><span id="fail-sub"></span><button type="button" id="retry" data-t="Retry">Retry</button></div>
+  <section class="pg" id="pg-home" hidden>
+    <div class="hero intro" id="hm-intro"></div>
+    <h2 class="sec-h on-floor" id="hm-games-h"></h2>
+    <div class="cards" id="hm-games"></div>
+    <h2 class="sec-h on-floor"><span data-t="Leaders">Leaders</span><a class="more" href="#leaders" data-t="See all">See all</a></h2>
+    <div class="trio" id="hm-leaders"></div>
+    <h2 class="sec-h on-floor"><span data-t="Standings">Standings</span><a class="more" href="#standings" data-t="See all">See all</a></h2>
+    <div class="duo" id="hm-teams"></div>
+  </section>
   <section class="pg" id="pg-player" hidden>
     <div class="hero" id="hero"></div>
     <div class="pick"><select id="team" aria-label="Team" data-ta="Team"></select><select id="player" aria-label="Player" data-ta="Player"></select></div>
@@ -332,17 +370,18 @@ let LAST = '';
 try { LAST = localStorage.getItem('pl-last') || ''; } catch (e) {}
 const remember = h => { LAST = h; try { localStorage.setItem('pl-last', h); } catch (e) {} $('#tb-player').href = $('#rl-player').href = `#${h}`; };
 
-// ---- routing: #CODE[/pid], #compare[/a/b], #standings[/east|west|league], #games[/date], #game/gid, #leaders[/stat]
-const PAGES = ['player', 'compare', 'standings', 'games', 'game', 'leaders'];
+// ---- routing: the opening page on no hash (or #home), #player (the remembered player), #CODE[/pid], #compare[/a/b], #standings[/east|west|league], #games[/date], #game/gid, #leaders[/stat]
+const PAGES = ['home', 'player', 'compare', 'standings', 'games', 'game', 'leaders'];
 let seq = 0;
 async function route() {
   const [a = '', b, c] = decodeURIComponent(location.hash.slice(1)).split('/');
   const my = ++seq;
-  const page = a === 'game' ? 'game' : PAGES.includes(a) && a !== 'player' ? a : 'player';
+  const page = a === '' ? 'home' : a === 'game' ? 'game' : PAGES.includes(a) && a !== 'player' ? a : 'player';
   $('#wipe').classList.add('on');
   $('#fail').hidden = true;
   try {
-    if (page === 'compare') await renderCompare(b, c, my);
+    if (page === 'home') await renderHome(my);
+    else if (page === 'compare') await renderCompare(b, c, my);
     else if (page === 'standings') await renderStandings(b, my);
     else if (page === 'games') await renderGames(b, my);
     else if (page === 'game') await renderGame(b, my);
@@ -433,11 +472,8 @@ async function renderCompare(a, b, my) {
 $('#cmp-a').addEventListener('change', () => { location.hash = `compare/${$('#cmp-a').value}/${$('#cmp-b').value}`; });
 $('#cmp-b').addEventListener('change', () => { location.hash = `compare/${$('#cmp-a').value}/${$('#cmp-b').value}`; });
 
-// ---- Standings, from the finals in the schedule: win percentage, then wins, then point difference
-async function renderStandings(view, my) {
-  const G = (await get('games.json')).games;
-  if (stale(my)) return;
-  view = ['east', 'west', 'league'].includes(view) ? view : 'conf';
+// ---- every club's record from the finals in the schedule, in standings order: win percentage, then wins, then point difference
+const records = G => {
   const R = Object.fromEntries(IDX.teams.map(T => [T.code, {code: T.code, conf: T.conf, w: 0, l: 0, pf: 0, pa: 0, hw: 0, hl: 0, aw: 0, al: 0, seq: []}]));
   for (const g of G) {
     if (g.hs == null) continue;
@@ -450,6 +486,14 @@ async function renderStandings(view, my) {
     }
   }
   const order = (x, y) => (y.w * (x.w + x.l) - x.w * (y.w + y.l)) || (y.w - x.w) || ((y.pf - y.pa) - (x.pf - x.pa)) || x.code.localeCompare(y.code);
+  return Object.values(R).sort(order);
+};
+
+// ---- Standings
+async function renderStandings(view, my) {
+  const G = (await get('games.json')).games;
+  if (stale(my)) return;
+  view = ['east', 'west', 'league'].includes(view) ? view : 'conf';
   const winPct = (w, gp) => { const v = rdiv(w * 1000, gp, 0); return v == null ? '–' : N(v === '1000' ? '1.000' : `.${v.padStart(3, '0')}`); };
   const streak = s => { if (!s.length) return '–'; const last = s[s.length - 1]; let n = 0; for (let i = s.length - 1; i >= 0 && s[i] === last; i--) n++; return `${last ? t('W') : t('L')}${n}`; };
   const l10 = s => { const x = s.slice(-10); return `${x.filter(Boolean).length}-${x.filter(v => !v).length}`; };
@@ -461,7 +505,7 @@ async function renderStandings(view, my) {
       return `<tr data-team="${r.code}"><td>${i + 1}</td><td class="l"><a href="#${r.code}">${logo(r.code)}${EN(tname(r.code))}</a></td><td class="k">${r.w}</td><td>${r.l}</td><td>${winPct(r.w, gp)}</td><td>${gb(r)}</td><td>${r.hw}-${r.hl}</td><td>${r.aw}-${r.al}</td><td>${l10(r.seq)}</td><td>${streak(r.seq)}</td><td>${avg(r.pf, gp)}</td><td>${avg(r.pa, gp)}</td><td class="${d[0] === '+' ? 'w' : d[0] === '−' ? 'lo' : ''}">${N(d)}</td></tr>`;
     }).join('')}</tbody></table></div></section>`;
   };
-  const all = Object.values(R).sort(order);
+  const all = records(G);
   const views = [['conf', 'Conferences'], ['east', 'East'], ['west', 'West'], ['league', 'League']];
   $('#st-tabs').innerHTML = views.map(([k, l]) => `<a href="#standings/${k}" aria-current="${k === view}">${t(l)}</a>`).join('');
   const east = all.filter(r => r.conf === 'E'), west = all.filter(r => r.conf === 'W');
@@ -479,12 +523,14 @@ async function renderGames(date, my) {
   const cur = $('#gm-dates [aria-current="true"]');
   if (cur) $('#gm-dates').scrollLeft = cur.offsetLeft - 40;
   const today = G.filter(g => g.date === date);
-  const row = (code, score, win) => `<div class="row${win ? ' win' : ''}">${logo(code)}<span class="nm">${EN(tname(code))}</span>${score != null ? `<span class="sc">${score}</span>` : ''}</div>`;
-  $('#gm-list').innerHTML = today.length ? today.map(g => {
-    const fin = g.hs != null, inner = `${row(g.away, g.as, fin && g.as > g.hs)}${row(g.home, g.hs, fin && g.hs > g.as)}<div class="ft">${fin ? t('Final') : fmtTime(g.time)}</div>`;
-    return fin ? `<a class="card" href="#game/${esc(g.gid)}" data-gid="${esc(g.gid)}">${inner}</a>` : `<div class="card">${inner}</div>`;
-  }).join('') : `<p class="empty">${t('No games on this day.')}</p>`;
+  $('#gm-list').innerHTML = today.length ? today.map(gameCard).join('') : `<p class="empty">${t('No games on this day.')}</p>`;
 }
+// one game: away over home, a final opens its game page, a game to come shows its tip-off in the reader's time
+const gameCard = g => {
+  const row = (code, score, win) => `<div class="row${win ? ' win' : ''}">${logo(code)}<span class="nm">${EN(tname(code))}</span>${score != null ? `<span class="sc">${score}</span>` : ''}</div>`;
+  const fin = g.hs != null, inner = `${row(g.away, g.as, fin && g.as > g.hs)}${row(g.home, g.hs, fin && g.hs > g.as)}<div class="ft">${fin ? t('Final') : fmtTime(g.time)}</div>`;
+  return fin ? `<a class="card" href="#game/${esc(g.gid)}" data-gid="${esc(g.gid)}">${inner}</a>` : `<div class="card">${inner}</div>`;
+};
 
 // ---- Game: the scoreboard in both clubs' colours, the periods and both box scores
 async function renderGame(gid, my) {
@@ -518,20 +564,52 @@ const LEAD = {
   ft: ['FT%', s => s.ftm / s.fta, s => pct(s.ftm, s.fta), (s, tg) => 82 * s.ftm >= 125 * tg, s => `${s.ftm}-${s.fta}`],
   ts: ['TS%', s => s.pts / (s.fga + 0.44 * s.fta), s => ts(s.pts, s.fga, s.fta), (s, tg) => 82 * s.fgm >= 300 * tg, s => String(s.pts)],
 };
+// the top 25 who qualify for a board, each with the shown value and a rank that ties on it
+const board = (L, stat) => {
+  const [, val, fmt, qual] = LEAD[stat];
+  const ok = qual || ((s, tg) => 10 * s.gp >= 7 * tg);
+  let rank = 0, prev = null;
+  return L.filter(p => p.gp > 0 && ok(p, team(p.team) ? team(p.team).gp : 0)).sort((x, y) => val(y) - val(x) || x.name.localeCompare(y.name)).slice(0, 25).map((p, i) => {
+    const v = fmt(p);
+    if (v !== prev) { rank = i + 1; prev = v; }
+    return {p, v, rank};
+  });
+};
 async function renderLeaders(stat, my) {
   const L = (await get('leaders.json')).players;
   if (stale(my)) return;
   if (!LEAD[stat]) stat = 'pts';
-  const [, val, fmt, qual, extra] = LEAD[stat];
+  const extra = LEAD[stat][4], rows = board(L, stat);
   $('#ld-tabs').innerHTML = Object.entries(LEAD).map(([k, [l]]) => `<a href="#leaders/${k}" aria-current="${k === stat}">${t(l)}</a>`).join('');
-  const ok = qual || ((s, tg) => 10 * s.gp >= 7 * tg);
-  const rows = L.filter(p => p.gp > 0 && ok(p, team(p.team) ? team(p.team).gp : 0)).sort((x, y) => val(y) - val(x) || x.name.localeCompare(y.name)).slice(0, 25);
-  let rank = 0, prev = null;
-  $('#ld').innerHTML = `<thead><tr><th>#</th><th class="l">${t('Player')}</th><th class="l">${t('Team')}</th><th>${t('GP@stat')}</th>${extra ? `<th>${t(stat === 'ts' ? 'PTS@stat' : 'M-A@stat')}</th>` : ''}<th>${t(LEAD[stat][0])}</th></tr></thead><tbody>${rows.length ? rows.map((p, i) => {
-    const v = fmt(p);
-    if (v !== prev) { rank = i + 1; prev = v; }
-    return `<tr data-pid="${esc(p.pid)}"><td>${rank}</td><td class="l"><a href="#${esc(p.team)}/${esc(p.pid)}">${esc(p.name)}</a></td><td class="l">${logo(p.team)}${esc(p.team)}</td><td>${p.gp}</td>${extra ? `<td>${extra(p)}</td>` : ''}<td class="k">${v}</td></tr>`;
-  }).join('') : `<tr><td class="empty l" colspan="6">${t('No player qualifies yet.')}</td></tr>`}</tbody>`;
+  $('#ld').innerHTML = `<thead><tr><th>#</th><th class="l">${t('Player')}</th><th class="l">${t('Team')}</th><th>${t('GP@stat')}</th>${extra ? `<th>${t(stat === 'ts' ? 'PTS@stat' : 'M-A@stat')}</th>` : ''}<th>${t(LEAD[stat][0])}</th></tr></thead><tbody>${rows.length ? rows.map(({p, v, rank}) =>
+    `<tr data-pid="${esc(p.pid)}"><td>${rank}</td><td class="l"><a href="#${esc(p.team)}/${esc(p.pid)}">${esc(p.name)}</a></td><td class="l">${logo(p.team)}${esc(p.team)}</td><td>${p.gp}</td>${extra ? `<td>${extra(p)}</td>` : ''}<td class="k">${v}</td></tr>`
+  ).join('') : `<tr><td class="empty l" colspan="6">${t('No player qualifies yet.')}</td></tr>`}</tbody>`;
+}
+
+// ---- Home: the season so far, the latest night with a final (or the first night to come), the top five on three boards
+// and both conferences in standings order; every value is drawn by the same code as its own page
+async function renderHome(my) {
+  const [G, L] = await Promise.all([get('games.json').then(d => d.games), get('leaders.json').then(d => d.players)]);
+  if (stale(my)) return;
+  const played = G.filter(g => g.hs != null), last = played.length ? played[played.length - 1].date : null;
+  const day = last || (G.find(g => g.hs == null) || {}).date;
+  $('#hm-intro').innerHTML = `<div class="badge"><i></i></div><div class="who"><div class="tag">NBA Player Lab · ${esc(IDX.label)}</div><h1>${t('Every player. Every game.')}</h1><div class="facts"><span>${t('Games played')} <b>${played.length}</b></span><span>${t('Games to play')} <b>${G.length - played.length}</b></span>${day ? `<span>${t(last ? 'Latest' : 'Tip-off')} <b>${fmtDate(day, true)}</b></span>` : ''}</div></div>`;
+  $('#hm-games-h').innerHTML = `<span>${t(last ? 'Latest results' : 'Up next')}</span>${day ? `<a class="more" href="#games/${day}">${t('See all')}</a>` : ''}`;
+  const today = G.filter(g => g.date === day);
+  $('#hm-games').innerHTML = today.length ? today.map(gameCard).join('') : `<p class="empty">${t('No games on this day.')}</p>`;
+  $('#hm-leaders').innerHTML = ['pts', 'reb', 'ast'].map(stat => {
+    const rows = board(L, stat).slice(0, 5);
+    return `<section class="panel" data-stat="${stat}"><h2>${t(LEAD[stat][0])}</h2><div class="list">${rows.length ? rows.map(({p, v, rank}) =>
+      `<a href="#${esc(p.team)}/${esc(p.pid)}" data-pid="${esc(p.pid)}"><span class="rk">${rank}</span>${face(p.pid, p.name)}<span class="nm">${EN(p.name)}<small>${esc(p.team)}</small></span><b class="v">${v}</b></a>`
+    ).join('') : `<p class="empty">${t('No player qualifies yet.')}</p>`}</div></section>`;
+  }).join('');
+  const all = records(G);
+  $('#hm-teams').innerHTML = [['E', 'Eastern Conference', 'east'], ['W', 'Western Conference', 'west']].map(([conf, title, view]) =>
+    `<section class="panel"><h2>${t(title)}</h2><div class="list">${all.filter(r => r.conf === conf).map((r, i) =>
+      `<a class="club" href="#${r.code}" data-team="${r.code}" style="${colours(r.code)}"><span class="rk">${i + 1}</span>${logo(r.code)}<span class="nm">${EN(tname(r.code))}</span><b class="v">${r.w}-${r.l}</b></a>`
+    ).join('')}</div></section>`
+  ).join('');
+  document.title = 'NBA Player Lab';
 }
 
 // ---- language and theme

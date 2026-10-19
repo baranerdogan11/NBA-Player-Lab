@@ -10,6 +10,7 @@ const ROUTES = [
   ['games', '#games', () => document.body.dataset.page === 'games' && !!document.querySelector('#gm-list .card')],
   ['game', '#game/0022600001', () => document.body.dataset.page === 'game' && document.querySelectorAll('#gm-box table').length === 2],
   ['leaders', '#leaders', () => document.body.dataset.page === 'leaders' && document.querySelectorAll('#ld tbody tr').length > 0],
+  ['home', '#home', () => document.body.dataset.page === 'home' && document.querySelectorAll('#hm-teams .club').length === 30],
 ];
 
 for (const [device, size] of [['phone', PHONE], ['desktop', DESKTOP]]) {
@@ -80,4 +81,53 @@ test.describe('player pictures', () => {
     expect(await page.locator('#hero .tag .mark img').getAttribute('src')).toBe(url('BOS'));
     expect(problems, 'the page reported errors').toEqual([]);
   });
+});
+
+test.describe('opening page', () => {
+  test.use(DESKTOP);
+  test('no hash opens it; its cards, leaders and records match the Games, Leaders and Standings pages', async ({page}) => {
+    const problems = await prepare(page);
+    await page.goto('./');
+    await settled(page);
+    expect(await page.evaluate(() => document.body.dataset.page)).toBe('home');
+    expect(await page.getAttribute('#rl-player', 'href')).toBe('#player');
+    const home = await page.evaluate(() => ({
+      gids: [...document.querySelectorAll('#hm-games a.card')].map(a => a.dataset.gid),
+      day: document.querySelector('#hm-games-h a.more').getAttribute('href'),
+      pts: [...document.querySelectorAll('#hm-leaders [data-stat="pts"] a')].map(a => [a.dataset.pid, a.querySelector('.v').textContent]),
+      clubs: Object.fromEntries([...document.querySelectorAll('#hm-teams .club')].map(a => [a.dataset.team, a.querySelector('.v').textContent])),
+    }));
+    expect(home.gids.length).toBeGreaterThan(0);
+    expect(home.pts.length).toBe(5);
+    await go(page, home.day, () => !!document.querySelector('#gm-list .card'));
+    expect(await page.evaluate(() => [...document.querySelectorAll('#gm-list a.card')].map(a => a.dataset.gid))).toEqual(home.gids);
+    await go(page, '#leaders/pts', () => document.querySelectorAll('#ld tbody tr').length > 0);
+    expect(await page.evaluate(() => [...document.querySelectorAll('#ld tbody tr')].slice(0, 5).map(tr => [tr.dataset.pid, tr.querySelector('.k').textContent]))).toEqual(home.pts);
+    await go(page, '#standings/league', () => document.querySelectorAll('#st-body tbody tr').length === 30);
+    const st = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('#st-body tr[data-team]')].map(tr => [tr.dataset.team, `${tr.cells[2].textContent}-${tr.cells[3].textContent}`])));
+    expect(home.clubs).toEqual(st);
+    await page.click('.top .id');
+    await page.waitForFunction(() => document.body.dataset.page === 'home');
+    expect(problems, 'the page reported errors').toEqual([]);
+  });
+  for (const lang of ['en', 'tr']) {
+    test(`before the first final it shows the first night to come and empty boards (${lang})`, async ({page}) => {
+      const problems = await prepare(page, {lang});
+      await page.route(/\/games\.json/, async r => {
+        const d = await (await r.fetch()).json();
+        await r.fulfill({json: {games: d.games.map(g => ({gid: g.gid, date: g.date, time: g.time, home: g.home, away: g.away, hs: null, as: null}))}});
+      });
+      await page.route(/\/leaders\.json/, r => r.fulfill({json: {players: []}}));
+      await page.goto('./');
+      await settled(page);
+      const got = await page.evaluate(() => ({
+        cards: document.querySelectorAll('#hm-games .card').length, links: document.querySelectorAll('#hm-games a.card').length,
+        empty: document.querySelectorAll('#hm-leaders .empty').length, records: [...new Set([...document.querySelectorAll('#hm-teams .club .v')].map(b => b.textContent))],
+      }));
+      expect(got).toEqual({cards: 15, links: 0, empty: 3, records: ['0-0']});
+      await noSidewaysScroll(page, `empty opening page (${lang})`);
+      if (lang === 'tr') expect(await page.evaluate(() => [...MISSING])).toEqual([]);
+      expect(problems, 'the page reported errors').toEqual([]);
+    });
+  }
 });
