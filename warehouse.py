@@ -88,7 +88,8 @@ for path in sorted(glob.glob(os.path.join(CACHE, "pbp_*.json"))):
                           "clock": e["clock"], "made": a.get("shotResult") == "Made", "pts": 3 if a["actionType"] == "3pt" else 2,
                           "x": a.get("xLegacy"), "y": a.get("yLegacy"), "distance": a.get("shotDistance"), "area": a.get("area"),
                           "area_detail": a.get("areaDetail"), "sub_type": a.get("subType"), "descriptor": a.get("descriptor") or None,
-                          "assist_player": a.get("assistPersonId"), "block_player": a.get("blockPersonId")})
+                          "qualifiers": e["qualifiers"], "assist_player": a.get("assistPersonId"), "block_player": a.get("blockPersonId"),
+                          "score_home": e["score_home"], "score_away": e["score_away"]})
 
 con = duckdb.connect()
 
@@ -122,7 +123,7 @@ counts = {
                                             ("score_home", I), ("score_away", I), ("description", V)]),
     "shots": to_parquet("shots", shots, [("game", V), ("action", I), ("player", I), ("team", V), ("period", I), ("clock", D), ("made", B), ("pts", I),
                                          ("x", I), ("y", I), ("distance", D), ("area", V), ("area_detail", V), ("sub_type", V), ("descriptor", V),
-                                         ("assist_player", I), ("block_player", I)]),
+                                         ("qualifiers", "VARCHAR[]"), ("assist_player", I), ("block_player", I), ("score_home", I), ("score_away", I)]),
 }
 json.dump({"season": SEASON, "tables": counts}, open(os.path.join(OUT, "manifest.json"), "w"), indent=1)
 print(f"{SEASON} warehouse: " + ", ".join(f"{k} {v}" for k, v in counts.items()))
