@@ -10,6 +10,11 @@ Files under <out>/ (out is teams/<season>/):
   <CODE>.json       the club's players, each with a log of his box-score lines (any club, newest last)
   games/<gid>.json  one final: score by period and both box scores
   leaders.json      every player's season totals, under his current club
+
+from_warehouse() turns the warehouse tables (warehouse/<season>/*.parquet, see warehouse.py) into those rows: regular
+season games only, and box lines of every player who was active (a coach's decision is a line with 0 seconds; inactive
+players have none).
+usage: python site_data.py [2026-27]   (reads warehouse/<season>/, writes teams/<season>/)
 """
 import json
 import os
@@ -96,3 +101,44 @@ def write_site(out, season, label, built, teams, players, games, lines):
     for t in teams:
         _dump(os.path.join(out, f"{t['code']}.json"), {"code": t["code"], "players": roster.get(t["code"], [])})
     _dump(os.path.join(out, "leaders.json"), {"players": leaders})
+
+
+def from_warehouse(wh):
+    """players, games, lines for write_site() from the Parquet tables in the directory wh."""
+    import duckdb
+    con = duckdb.connect()
+    for t in ("games", "box", "players", "periods"):
+        con.execute(f"create view {t} as select * from read_parquet('{os.path.join(wh, t + '.parquet')}')")
+
+    def rows(sql):
+        cur = con.execute(sql)
+        cols = [c[0] for c in cur.description]
+        return [dict(zip(cols, r)) for r in cur.fetchall()]
+
+    played = "from box b join games g using (game) join players p using (player) where g.game_type = 'regular' and g.final and b.status = 'ACTIVE'"
+    qtr = {}
+    for r in rows("select q.game, q.period, sum(q.pts) filter (where q.team = g.home) as h, sum(q.pts) filter (where q.team = g.away) as a "
+                  "from periods q join games g using (game) group by all order by q.game, q.period"):
+        qtr.setdefault(r["game"], []).append([int(r["h"] or 0), int(r["a"] or 0)])
+    games = [{**g, "final": bool(g["final"]), **({"periods": qtr.get(g["gid"], [])} if g["final"] else {})}
+             for g in rows("select game as gid, strftime(date, '%Y-%m-%d') as \"date\", strftime(tipoff_utc, '%Y-%m-%dT%H:%M:%SZ') as \"time\", "
+                           "home, away, final, home_score as hs, away_score as \"as\" from games where game_type = 'regular'")]
+    stat = ", ".join(f"coalesce(b.{'plus_minus' if k == 'pm' else k}, 0) as {k}" for k in STATS)
+    lines = rows(f"select b.game as gid, b.team, b.player::varchar as pid, p.name, b.starter as start, round(b.seconds)::int as sec, {stat} {played}")
+    players = rows("select b.player::varchar as pid, arg_max(b.team, g.tipoff_utc) as team, any_value(p.name) as \"name\", "
+                   "arg_max(b.jersey, g.tipoff_utc) as jersey, arg_max(b.position, g.tipoff_utc) filter (where b.position is not null) as pos, "
+                   f"null as height, null as born {played} group by b.player order by pid")
+    return players, games, lines
+
+
+if __name__ == "__main__":
+    import datetime
+    from season import ROOT, season
+    SEASON = season()
+    built = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    out, wh = os.path.join(ROOT, "teams", SEASON), os.path.join(ROOT, "warehouse", SEASON)
+    if not os.path.exists(os.path.join(wh, "box.parquet")):
+        raise SystemExit(f"{SEASON}: no warehouse tables in {wh}; run warehouse.py first")
+    teams = load_teams()
+    write_site(out, SEASON, SEASON, built, teams, *from_warehouse(wh))
+    print(f"{SEASON}: site JSON written to {out}")
