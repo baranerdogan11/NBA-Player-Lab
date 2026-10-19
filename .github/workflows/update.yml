@@ -1,0 +1,149 @@
+name: Update data
+
+# Unattended publishing: every 5 minutes on game evenings, and once a night, the pipeline fetches what is new, passes
+# every gate and deploys. A failed gate stops the run before anything is committed, so the last good build stays live.
+# The season comes from config.json.
+
+on:
+  schedule:
+    - cron: "*/5 17-23 * * *"   # game evenings (UTC): every 5 minutes, runs only when a game has gone final since the last build
+    - cron: "*/5 0-9 * * *"     # the last West Coast games end by about 08:30 UTC
+    - cron: "0 10 * * *"        # nightly (late stat corrections): GitHub often fires these late, so several slots are
+    - cron: "47 10 * * *"       # scheduled; the first one that fires after 10:00 UTC does the nightly run and the rest
+    - cron: "17 11 * * *"       # find it already done (see due.py)
+    - cron: "17 12 * * *"
+  workflow_dispatch:            # by hand from the Actions tab; runs only if a game has gone final or the nightly is due, unless force is set
+    inputs:
+      force:
+        description: Run even if no game has gone final since the last build
+        type: boolean
+        default: false
+
+permissions:
+  contents: read             # only the update job, which pushes the data commit, gets write access
+
+concurrency:
+  group: update-data
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      run: ${{ steps.due.outputs.run }}
+      final: ${{ steps.due.outputs.final }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Has a game gone final since the last build, or is the nightly due?
+        id: due
+        run: python due.py
+
+  update:
+    needs: check
+    if: needs.check.outputs.run == 'true' || github.event.inputs.force == 'true'
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      pushed: ${{ steps.publish.outputs.pushed }}
+      sha: ${{ steps.publish.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: .python-version
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Python self-tests (every tests/test_*.py)
+        run: python tests/run_all.py
+
+      - name: Restore feed cache
+        uses: actions/cache@v6
+        with:
+          path: cache
+          key: feeds-${{ github.run_id }}
+          restore-keys: feeds-
+
+      # the pipeline stages run as they land in the repository; each one that exists must pass
+      - name: Fetch new games (schedule, box scores, play-by-play)
+        if: hashFiles('fetch_season.py') != ''
+        run: python fetch_season.py
+
+      - name: Raw-feed gate (play-by-play totals match the official box score)
+        if: hashFiles('checks.py') != ''
+        run: python checks.py
+
+      - name: Build warehouse
+        if: hashFiles('warehouse.py') != ''
+        run: python warehouse.py
+
+      - name: Warehouse assertions
+        if: hashFiles('warehouse_tests.py') != ''
+        run: python warehouse_tests.py
+
+      - name: Build site
+        run: python build.py
+
+      - name: Record the build
+        run: python due.py --record=${{ needs.check.outputs.final }}
+
+      # smoke test: the built site, exactly as it will deploy, must draw every page without an error
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Chrome for the smoke test
+        run: |
+          CHROME=$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)
+          if [ -z "$CHROME" ]; then echo "::error::no Chrome on the runner"; exit 1; fi
+          "$CHROME" --version
+          echo "CHROME=$CHROME" >> "$GITHUB_ENV"
+
+      - name: Smoke test (Playwright) on the built site
+        run: npm run test:e2e
+
+      - name: Commit and push
+        id: publish
+        run: |
+          git config user.name "nba-player-lab-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes."
+          else
+            git commit -m "Update $(date -u +%Y-%m-%d\ %H:%M) UTC: ${{ needs.check.outputs.final }} games"
+            git push
+            echo "pushed=true" >> "$GITHUB_OUTPUT"
+            echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Smoke test report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: smoke-${{ github.run_id }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+  deploy:
+    # the commit just pushed passed every gate above; a push made with GITHUB_TOKEN does not start test.yml, so the
+    # data update deploys here
+    needs: update
+    if: needs.update.outputs.pushed == 'true'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/pages.yml
+    with:
+      ref: ${{ needs.update.outputs.sha }}
