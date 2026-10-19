@@ -1,0 +1,9 @@
+# fetched raw feeds: rebuilt by fetch_season.py
+cache/
+__pycache__/
+.DS_Store
+node_modules/
+test-results/
+playwright-report/
+tests/lint/.out/
+.venv/
