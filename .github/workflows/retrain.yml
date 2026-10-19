@@ -2,12 +2,10 @@ name: Retrain xFG
 
 # Retrains the xFG model on the archive seasons in model/training.json (downloaded at the pinned commit and checked
 # against their checksums), runs the model tests and commits the model, its card and the shooter effects back to the
-# branch. Runs when the training code or the season list changes on a branch, or by hand.
+# branch it is run on. Run it by hand on a branch after changing the training code or the season list: a commit
+# pushed by the workflow does not start the PR checks, so push any commit afterwards (or re-run them) before merging.
 
 on:
-  push:
-    branches-ignore: [main]
-    paths: [model/training.json, model/archive.py, model/actions.py, model/features.py, model/xfg.py, .github/workflows/retrain.yml]
   workflow_dispatch:
 
 permissions:
