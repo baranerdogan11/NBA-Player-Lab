@@ -1,5 +1,5 @@
 """Bronze layer: pulls the season's schedule and, for every final game, the official box score and play-by-play from
-the NBA CDN (cdn.nba.com/static/json), into cache/<season>/. Each rerun fetches only games that are new, plus the
+the NBA's game-data bucket, into cache/<season>/. Each rerun fetches only games that are new, plus the
 games of the last 72 hours again so late stat corrections land. Runs in GitHub Actions only.
 
 The CDN's schedule file covers the current season only; for an earlier season the regular-season games are found by
@@ -17,7 +17,9 @@ from season import ROOT, season
 SEASON = season()
 CACHE = os.path.join(ROOT, "cache", SEASON)
 os.makedirs(CACHE, exist_ok=True)
-CDN = "https://cdn.nba.com/static/json"
+# cdn.nba.com refuses scripted clients (GitHub's runners and a home connection alike), so the files are read from the S3
+# bucket it serves from: the same JSON, under /NBA instead of /static/json. Chosen by Baran on 19 Oct 2026.
+CDN = "https://nba-prod-us-east-1-mediaops-stats.s3.amazonaws.com/NBA"
 SCHEDULE = f"{CDN}/staticData/scheduleLeagueV2.json"
 BOX = CDN + "/liveData/boxscore/boxscore_{}.json"
 PBP = CDN + "/liveData/playbyplay/playbyplay_{}.json"
@@ -37,7 +39,7 @@ def get(url):
         if r.ok:
             time.sleep(0.2)
             return r.json()
-        if r.status_code in (403, 404):            # the CDN answers 403 for a file that does not exist
+        if r.status_code in (403, 404):            # the bucket answers 403 for a file that does not exist
             raise Missing(url)
         time.sleep(6 * (attempt + 1) if r.status_code == 429 else 2)
     raise RuntimeError(f"{r.status_code} {url}")
