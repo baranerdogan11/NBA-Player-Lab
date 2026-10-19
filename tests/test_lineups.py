@@ -1,4 +1,4 @@
-"""Lineup reconstruction checks on two real 2025-26 games from the play-by-play archive (one went to double overtime)
+"""Lineup reconstruction checks on two real 2025-26 games from the play-by-play archive (one went to double overtime, both stored in the warehouse events layout)
 and on hand-written substitutions: five per club at every action, stint points add up to the final score, stint
 seconds to the game length, and on + off adds up to the club's totals.
 
@@ -9,6 +9,7 @@ import gzip
 import json
 import os
 import sys
+import tempfile
 import pandas as pd
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -16,17 +17,17 @@ sys.path.insert(0, ROOT)
 import lineups  # noqa: E402
 
 checks, rows = {}, []
-for path in sorted(glob.glob(os.path.join(ROOT, "tests", "fixtures", "pbp_*.json.gz"))):
+for path in sorted(glob.glob(os.path.join(ROOT, "tests", "fixtures", "events_*.json.gz"))):
     acts = json.load(gzip.open(path, "rt"))
-    g = acts[0]["gameId"]
+    g = acts[0]["game"]
     starters = lineups.infer_starters(acts)
     sts, problems = lineups.stints(acts, starters)
-    last = [a for a in lineups.ordered(acts) if a["scoreHome"] != ""][-1]
+    last = lineups.ordered(acts)[-1]
     periods = max(int(a["period"]) for a in acts)
     checks[f"{g}: five starters each"] = sorted(len(v) for v in starters.values()) == [5, 5]
     checks[f"{g}: no problems"] = problems == []
     checks[f"{g}: five on the floor in every stint"] = all(len(s["players"]) == 5 and len(s["opp_players"]) == 5 for s in sts)
-    checks[f"{g}: points add up to the final"] = sorted(sum(s["pts"] for s in sts if s["club"] == c) for c in starters) == sorted([int(last["scoreHome"]), int(last["scoreAway"])])
+    checks[f"{g}: points add up to the final"] = sorted(sum(s["pts"] for s in sts if s["club"] == c) for c in starters) == sorted([last["score_home"], last["score_away"]])
     checks[f"{g}: seconds add up to the game"] = abs(sum(s["sec"] for s in sts) / 2 - (2880 + 300 * (periods - 4))) < 0.5
     checks[f"{g}: each side's counts mirror the other's"] = all(a["pts"] == b["opp_pts"] and a["fga"] == b["opp_fga"] for a, b in zip(sts[0::2], sts[1::2]))
     sec = lineups.seconds_on(sts)
@@ -41,13 +42,36 @@ for k in ("sec", "pts", "opp_pts"):
 checks["lineup seconds = club seconds x 1"] = bool((lu.groupby("club").sec.sum() - team.sec).abs().max() < 1e-6)
 checks["on/off is net on minus net off"] = bool(((oo.net - oo.off_net) - oo.onoff).abs().max() < 1e-9)
 
+# the whole run on a scratch warehouse built from the two games: events, box (starters and seconds) and games
+w = tempfile.mkdtemp()
+ev = pd.concat([pd.DataFrame(json.load(gzip.open(p, "rt"))) for p in sorted(glob.glob(os.path.join(ROOT, "tests", "fixtures", "events_*.json.gz")))])
+box, games = [], []
+for g, d in ev.groupby("game"):
+    acts = d.to_dict("records")
+    starters = lineups.infer_starters(acts)
+    for (team, player), sec in lineups.seconds_on(lineups.stints(acts, starters)[0]).items():
+        box.append({"game": g, "team": team, "player": player, "starter": player in starters[team], "seconds": sec + 20})   # a scorer's 20 s
+    last = lineups.ordered(acts)[-1]
+    games.append({"game": g, "home_score": last["score_home"], "away_score": last["score_away"], "final": True})
+ev.to_parquet(os.path.join(w, "events.parquet"))
+pd.DataFrame(box).to_parquet(os.path.join(w, "box.parquet"))
+pd.DataFrame(games).to_parquet(os.path.join(w, "games.parquet"))
+checks["the warehouse run passes its own checks"] = lineups.main("test", w) == []
+checks["it writes stints, lineups and onoff"] = all(os.path.exists(os.path.join(w, f"{t}.parquet")) for t in ("stints", "lineups", "onoff"))
+pd.DataFrame(box).assign(seconds=lambda b: b.seconds + 100).to_parquet(os.path.join(w, "box.parquet"))
+checks["seconds off the box score by over a minute fail the run"] = any("box" in p for p in lineups.main("test", w))
+
 # hand-written: a substitution of a player already on the bench is reported, not absorbed
-H, A = "1", "2"
-five = lambda t, base: {f"{t}{i}" for i in range(base, base + 5)}  # noqa: E731
-acts = [{"actionNumber": 1, "orderNumber": 1, "period": 1, "clock": "PT12M00.00S", "actionType": "period", "subType": "start", "personId": "0", "teamId": "", "scoreHome": "0", "scoreAway": "0"},
-        {"actionNumber": 2, "orderNumber": 2, "period": 1, "clock": "PT10M00.00S", "actionType": "substitution", "subType": "out", "personId": "19", "teamId": H, "scoreHome": "0", "scoreAway": "0"},
-        {"actionNumber": 3, "orderNumber": 3, "period": 1, "clock": "PT10M00.00S", "actionType": "substitution", "subType": "in", "personId": "18", "teamId": H, "scoreHome": "0", "scoreAway": "0"}]
-_, problems = lineups.stints(acts, {H: five("1", 0), A: five("2", 0)})
+H, A = "HOM", "AWY"
+
+
+def ev(k, t, sub, team, player, clock):
+    return {"game": "x", "action": k, "order_no": k, "period": 1, "clock": clock, "action_type": t, "sub_type": sub, "team": team, "player": player,
+            "score_home": 0, "score_away": 0}
+
+
+acts = [ev(1, "period", "start", None, None, 720.0), ev(2, "substitution", "out", H, 19, 600.0), ev(3, "substitution", "in", H, 18, 600.0)]
+_, problems = lineups.stints(acts, {H: set(range(10, 15)), A: set(range(20, 25))})
 checks["a bad substitution is reported"] = any("subbed out while on the bench" in p for p in problems)
 
 for k, v in checks.items():

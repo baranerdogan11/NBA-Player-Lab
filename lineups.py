@@ -22,30 +22,22 @@ length, and each player's seconds on the floor agree with the box score within a
 usage: python lineups.py [season]
 """
 import os
-import re
 import sys
 import duckdb
 import pandas as pd
 
-CLOCK = re.compile(r"PT(\d+)M([\d.]+)S")
 PERIOD_SEC = lambda per: 720 if per <= 4 else 300  # noqa: E731
 # who an action puts on the floor: the actor, and the other players it names (technical fouls and ejections can name
 # players on the bench, so they never count)
-WITH = ("assistPersonId", "stealPersonId", "blockPersonId", "foulDrawnPersonId", "jumpBallWonPersonId", "jumpBallLostPersonId")
 
 
-def clock_sec(s):
-    m = CLOCK.match(s or "")
-    return int(m.group(1)) * 60 + float(m.group(2)) if m else None
-
-
-def _pid(v):
-    s = str(v or "").split(".")[0]
-    return s if s not in ("", "0") else None
+def _v(x):
+    """A value from a row, with pandas' missing markers as None."""
+    return None if x is None or x is pd.NA or (isinstance(x, float) and x != x) else x
 
 
 def ordered(actions):
-    return sorted(actions, key=lambda a: int(a["orderNumber"]))
+    return sorted(actions, key=lambda a: int(a["order_no"]))
 
 
 def infer_starters(actions):
@@ -54,14 +46,14 @@ def infer_starters(actions):
     for a in ordered(actions):
         if int(a["period"]) != 1:
             break
-        t, team, p = a["actionType"], str(a.get("teamId") or ""), _pid(a.get("personId"))
+        t, team, p = a["action_type"], _v(a.get("team")), _v(a.get("player"))
         if t == "substitution":
-            if a.get("subType") == "in":
+            if a.get("sub_type") == "in":
                 subbed_in.add(p)
             elif p and p not in subbed_in:
                 seen.setdefault(team, set()).add(p)
             continue
-        if (t == "foul" and a.get("subType") == "technical") or t == "ejection":
+        if (t == "foul" and a.get("sub_type") == "technical") or t == "ejection":
             continue
         if p and team and p not in subbed_in:
             seen.setdefault(team, set()).add(p)
@@ -69,7 +61,7 @@ def infer_starters(actions):
 
 
 def stints(actions, starters):
-    """Stints of one game from its actions and {teamId: set of five personIds}. Returns (stints, problems)."""
+    """Stints of one game from its events (dicts, warehouse names) and {team: set of five players}. Returns (stints, problems)."""
     teams = list(starters)
     on = {t: set(starters[t]) for t in teams}
     out, problems = [], []
@@ -93,8 +85,8 @@ def stints(actions, starters):
         sec, cur = 0.0, zero()
 
     for a in ordered(actions):
-        t, sub, team = a["actionType"], a.get("subType"), str(a.get("teamId") or "")
-        p, a_per, c = _pid(a.get("personId")), int(a["period"]), clock_sec(a.get("clock"))
+        t, sub, team = a["action_type"], a.get("sub_type"), _v(a.get("team"))
+        p, a_per, c = _v(a.get("player")), int(a["period"]), _v(a.get("clock"))
         if a_per != per:                          # whatever the clock said, the old period ran out
             sec += clock
             per, clock = a_per, float(PERIOD_SEC(a_per))
@@ -105,18 +97,16 @@ def stints(actions, starters):
             flush()
             if sub == "in":
                 if p in on[team]:
-                    problems.append(f"{a['actionNumber']}: {p} subbed in while on the floor")
+                    problems.append(f"{a['action']}: {p} subbed in while on the floor")
                 on[team].add(p)
             else:
                 if p not in on[team]:
-                    problems.append(f"{a['actionNumber']}: {p} subbed out while on the bench")
+                    problems.append(f"{a['action']}: {p} subbed out while on the bench")
                 on[team].discard(p)
             continue
         # points from the running score: the only source that always adds up to the final
-        try:
-            s = (int(float(a["scoreHome"])), int(float(a["scoreAway"])))
-        except (KeyError, TypeError, ValueError):
-            s = score
+        sh, sa = _v(a.get("score_home")), _v(a.get("score_away"))
+        s = (int(sh), int(sa)) if sh is not None and sa is not None else score
         if s != score and team in on:
             if home_team is None:
                 home_team = team if s[0] > score[0] else next(x for x in teams if x != team)
@@ -127,7 +117,7 @@ def stints(actions, starters):
         if team not in on:
             continue
         if any(len(v) != 5 for v in on.values()) and t in ("2pt", "3pt", "freethrow", "turnover"):
-            problems.append(f"{a['actionNumber']}: {[len(v) for v in on.values()]} on the floor")
+            problems.append(f"{a['action']}: {[len(v) for v in on.values()]} on the floor")
         if t in ("2pt", "3pt"):
             cur[team]["fga"] += 1
         elif t == "freethrow":
@@ -172,9 +162,9 @@ def season_tables(st):
     """lineups and onoff frames from the season's stints frame (needs a game column)."""
     sums = {"g": ("game", "nunique"), "sec": ("sec", "sum"), "pts": ("pts", "sum"), "opp_pts": ("opp_pts", "sum"),
             **{k: (k, "sum") for k in COUNTS}, **{f"opp_{k}": (f"opp_{k}", "sum") for k in COUNTS}}
-    st = st.assign(five=st.players.map(lambda p: ",".join(sorted(p))))
+    st = st.assign(five=st.players.map(lambda p: ",".join(map(str, sorted(p)))))
     lu = ratings(st.groupby(["club", "five"], as_index=False).agg(**sums))
-    lu["players"] = lu.five.str.split(",")
+    lu["players"] = lu.five.map(lambda f: [int(p) for p in f.split(",")])
     team = st.groupby("club").agg(**sums)
     per = st.explode("players").rename(columns={"players": "player"}).groupby(["club", "player"], as_index=False).agg(**sums)
     on = ratings(per)
@@ -189,18 +179,19 @@ def season_tables(st):
     return lu.drop(columns="five"), oo
 
 
-def main(season):
-    root = os.path.dirname(os.path.abspath(__file__))
-    w = os.path.join(root, "warehouse", season)
+def main(season, w=None):
+    w = w or os.path.join(os.path.dirname(os.path.abspath(__file__)), "warehouse", season)
     con = duckdb.connect()
-    ev = con.execute(f"select * from read_parquet('{w}/events.parquet')").df()
-    box = con.execute(f"select game, teamId, personId, starter, seconds from read_parquet('{w}/box.parquet')").df()
-    box[["teamId", "personId"]] = box[["teamId", "personId"]].astype(str)
-    starters = {g: {t: set(d.personId) for t, d in gd[gd.starter].groupby("teamId")} for g, gd in box.groupby("game")}
-    final = {r.game: sorted([r.home_score, r.away_score]) for r in con.execute(f"select * from read_parquet('{w}/games.parquet')").df().itertuples()}
+    ev = con.execute(f"select game, action, order_no, period, clock, team, player, action_type, sub_type, score_home, score_away "
+                     f"from read_parquet('{w}/events.parquet')").df()
+    ev["player"] = ev.player.astype("Int64")                  # DuckDB hands a nullable INTEGER over as float
+    box = con.execute(f"select game, team, player, starter, seconds from read_parquet('{w}/box.parquet')").df()
+    box["player"] = box.player.astype(int)
+    starters = {g: {t: set(d.player) for t, d in gd[gd.starter].groupby("team")} for g, gd in box.groupby("game")}
+    final = {r.game: sorted([r.home_score, r.away_score]) for r in con.execute(f"select * from read_parquet('{w}/games.parquet') where final").df().itertuples()}
     rows, problems = [], []
     for g, acts in ev.groupby("game"):
-        acts = acts.astype(object).where(acts.notna(), None).to_dict("records")
+        acts = acts.to_dict("records")
         sts, pr = stints(acts, starters.get(g, {}))
         problems += [f"game {g}: {p}" for p in pr]
         n_per = max(int(a["period"]) for a in acts)
@@ -211,8 +202,8 @@ def main(season):
             problems.append(f"game {g}: stint points {pts}, final {final[g]}")
         on = seconds_on(sts)
         for b in box[box.game == g].itertuples():
-            if abs(on.get((b.teamId, b.personId), 0) - (b.seconds or 0)) > 60:
-                problems.append(f"game {g}: {b.personId} on the floor {on.get((b.teamId, b.personId), 0):.0f} s, box {b.seconds} s")
+            if abs(on.get((b.team, b.player), 0) - (b.seconds or 0)) > 60:
+                problems.append(f"game {g}: {b.player} on the floor {on.get((b.team, b.player), 0):.0f} s, box {b.seconds:.0f} s")
         rows += [{"game": g, **s} for s in sts]
     st = pd.DataFrame(rows)
     lu, oo = season_tables(st)
