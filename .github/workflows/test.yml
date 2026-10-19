@@ -1,7 +1,9 @@
 name: Test
 
-# Every code change is tested before it can go live: on a pull request and on a push to main, the Python checks and the
-# browser checks run side by side.
+# Every code change is tested before it can go live: on a pull request the checks run and nothing deploys; on a push
+# to main the checks run and the site deploys to GitHub Pages only when they pass. The data updates committed by
+# update.yml do not start this workflow (a push made with GITHUB_TOKEN never does); that workflow runs its own gates
+# and deploys through pages.yml itself.
 
 on:
   push:
@@ -75,3 +77,14 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 14
+
+  deploy:
+    needs: [test, browser]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/pages.yml
+    with:
+      ref: ${{ github.sha }}
