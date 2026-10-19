@@ -1,0 +1,19 @@
+{
+ "season": "2026-27",
+ "checked_at": "2026-10-19T20:49:01Z",
+ "rows": {
+  "teams": 30,
+  "games": 1274,
+  "players": 0,
+  "box": 0,
+  "team_box": 0,
+  "periods": 0,
+  "events": 0,
+  "shots": 0
+ },
+ "games": 0,
+ "tests": 36,
+ "failures": 0,
+ "warnings": 0,
+ "ok": true
+}
