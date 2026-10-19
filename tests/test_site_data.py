@@ -1,0 +1,53 @@
+"""The site's JSON and its one rounding rule.
+
+rdiv must round half away from zero exactly (no binary float at the halves), and the files written from the fixture
+league must agree with each other: every box score adds up to its final, every player's log is his box lines, and the
+leaders' totals are the sums of the logs.
+usage: python tests/test_site_data.py
+"""
+import json
+import os
+import random
+import sys
+import tempfile
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
+sys.path.insert(0, os.path.join(ROOT, "tests", "fixtures"))
+import site_fixture  # noqa: E402
+from site_data import STATS, rdiv, write_site  # noqa: E402
+
+checks = {}
+cases = [((1985, 100), "19.9"), ((1, 4), "0.3"), ((-1, 4), "-0.3"), ((21, 2), "10.5"), ((119, 6), "19.8"), ((0, 3), "0.0"),
+         ((-1, 40), "0.0"), ((2, 3, 0), "1"), ((5, 8, 2), "0.63"), ((625, 1000, 0), "1"), ((7, 0), None)]
+bad = [(a, rdiv(*a), want) for a, want in cases if rdiv(*a) != want]
+checks["rdiv rounds half away from zero" + (f" (wrong: {bad})" if bad else "")] = not bad
+
+out = tempfile.mkdtemp()
+teams, players, games, lines = site_fixture.make(random.Random(7))
+write_site(out, "2026-27", "2026-27", "2026-10-26T06:00:00Z", teams, players, games, lines)
+
+
+def load(name):
+    return json.load(open(os.path.join(out, name)))
+
+
+idx, sched, lead = load("index.json"), load("games.json")["games"], load("leaders.json")["players"]
+finals = [g for g in sched if g["hs"] is not None]
+checks["index lists 30 clubs with two colours"] = len(idx["teams"]) == 30 and all(len(t["colors"]) == 2 for t in idx["teams"])
+checks["club games played match the finals"] = all(t["gp"] == sum(t["code"] in (g["home"], g["away"]) for g in finals) for t in idx["teams"])
+boxes = {g["gid"]: load(os.path.join("games", f"{g['gid']}.json")) for g in finals}
+checks["every box score adds up to its final"] = all(
+    sum(x["pts"] for x in b["box"][b["home"]]) == b["hs"] and sum(x["pts"] for x in b["box"][b["away"]]) == b["as"]
+    and sum(p[0] for p in b["periods"]) == b["hs"] and sum(p[1] for p in b["periods"]) == b["as"] for b in boxes.values())
+logs = {p["pid"]: p["log"] for t in idx["teams"] for p in load(f"{t['code']}.json")["players"]}
+line = {(gid, x["pid"]): x for gid, b in boxes.items() for side in b["box"].values() for x in side}
+checks["every log row is the player's box line"] = all(
+    all(r[k] == line[(r["gid"], pid)][k] for k in [*STATS, "sec", "start"]) for pid, log in logs.items() for r in log)
+checks["leaders' totals are the sums of the logs"] = all(
+    p["gp"] == sum(r["sec"] > 0 for r in logs[p["pid"]]) and all(p[k] == sum(r[k] for r in logs[p["pid"]] if r["sec"] > 0) for k in STATS)
+    for p in lead)
+
+for name, passed in checks.items():
+    print(("PASS " if passed else "FAIL ") + name)
+sys.exit(0 if all(checks.values()) else 1)

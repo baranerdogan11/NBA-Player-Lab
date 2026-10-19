@@ -1,5 +1,5 @@
-// Browser tests for the built site (tests/e2e). The site is served from the repository root exactly as GitHub Pages
-// serves it. Chrome comes from $CHROME (CI sets it to the runner's Chrome, the same one tests/test_site.py uses), so
+// Browser tests for the page (tests/e2e), against the made-up league in tests/fixtures/site_fixture.py: the fixture and the
+// page are built into _site/ and served from there. Chrome comes from $CHROME (CI sets it to the runner's Chrome), so
 // nothing is downloaded; without $CHROME, Playwright's own Chromium is used (npx playwright install chromium).
 // Run: npm run test:e2e   (screenshots of every page land in test-results/, and in the CI run's artifacts)
 import {defineConfig} from '@playwright/test';
@@ -8,8 +8,8 @@ const PORT = 8137;
 export default defineConfig({
   testDir: '.',
   outputDir: '../../test-results',
-  timeout: 120_000,
-  expect: {timeout: 15_000},
+  timeout: 60_000,
+  expect: {timeout: 10_000},
   fullyParallel: true,
   workers: process.env.CI ? 2 : undefined,
   forbidOnly: !!process.env.CI,
@@ -20,7 +20,7 @@ export default defineConfig({
     serviceWorkers: 'block',
   },
   webServer: {
-    command: `python3 -m http.server ${PORT} --bind 127.0.0.1`,
+    command: `rm -rf _site && python3 tests/fixtures/site_fixture.py _site && python3 build.py --out=_site && python3 -m http.server ${PORT} --bind 127.0.0.1 -d _site`,
     cwd: '../..',
     url: `http://127.0.0.1:${PORT}/index.html`,
     reuseExistingServer: !process.env.CI,
