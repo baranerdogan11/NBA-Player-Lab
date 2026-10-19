@@ -1,0 +1,44 @@
+name: Retrain xFG
+
+# Retrains the xFG model on the archive seasons in model/training.json (downloaded at the pinned commit and checked
+# against their checksums), runs the model tests and commits the model, its card and the shooter effects back to the
+# branch. Runs when the training code or the season list changes on a branch, or by hand.
+
+on:
+  push:
+    branches-ignore: [main]
+    paths: [model/training.json, model/archive.py, model/actions.py, model/features.py, model/xfg.py, .github/workflows/retrain.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: retrain-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  train:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: .python-version
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Shots from the archive
+        run: python model/archive.py
+      - name: Train
+        run: python model/xfg.py | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Model tests
+        run: python tests/test_xfg.py
+      - name: Commit to the branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
+          git add model/
+          git diff --cached --quiet && { echo "nothing to commit"; exit 0; }
+          git commit -m "Retrain xFG on $(python -c 'import json;print(", ".join(json.load(open("model/training.json"))["seasons"]))')"
+          git push origin HEAD:${GITHUB_REF_NAME}
