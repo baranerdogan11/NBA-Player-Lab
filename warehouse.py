@@ -1,6 +1,6 @@
 """Silver layer: normalised tables built from the cached feeds (bronze) and persisted as Parquet.
 
-Tables under warehouse/<season>/: teams, games, players, box (one line per player per game), team_box (one line per
+Tables under warehouse/<season>/: teams, games, players, roster (who is on each club now), box (one line per player per game), team_box (one line per
 team per game: the official totals, team rebounds and team turnovers included), periods (points per team per period),
 events (every play-by-play action) and shots (every field-goal attempt). Player ids are the league's personId, team
 codes its tricodes. See warehouse/SCHEMA.md.
@@ -74,6 +74,15 @@ for path in sorted(glob.glob(os.path.join(CACHE, "box_*.json"))):
         for q in t.get("periods", []):
             periods.append({"game": gid, "team": team, "period": q["period"], "period_type": q.get("periodType"), "pts": q["score"]})
 
+# ---- rosters: the league's player index (current season only), one row per player signed to a club
+roster = []
+if os.path.exists(os.path.join(CACHE, "roster.json")):
+    rs = json.load(open(os.path.join(CACHE, "roster.json")))["resultSets"][0]
+    for r in (dict(zip(rs["headers"], row)) for row in rs["rowSet"]):
+        if r["TEAM_ABBREVIATION"] and r["ROSTER_STATUS"] == 1:
+            roster.append({"player": r["PERSON_ID"], "team": r["TEAM_ABBREVIATION"], "name": f"{r['PLAYER_FIRST_NAME']} {r['PLAYER_LAST_NAME']}".strip(),
+                           "jersey": r["JERSEY_NUMBER"] or None, "position": r["POSITION"] or None, "height": r["HEIGHT"] or None})
+
 # ---- play-by-play: every action, and every field-goal attempt as a shot
 events, shots = [], []
 for path in sorted(glob.glob(os.path.join(CACHE, "pbp_*.json"))):
@@ -117,6 +126,7 @@ counts = {
     "games": to_parquet("games", games, [("game", V), ("game_type", V), ("date", "DATE"), ("tipoff_utc", "TIMESTAMP"), ("home", V), ("away", V),
                                          ("home_score", I), ("away_score", I), ("status", I), ("final", B)]),
     "players": to_parquet("players", list(players.values()), [("player", I), ("name", V), ("first_name", V), ("family_name", V)]),
+    "roster": to_parquet("roster", sorted(roster, key=lambda r: r["player"]), [("player", I), ("team", V), ("name", V), ("jersey", V), ("position", V), ("height", V)]),
     "box": to_parquet("box", box, [("game", V), ("player", I), ("team", V), ("jersey", V), ("position", V), ("starter", B), ("played", B), ("status", V),
                                    ("not_playing_reason", V), ("seconds", D)] + [(k, I) for k in STAT]),
     "team_box": to_parquet("team_box", team_box, [("game", V), ("team", V), ("opponent", V), ("home", B), ("score", I), ("seconds", D)]

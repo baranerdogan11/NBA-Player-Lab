@@ -12,7 +12,7 @@ from season import ROOT, season
 SEASON = season()
 W = os.path.join(ROOT, "warehouse", SEASON)
 con = duckdb.connect()
-TABLES = ["teams", "games", "players", "box", "team_box", "periods", "events", "shots"]
+TABLES = ["teams", "games", "players", "roster", "box", "team_box", "periods", "events", "shots"]
 for t in TABLES:
     con.execute(f"create view {t} as select * from read_parquet('{os.path.join(W, t + '.parquet')}')")
 STATS = ["pts", "fgm", "fga", "fg3m", "fg3a", "ftm", "fta", "oreb", "dreb", "reb", "ast", "stl", "blk", "blka", "tov", "pf"]
@@ -22,6 +22,7 @@ differs = lambda a, b: " or ".join(f"{a}.{s} is distinct from {b}.{s}" for s in 
 # (name, query returning the offending rows)
 TESTS = [
     ("teams: 30 rows, unique codes and ids", "select * from (select count(*) n, count(distinct team) t, count(distinct team_id) i from teams) where n != 30 or t != 30 or i != 30"),
+    ("roster: one club per player, and every club is known", "select player from roster group by player having count(*) > 1 or bool_or(team not in (select team from teams))"),
     ("games: unique ids", "select game from games group by game having count(*) > 1"),
     # preseason games against non-NBA clubs are kept as scheduled, with the visitor's code as the feed gives it
     ("games: named teams are known outside the preseason", "select * from games where game_type != 'preseason' and ((home is not null and home not in (select team from teams)) or (away is not null and away not in (select team from teams)))"),

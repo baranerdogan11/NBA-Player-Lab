@@ -23,6 +23,7 @@ CDN = "https://nba-prod-us-east-1-mediaops-stats.s3.amazonaws.com/NBA"
 SCHEDULE = f"{CDN}/staticData/scheduleLeagueV2.json"
 BOX = CDN + "/liveData/boxscore/boxscore_{}.json"
 PBP = CDN + "/liveData/playbyplay/playbyplay_{}.json"
+ROSTER = f"{CDN}/staticData/playerIndex.json"       # every player on a club's roster now, with jersey, position and height
 H = {"User-Agent": "Mozilla/5.0", "Accept": "application/json", "Referer": "https://www.nba.com/", "Origin": "https://www.nba.com"}
 # the third digit of a game id is its type: 1 preseason, 2 regular season, 3 All-Star, 4 playoffs, 5 play-in, 6 NBA Cup final
 GAME_TYPES = {"2", "4", "5", "6"}
@@ -125,3 +126,15 @@ else:
     json.dump(games, open(os.path.join(CACHE, "schedule.json"), "w"))
     n = len(games)
 print(f"{n} final games cached")
+
+# ---- rosters: the league's player index for the current season, fetched again on every run so signings, waivers and
+# trades land; if the fetch fails the cached copy stays. An earlier season has no roster file (players come from box scores).
+if sched["seasonYear"] == SEASON:
+    try:
+        index = get(ROSTER)
+        if index["parameters"]["Season"] != SEASON:
+            raise ValueError(f"player index is for {index['parameters']['Season']}")
+        json.dump(index, open(os.path.join(CACHE, "roster.json"), "w"))
+        print(f"roster: {len(index['resultSets'][0]['rowSet'])} players")
+    except Exception as e:
+        print(f"   roster fetch failed, keeping the cached copy: {e}")
