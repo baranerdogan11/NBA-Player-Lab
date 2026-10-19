@@ -1,5 +1,5 @@
 """When the update workflow runs: a game has gone final since the last published build, or the nightly is due.
-Reads the NBA CDN schedule and the committed warehouse/<season>/status.json, prints its reasoning and writes run=true|false
+Reads the NBA schedule (from the CDN's S3 origin) and the committed warehouse/<season>/status.json, prints its reasoning and writes run=true|false
 and final=<games> to $GITHUB_OUTPUT. warehouse_tests.py writes that file on every passing build;
 until it exists, --record=<games> stores the count and the time after a build, so the next check compares against what
 was published.
@@ -13,7 +13,8 @@ import urllib.request
 from datetime import datetime, timezone
 from season import ROOT, season
 
-SCHEDULE = "https://cdn.nba.com/static/json/staticData/scheduleLeagueV2.json"
+# the S3 origin behind cdn.nba.com: the CDN refuses scripted clients, the bucket serves the same files
+SCHEDULE = "https://nba-prod-us-east-1-mediaops-stats.s3.amazonaws.com/NBA/staticData/scheduleLeagueV2.json"
 # game ids start with the game type: 002 regular season, 004 playoffs, 005 play-in. Preseason (001), All-Star (003)
 # and the NBA Cup final (006) are not built.
 BUILT_TYPES = ("002", "004", "005")
@@ -56,14 +57,14 @@ def main():
         print(f"recorded {path}: {status}")
         return
     now = datetime.now(timezone.utc)
-    req = urllib.request.Request(SCHEDULE, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://www.nba.com/"})
+    req = urllib.request.Request(SCHEDULE)
     try:
         final = len(final_games(json.load(urllib.request.urlopen(req, timeout=60)), season()))
     except OSError as e:
         # an unreachable schedule fails the run once a day (when the nightly is due), not on every 5-minute check
         if decide(-1, status, now)[0]:
-            raise SystemExit(f"the NBA CDN schedule could not be read: {e}")
-        print(f"::warning::the NBA CDN schedule could not be read ({e}); trying again at the next check")
+            raise SystemExit(f"the NBA schedule could not be read: {e}")
+        print(f"::warning::the NBA schedule could not be read ({e}); trying again at the next check")
         final, now = -1, None
     run, reason = decide(final, status, now) if now else (False, "schedule unreadable: no run")
     print(reason)

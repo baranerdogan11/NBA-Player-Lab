@@ -27,11 +27,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # cdn.nba.com refuses GitHub-hosted runners, so everything that reads it runs on the self-hosted runner (Baran's
-  # computer): the check, and the fetch when a run is due. The gates, the build and the deploy run on GitHub's runners.
-  # While the computer is off, these jobs wait in the queue and the site keeps its last good build.
+  # the check, and the fetch when a run is due; the gates, the build and the deploy run in the update job
   fetch:
-    runs-on: self-hosted
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     outputs:
       run: ${{ steps.due.outputs.run }}
@@ -42,6 +40,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version-file: .python-version
+          cache: pip
 
       - name: Has a game gone final since the last build, or is the nightly due?
         id: due
