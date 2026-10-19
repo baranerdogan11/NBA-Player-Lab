@@ -1,0 +1,7 @@
+# Python lint, run by test.yml on every PR: pyflakes (unused imports and names, undefined names) and syntax errors.
+target-version = "py311"
+line-length = 120
+extend-exclude = [".venv", "node_modules", "cache"]
+
+[lint]
+select = ["F", "E9"]

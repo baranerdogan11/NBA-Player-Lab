@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script>try{var pt=localStorage.getItem("pl-theme");if(pt==="dark"||(!pt&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.dataset.theme="dark"}catch(e){}</script>
+<title>NBA Player Lab</title>
+<meta name="description" content="Shot charts, role profiles, lineups and standings for every NBA player and team, rebuilt within minutes of every final.">
+<meta name="theme-color" content="#0b0d10">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%230b0d10'/%3E%3Ccircle cx='32' cy='32' r='22' fill='%23f26f21'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f4f6f8;--panel:#ffffff;--line:#d9dee6;--ink:#0b0d10;--ink2:#2b3038;--muted:#5d6573;
+  --hero:#0b0d10;--hero-ink:#ffffff;--accent:#f26f21;--home:#1d428a;--away:#c8102e;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--cond:"Arial Narrow",Impact,sans-serif;
+  color-scheme:light;
+}
+html[data-theme="dark"]{--bg:#0e1013;--panel:#16191f;--line:#2a2f38;--ink:#f4f6f8;--ink2:#c6cbd4;--muted:#8b93a1;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink2);font:16px/1.5 var(--sans);padding-bottom:64px}
+button{font:inherit;border-radius:0;cursor:pointer}
+/* hero: dark, wearing both teams' colours along its foot */
+.hero{background:var(--hero);color:var(--hero-ink);padding:20px 16px 0;border-bottom:4px solid;border-image:linear-gradient(90deg,var(--home) 50%,var(--away) 50%) 1}
+.hero .top{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:1200px;margin:0 auto}
+.hero h1{margin:0;font:700 26px/1.1 var(--cond);letter-spacing:.04em;text-transform:uppercase}
+.hero .season{color:#8b93a1;font-size:14px}
+.hero .lang{background:transparent;color:var(--hero-ink);border:1px solid #3a404b;min-height:36px;padding:0 12px}
+/* tab rail: orange marker under the current page */
+.rail{display:flex;gap:4px;max-width:1200px;margin:16px auto 0;overflow-x:auto}
+.rail a{color:#c6cbd4;text-decoration:none;font:700 15px var(--cond);letter-spacing:.06em;text-transform:uppercase;padding:10px 14px;border-bottom:3px solid transparent}
+.rail a[aria-current="page"]{color:#fff;border-bottom-color:var(--accent)}
+main{max-width:1200px;margin:0 auto;padding:16px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:0;padding:16px}
+h2{margin:0 0 12px;font:700 20px var(--cond);letter-spacing:.04em;text-transform:uppercase;color:var(--ink);display:flex;align-items:center;gap:8px}
+h2::before{content:"";width:6px;height:18px;background:var(--accent)}
+/* phone: the rail becomes a five-tab bar at the bottom */
+#tabbar{display:none}
+@media (max-width:720px){
+  .rail{display:none}
+  #tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;background:var(--hero);border-top:3px solid var(--accent);z-index:10}
+  #tabbar a{display:flex;align-items:center;justify-content:center;min-height:56px;color:#c6cbd4;text-decoration:none;font:700 12px var(--sans);overflow:hidden}
+  #tabbar a span{text-align:center;line-height:1.15;overflow:hidden;padding:0 2px}
+  #tabbar a[aria-current="page"]{color:#fff;background:#1c2028}
+}
+</style>
+<header class="hero">
+  <div class="top">
+    <div><h1>NBA Player Lab</h1><div class="season" id="season"></div></div>
+    <button class="lang" id="lang" type="button"></button>
+  </div>
+  <nav class="rail" id="rail"></nav>
+</header>
+<main><section class="panel" id="page"><h2 id="page-title"></h2></section></main>
+<nav id="tabbar"></nav>
+<script>
+const META = /*META*/;
+const T = {tr: /*TR*/{}};
+const TABS = [['player', 'Player'], ['compare', 'Compare'], ['standings', 'Standings'], ['games', 'Games'], ['leaders', 'Leaders']];
+let LANG = 'en';
+try { LANG = localStorage.getItem('pl-lang') === 'tr' ? 'tr' : 'en'; } catch (e) {}
+const $ = s => document.querySelector(s);
+const t = s => (LANG === 'tr' && T.tr[s]) || s;
+
+function route() {
+  const id = (location.hash.slice(1).split('/')[0] || 'player');
+  const tab = TABS.find(x => x[0] === id) || TABS[0];
+  for (const a of document.querySelectorAll('#rail a, #tabbar a')) a.setAttribute('aria-current', a.dataset.tab === tab[0] ? 'page' : 'false');
+  $('#page-title').textContent = t(tab[1]);
+}
+
+function draw() {
+  document.documentElement.lang = LANG;
+  $('#season').textContent = `${t('Season')} ${META.season}`;
+  $('#lang').textContent = LANG === 'tr' ? 'EN' : 'TR';
+  const links = TABS.map(([id, label]) => `<a href="#${id}" data-tab="${id}"><span>${t(label)}</span></a>`).join('');
+  $('#rail').innerHTML = links;
+  $('#tabbar').innerHTML = TABS.map(([id, label]) => `<a href="#${id}" data-tab="${id}" id="tb-${id}"><span>${t(label)}</span></a>`).join('');
+  route();
+}
+
+$('#lang').addEventListener('click', () => {
+  LANG = LANG === 'tr' ? 'en' : 'tr';
+  try { localStorage.setItem('pl-lang', LANG); } catch (e) {}
+  draw();
+});
+addEventListener('hashchange', route);
+draw();
+</script>
