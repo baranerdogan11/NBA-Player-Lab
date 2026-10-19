@@ -1,7 +1,8 @@
 """When the update workflow runs: a game has gone final since the last published build, or the nightly is due.
-Reads the NBA CDN schedule and the committed teams/<season>/status.json, prints its reasoning and writes run=true|false
-and final=<games> to $GITHUB_OUTPUT. After a build passes every gate, --record=<games> stores that count and the time
-in status.json, so the next check compares against what was published.
+Reads the NBA CDN schedule and the committed warehouse/<season>/status.json, prints its reasoning and writes run=true|false
+and final=<games> to $GITHUB_OUTPUT. warehouse_tests.py writes that file on every passing build;
+until it exists, --record=<games> stores the count and the time after a build, so the next check compares against what
+was published.
 usage: python due.py [2026-27]
        python due.py --record=<games> [2026-27]
 """
@@ -45,7 +46,7 @@ def decide(final, status, now):
 
 
 def main():
-    path = os.path.join(ROOT, "teams", season(), "status.json")
+    path = os.path.join(ROOT, "warehouse", season(), "status.json")
     status = json.load(open(path)) if os.path.exists(path) else {}
     record = [a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--record=")]
     if record:

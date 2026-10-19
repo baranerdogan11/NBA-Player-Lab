@@ -74,22 +74,19 @@ jobs:
         if: hashFiles('fetch_season.py') != ''
         run: python fetch_season.py
 
-      - name: Raw-feed gate (play-by-play totals match the official box score)
-        if: hashFiles('checks.py') != ''
-        run: python checks.py
-
       - name: Build warehouse
         if: hashFiles('warehouse.py') != ''
         run: python warehouse.py
 
-      - name: Warehouse assertions
+      - name: Warehouse gates (play-by-play totals match the official box score; writes status.json)
         if: hashFiles('warehouse_tests.py') != ''
         run: python warehouse_tests.py
 
       - name: Build site
         run: python build.py
 
-      - name: Record the build
+      - name: Record the build (until warehouse_tests.py lands and writes status.json itself)
+        if: hashFiles('warehouse_tests.py') == ''
         run: python due.py --record=${{ needs.check.outputs.final }}
 
       # smoke test: the built site, exactly as it will deploy, must draw every page without an error

@@ -17,7 +17,7 @@ def get(url):
 
 def main():
     site, sha, s = os.environ["SITE"].rstrip("/") + "/", os.environ["SHA"], season()
-    path = os.path.join(ROOT, "teams", s, "status.json")
+    path = os.path.join(ROOT, "warehouse", s, "status.json")
     want = json.load(open(path)) if os.path.exists(path) else None
     problem = "not checked"
     for _ in range(20):
@@ -25,7 +25,7 @@ def main():
             served = get(site + "version.txt").strip()
             if served != sha:
                 problem = f"version.txt is {served}, not {sha}"
-            elif want is not None and json.loads(get(f"{site}teams/{s}/status.json")) != want:
+            elif want is not None and json.loads(get(f"{site}warehouse/{s}/status.json")) != want:
                 problem = "the served status.json differs from the committed one"
             elif "<html" not in get(site).lower():
                 problem = "the home page is not HTML"
