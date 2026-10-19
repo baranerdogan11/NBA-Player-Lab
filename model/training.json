@@ -1,0 +1,11 @@
+{
+ "seasons": ["2025-26"],
+ "archive": {
+  "repo": "shufinskiy/nba_data",
+  "commit": "e829d4678be1e075f99e5d41a1c5f97089be446b",
+  "sha256": {
+   "cdnnba_2025": "a5d1bed30778430816b755676649cb2e3690ea62df5d96f4d9d6e9a8b8839339",
+   "cdnnba_po_2025": "4416f6646be578d4045a041d538f5197b700e706040ca4a363705dfb868ac593"
+  }
+ }
+}

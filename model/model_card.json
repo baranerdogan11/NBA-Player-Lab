@@ -1,0 +1,199 @@
+{
+ "model": "xFG (expected field goal)",
+ "version": "2026-10-19",
+ "trained_on": "2025-26",
+ "training_seasons": [
+  "2025-26"
+ ],
+ "source": "NBA CDN play-by-play actions via the shufinskiy/nba_data archive (model/training.json pins the commit and checksums)",
+ "n_shots": 229304,
+ "n_shots_by_season": {
+  "2025-26": 229304
+ },
+ "n_shooters": 582,
+ "split": "time-based: test = 2025-26 games after 2026-03-10 (55708 shots), train = every earlier game (173596 shots)",
+ "features": [
+  "dist",
+  "angle",
+  "x",
+  "y",
+  "clock",
+  "period",
+  "margin",
+  "poss_sec",
+  "three",
+  "home",
+  "fastbreak",
+  "second_chance",
+  "from_tov",
+  "area",
+  "shot_type",
+  "move",
+  "poss_start",
+  "shooter"
+ ],
+ "chosen": "xfg_context_plus_shooter",
+ "metrics_test": {
+  "constant": {
+   "logloss": 0.692,
+   "brier": 0.2494,
+   "auc": 0.5
+  },
+  "area_fg": {
+   "logloss": 0.6589,
+   "brier": 0.2331,
+   "auc": 0.6342
+  },
+  "distance_bands": {
+   "logloss": 0.6535,
+   "brier": 0.2306,
+   "auc": 0.6431
+  },
+  "xfg_context_without_move": {
+   "logloss": 0.6381,
+   "brier": 0.2245,
+   "auc": 0.6627
+  },
+  "xfg_context": {
+   "logloss": 0.6353,
+   "brier": 0.2234,
+   "auc": 0.6668
+  },
+  "xfg_context_plus_shooter": {
+   "logloss": 0.6342,
+   "brier": 0.2229,
+   "auc": 0.6691
+  }
+ },
+ "calibration_test": [
+  {
+   "n": 5571,
+   "pred": 0.298,
+   "actual": 0.301
+  },
+  {
+   "n": 5571,
+   "pred": 0.345,
+   "actual": 0.348
+  },
+  {
+   "n": 5571,
+   "pred": 0.36,
+   "actual": 0.36
+  },
+  {
+   "n": 5570,
+   "pred": 0.376,
+   "actual": 0.386
+  },
+  {
+   "n": 5571,
+   "pred": 0.4,
+   "actual": 0.407
+  },
+  {
+   "n": 5571,
+   "pred": 0.431,
+   "actual": 0.433
+  },
+  {
+   "n": 5570,
+   "pred": 0.47,
+   "actual": 0.47
+  },
+  {
+   "n": 5571,
+   "pred": 0.538,
+   "actual": 0.539
+  },
+  {
+   "n": 5571,
+   "pred": 0.662,
+   "actual": 0.654
+  },
+  {
+   "n": 5571,
+   "pred": 0.86,
+   "actual": 0.856
+  }
+ ],
+ "permutation_importance": [
+  [
+   "dist",
+   0.0733
+  ],
+  [
+   "shot_type",
+   0.0147
+  ],
+  [
+   "move",
+   0.0121
+  ],
+  [
+   "shooter",
+   0.003
+  ],
+  [
+   "poss_sec",
+   0.0018
+  ],
+  [
+   "clock",
+   0.0012
+  ],
+  [
+   "y",
+   0.0009
+  ],
+  [
+   "fastbreak",
+   0.0008
+  ],
+  [
+   "area",
+   0.0007
+  ],
+  [
+   "angle",
+   0.0005
+  ],
+  [
+   "x",
+   0.0004
+  ],
+  [
+   "poss_start",
+   0.0004
+  ],
+  [
+   "period",
+   0.0002
+  ],
+  [
+   "margin",
+   0.0001
+  ],
+  [
+   "home",
+   0.0001
+  ],
+  [
+   "second_chance",
+   0.0001
+  ],
+  [
+   "three",
+   -0.0
+  ],
+  [
+   "from_tov",
+   0.0
+  ]
+ ],
+ "shooter_shrinkage_k": 300.0,
+ "shooter_prior_decay": 0.6,
+ "algorithm": "sklearn HistGradientBoostingClassifier, early stopping",
+ "notes": "Shooter effect is a sequential shrunk residual from earlier shots only; no leakage. The move (descriptor) is recorded more often on makes than misses; xfg_context_without_move shows what the model scores without it.",
+ "context_coverage": 1.0
+}
