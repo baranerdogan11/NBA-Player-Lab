@@ -108,6 +108,10 @@ jobs:
         if: hashFiles('warehouse_tests.py') != ''
         run: python warehouse_tests.py
 
+      - name: Site JSON (teams/<season>/ from the warehouse tables)
+        if: hashFiles('warehouse.py') != ''
+        run: python site_data.py
+
       - name: Build site
         run: python build.py
 
