@@ -32,15 +32,19 @@ def num(v):
 
 
 # ---- games and teams, from the schedule
+# A game whose teams are not decided yet (the NBA Cup knockout rounds, the play-in, the playoffs) carries a placeholder
+# team with teamId 0 and no tricode; it is kept with home or away NULL until the schedule names the teams.
+tricode = lambda t: t.get("teamTricode") if t.get("teamId") else None
 games, teams = [], {}
 for g in json.load(open(os.path.join(CACHE, "schedule.json"))):
     h, a = g["homeTeam"], g["awayTeam"]
     gtype = GAME_TYPE.get(g["gameId"][2])
     if gtype == "regular":
         for t in (h, a):
-            teams[t["teamTricode"]] = {"team": t["teamTricode"], "team_id": t["teamId"], "city": t["teamCity"], "name": t["teamName"]}
+            if tricode(t):
+                teams[t["teamTricode"]] = {"team": t["teamTricode"], "team_id": t["teamId"], "city": t["teamCity"], "name": t["teamName"]}
     games.append({"game": g["gameId"], "game_type": gtype, "date": (g.get("gameDateEst") or "")[:10] or None, "tipoff_utc": g.get("gameDateTimeUTC"),
-                  "home": h["teamTricode"], "away": a["teamTricode"], "home_score": h.get("score"), "away_score": a.get("score"),
+                  "home": tricode(h), "away": tricode(a), "home_score": h.get("score"), "away_score": a.get("score"),
                   "status": g["gameStatus"], "final": g["gameStatus"] == 3})
 
 # ---- box scores: player lines, team totals and period scores, both teams of every cached game
