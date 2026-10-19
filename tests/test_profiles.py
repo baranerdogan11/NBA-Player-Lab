@@ -16,18 +16,15 @@ Z = {k: 0 for k in profiles.STATS}
 
 
 def line(game, team, pid, sec, starter=False, position="", **stats):
-    return {"game": game, "teamId": team, "personId": pid, "seconds": sec, "starter": starter, "position": position, **{**Z, **stats}}
+    return {"game": game, "team": team, "player": pid, "seconds": sec, "starter": starter, "position": position, **{**Z, **stats}}
 
 
 # one game, five players a side playing 48 minutes; player A1 has the numbers worked by hand below
-box = [line(1, "A", "A1", 2880, True, "PG", points=30, fieldGoalsMade=11, fieldGoalsAttempted=20, threePointersMade=4, threePointersAttempted=8,
-            freeThrowsMade=4, freeThrowsAttempted=5, reboundsOffensive=1, reboundsDefensive=5, assists=10, turnovers=3, steals=2, blocks=1)]
-box += [line(1, "A", f"A{i}", 2880, True, "C" if i == 5 else "SF", fieldGoalsMade=5, fieldGoalsAttempted=10, threePointersAttempted=2, freeThrowsAttempted=2,
-             reboundsOffensive=2, reboundsDefensive=5, turnovers=2, points=10) for i in range(2, 6)]
-box += [line(1, "B", f"B{i}", 2880, True, "G", fieldGoalsMade=4, fieldGoalsAttempted=10, threePointersAttempted=4, freeThrowsAttempted=2,
-             reboundsOffensive=1, reboundsDefensive=6, turnovers=3, points=9) for i in range(1, 6)]
+box = [line(1, "A", "A1", 2880, True, "PG", pts=30, fgm=11, fga=20, fg3m=4, fg3a=8, ftm=4, fta=5, oreb=1, dreb=5, ast=10, tov=3, stl=2, blk=1)]
+box += [line(1, "A", f"A{i}", 2880, True, "C" if i == 5 else "SF", fgm=5, fga=10, fg3a=2, fta=2, oreb=2, dreb=5, tov=2, pts=10) for i in range(2, 6)]
+box += [line(1, "B", f"B{i}", 2880, True, "G", fgm=4, fga=10, fg3a=4, fta=2, oreb=1, dreb=6, tov=3, pts=9) for i in range(1, 6)]
 box = pd.DataFrame(box)
-r = profiles.rates(profiles.season_lines(box)).set_index("personId")
+r = profiles.rates(profiles.season_lines(box)).set_index("player")
 a = r.loc["A1"]
 # team A: FGA 60, FTA 13, TOV 11, FGM 31, OREB 9, DREB 25; team B: FGA 50, FTA 10, TOV 15, OREB 5, DREB 30, 3PA 20
 checks = {
@@ -51,12 +48,11 @@ for g in range(3):
         for i in range(30):
             pid = f"{pos}{i}"
             fga = 10 + i % 7
-            rows.append(line(g, f"T{i % 10}", pid, 1800, True, pos, fieldGoalsAttempted=fga, fieldGoalsMade=fga // 2, threePointersAttempted=min(three, fga),
-                             freeThrowsAttempted=2, points=fga + i % 5, reboundsOffensive=reb // 3, reboundsDefensive=reb - reb // 3,
-                             assists=ast, turnovers=1 + i % 3, blocks=blk))
-    rows.append(line(g, "T0", "bench_big", 1500, False, "", fieldGoalsAttempted=8, fieldGoalsMade=5, reboundsOffensive=4, reboundsDefensive=8, blocks=3, points=11, turnovers=1))
+            rows.append(line(g, f"T{i % 10}", pid, 1800, True, pos, fga=fga, fgm=fga // 2, fg3a=min(three, fga), fta=2, pts=fga + i % 5,
+                             oreb=reb // 3, dreb=reb - reb // 3, ast=ast, tov=1 + i % 3, blk=blk))
+    rows.append(line(g, "T0", "bench_big", 1500, False, "", fga=8, fgm=5, oreb=4, dreb=8, blk=3, pts=11, tov=1))
 big = pd.DataFrame(rows)
-p = profiles.profiles(big).set_index("personId")
+p = profiles.profiles(big).set_index("player")
 checks["starters take the group they started at"] = p.loc["PG0", "group"] == "G" and p.loc["SF3", "group"] == "F" and p.loc["C7", "group_source"] == "started"
 checks["a bench player is placed by role"] = p.loc["bench_big", "group"] == "C" and p.loc["bench_big", "group_source"] == "role"
 cs = p[(p.group == "C") & p.eligible]
@@ -64,7 +60,7 @@ checks["percentiles within the group, 0 to 100"] = cs.pctl_ts.between(0, 100).al
 best, worst = cs.ts.idxmax(), cs.ts.idxmin()
 checks["best true shooting ranks top, worst bottom"] = cs.loc[best, "pctl_ts"] > 90 and cs.loc[worst, "pctl_ts"] == 0
 checks["fewer turnovers rank higher"] = cs.loc[cs.tov_pct.idxmin(), "pctl_tov_pct"] > cs.loc[cs.tov_pct.idxmax(), "pctl_tov_pct"]
-small = profiles.profiles(big[big.personId.str.startswith(("PG", "SF")) | (big.personId == "C0")]).set_index("personId")
+small = profiles.profiles(big[big.player.str.startswith(("PG", "SF")) | (big.player == "C0")]).set_index("player")
 checks["no ranking for a group under the minimum pool"] = np.isnan(small.loc["C0", "pctl_ts"]) and not np.isnan(small.loc["PG0", "pctl_ts"])
 
 for k, v in checks.items():

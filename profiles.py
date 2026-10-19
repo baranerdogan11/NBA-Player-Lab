@@ -26,60 +26,59 @@ ROLE = ["usg", "ast_pct", "tov_pct", "oreb_pct", "dreb_pct", "stl_pct", "blk_pct
 EFFICIENCY = ["ts", "pps", "onoff"]
 LOWER_IS_BETTER = {"tov_pct"}
 CENTRE_KEYS = ["usg", "ast_pct", "oreb_pct", "dreb_pct", "blk_pct", "fg3a_rate"]
-STATS = ["points", "fieldGoalsMade", "fieldGoalsAttempted", "threePointersMade", "threePointersAttempted", "freeThrowsMade", "freeThrowsAttempted",
-         "reboundsOffensive", "reboundsDefensive", "assists", "turnovers", "steals", "blocks"]
+STATS = ["pts", "fgm", "fga", "fg3m", "fg3a", "ftm", "fta", "oreb", "dreb", "ast", "tov", "stl", "blk"]
 
 
 def season_lines(box):
     """Per-player season totals with his teams' totals over the same games and their opponents' (only games he played)."""
     b = box.copy()
     b["min"] = b.seconds / 60
-    team = b.groupby(["game", "teamId"], as_index=False)[STATS + ["min"]].sum()
-    opp = team.rename(columns={"teamId": "oppId", **{c: f"opp_{c}" for c in STATS + ["min"]}})
-    pair = team.merge(opp, on="game").query("teamId != oppId")
+    team = b.groupby(["game", "team"], as_index=False)[STATS + ["min"]].sum()
+    opp = team.rename(columns={"team": "opp_team", **{c: f"opp_{c}" for c in STATS + ["min"]}})
+    pair = team.merge(opp, on="game").query("team != opp_team")
     pair = pair.rename(columns={c: f"tm_{c}" for c in STATS + ["min"]})
-    played = b[b.seconds > 0].merge(pair, on=["game", "teamId"])
+    played = b[b.seconds > 0].merge(pair, on=["game", "team"])
     cols = STATS + ["min"] + [f"tm_{c}" for c in STATS + ["min"]] + [f"opp_{c}" for c in STATS + ["min"]]
-    tot = played.groupby("personId", as_index=False)[cols].sum()
-    tot["gp"] = played.groupby("personId").game.nunique().values
-    tot["teamId"] = played.sort_values("game").groupby("personId").teamId.last().values   # his current team
+    tot = played.groupby("player", as_index=False)[cols].sum()
+    tot["gp"] = played.groupby("player").game.nunique().values
+    tot["team"] = played.sort_values("game").groupby("player").team.last().values   # his current team
     return tot
 
 
 def rates(t):
     """The role and efficiency rates from season_lines (unrounded; NaN where a denominator is zero)."""
-    d = pd.DataFrame({"personId": t.personId, "teamId": t.teamId, "gp": t.gp, "min": t["min"]})
+    d = pd.DataFrame({"player": t.player, "team": t.team, "gp": t.gp, "min": t["min"]})
     div = lambda a, b: (a / b).where(b > 0)  # noqa: E731
     share = t.tm_min / 5 / t["min"]                       # team minutes per player slot over his minutes
-    poss = lambda p="": t[f"{p}fieldGoalsAttempted"] + 0.44 * t[f"{p}freeThrowsAttempted"] + t[f"{p}turnovers"]  # noqa: E731
-    opp_poss = t.opp_fieldGoalsAttempted - t.opp_reboundsOffensive + t.opp_turnovers + 0.44 * t.opp_freeThrowsAttempted
+    poss = lambda p="": t[f"{p}fga"] + 0.44 * t[f"{p}fta"] + t[f"{p}tov"]  # noqa: E731
+    opp_poss = t.opp_fga - t.opp_oreb + t.opp_tov + 0.44 * t.opp_fta
     d["usg"] = 100 * div(poss() * share, poss("tm_"))
-    d["ast_pct"] = 100 * div(t.assists, t["min"] / (t.tm_min / 5) * t.tm_fieldGoalsMade - t.fieldGoalsMade)
-    d["tov_pct"] = 100 * div(t.turnovers, poss())
-    d["oreb_pct"] = 100 * div(t.reboundsOffensive * share, t.tm_reboundsOffensive + t.opp_reboundsDefensive)
-    d["dreb_pct"] = 100 * div(t.reboundsDefensive * share, t.tm_reboundsDefensive + t.opp_reboundsOffensive)
-    d["stl_pct"] = 100 * div(t.steals * share, opp_poss)
-    d["blk_pct"] = 100 * div(t.blocks * share, t.opp_fieldGoalsAttempted - t.opp_threePointersAttempted)
-    d["fg3a_rate"] = div(t.threePointersAttempted, t.fieldGoalsAttempted)
-    d["fta_rate"] = div(t.freeThrowsAttempted, t.fieldGoalsAttempted)
-    d["ts"] = div(t.points, 2 * (t.fieldGoalsAttempted + 0.44 * t.freeThrowsAttempted))
-    d["pps"] = div(t.points - t.freeThrowsMade, t.fieldGoalsAttempted)
+    d["ast_pct"] = 100 * div(t.ast, t["min"] / (t.tm_min / 5) * t.tm_fgm - t.fgm)
+    d["tov_pct"] = 100 * div(t.tov, poss())
+    d["oreb_pct"] = 100 * div(t.oreb * share, t.tm_oreb + t.opp_dreb)
+    d["dreb_pct"] = 100 * div(t.dreb * share, t.tm_dreb + t.opp_oreb)
+    d["stl_pct"] = 100 * div(t.stl * share, opp_poss)
+    d["blk_pct"] = 100 * div(t.blk * share, t.opp_fga - t.opp_fg3a)
+    d["fg3a_rate"] = div(t.fg3a, t.fga)
+    d["fta_rate"] = div(t.fta, t.fga)
+    d["ts"] = div(t.pts, 2 * (t.fga + 0.44 * t.fta))
+    d["pps"] = div(t.pts - t.ftm, t.fga)
     return d
 
 
 def position_groups(box, r):
-    """{personId: (group, source)}: the group he started at most, else the nearest starters' centre by role."""
+    """{player: (group, source)}: the group he started at most, else the nearest starters' centre by role."""
     st = box[box.starter & box.position.fillna("").isin(list(GROUP))].assign(group=lambda x: x.position.map(GROUP))
-    started = st.groupby("personId").group.agg(lambda g: g.value_counts().sort_index().idxmax()).to_dict()
+    started = st.groupby("player").group.agg(lambda g: g.value_counts().sort_index().idxmax()).to_dict()
     out = {p: (g, "started") for p, g in started.items()}
-    known = r[r.personId.isin(started) & (r.gp >= MIN_GAMES)].dropna(subset=CENTRE_KEYS)
-    rest = r[~r.personId.isin(started)].dropna(subset=CENTRE_KEYS)
+    known = r[r.player.isin(started) & (r.gp >= MIN_GAMES)].dropna(subset=CENTRE_KEYS)
+    rest = r[~r.player.isin(started)].dropna(subset=CENTRE_KEYS)
     if len(known) >= 10 and len(rest):
         mu, sd = known[CENTRE_KEYS].mean(), known[CENTRE_KEYS].std().replace(0, 1)
         z = lambda f: ((f[CENTRE_KEYS] - mu) / sd).values  # noqa: E731
-        groups = known.personId.map(started)
+        groups = known.player.map(started)
         centres = {g: z(known)[(groups == g).values].mean(axis=0) for g in sorted(set(groups))}
-        for pid, v in zip(rest.personId, z(rest)):
+        for pid, v in zip(rest.player, z(rest)):
             out[pid] = (min(centres, key=lambda g: float(np.sum((v - centres[g]) ** 2))), "role")
     return out
 
@@ -94,11 +93,10 @@ def percentile(pool, v, lower_better=False):
 def profiles(box, onoff=None):
     r = rates(season_lines(box))
     # on/off with his current team (a traded player has a row per team)
-    r["onoff"] = (r.merge(onoff.rename(columns={"club": "teamId", "player": "personId"})[["teamId", "personId", "onoff"]], how="left", on=["teamId", "personId"]).onoff.values
-                  if onoff is not None else np.nan)
+    r["onoff"] = r.merge(onoff[["team", "player", "onoff"]], how="left", on=["team", "player"]).onoff.values if onoff is not None else np.nan
     pos = position_groups(box, r)
-    r["group"] = r.personId.map(lambda p: pos.get(p, (None, None))[0])
-    r["group_source"] = r.personId.map(lambda p: pos.get(p, (None, None))[1])
+    r["group"] = r.player.map(lambda p: pos.get(p, (None, None))[0])
+    r["group_source"] = r.player.map(lambda p: pos.get(p, (None, None))[1])
     r["eligible"] = (r.gp >= MIN_GAMES) & (r["min"] / r.gp >= MIN_MPG) & r.group.notna()
     for k in ROLE + EFFICIENCY:
         r[f"pctl_{k}"] = np.nan
@@ -118,7 +116,6 @@ if __name__ == "__main__":
     s = season()
     w = os.path.join(os.path.dirname(os.path.abspath(__file__)), "warehouse", s)
     box = pd.read_parquet(os.path.join(w, "box.parquet"))
-    box[["teamId", "personId"]] = box[["teamId", "personId"]].astype(str)
     oo_path = os.path.join(w, "onoff.parquet")
     out = profiles(box, pd.read_parquet(oo_path) if os.path.exists(oo_path) else None)
     out.to_parquet(os.path.join(w, "profiles.parquet"), index=False)
