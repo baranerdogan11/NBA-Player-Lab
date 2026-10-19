@@ -33,11 +33,12 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
 
-      - name: Stage the site (the repository without dotfiles, plus version.txt naming the commit)
+      - name: Stage the site (the repository without dotfiles, version.txt naming the commit, index.html rebuilt)
         run: |
           mkdir -p "$RUNNER_TEMP/site"
           rsync -a --exclude='.*' --exclude='cache/' --exclude='node_modules/' ./ "$RUNNER_TEMP/site/"
           git rev-parse HEAD > "$RUNNER_TEMP/site/version.txt"
+          python3 build.py --out="$RUNNER_TEMP/site"   # the page from this commit's template.html, not a stale index.html
           du -sh "$RUNNER_TEMP/site"
 
       - uses: actions/configure-pages@v6
