@@ -164,6 +164,7 @@ test.describe('game log', () => {
     await page.click('#log-sec summary');
     expect(await isOpen()).toBe(false);
     expect(await page.locator('#log').isVisible()).toBe(false);
+    await page.waitForFunction(() => localStorage.getItem('pl-log') === 'closed');   // the toggle event is queued, not synchronous
     await page.reload();
     await settled(page);
     expect(await isOpen()).toBe(false);
