@@ -42,6 +42,11 @@ TESTS = [
         select t.game, t.team from team_box t join (select game, team, {sum_stats} from box group by 1, 2) p using (game, team) where {differs('t', 'p')}"""),
     ("periods: points by period add up to the final score", "select t.game, t.team from team_box t join (select game, team, sum(pts) p from periods group by 1, 2) q using (game, team) where q.p != t.score"),
     ("events: every final game has its play-by-play", "select game from team_box where game not in (select game from events) group by game"),
+    # UTF-8 read as Latin-1 turns "č" into "Ä\x8d" and "é" into "Ã©": no real name holds a character from U+0080 to U+00BF
+    ("names: no double-encoded accents", """
+        select 'players' t, name from players where regexp_matches(concat_ws(' ', name, first_name, family_name), '[\\x{0080}-\\x{00BF}]')
+        union all select 'roster', name from roster where regexp_matches(name, '[\\x{0080}-\\x{00BF}]')
+        union all select 'teams', name from teams where regexp_matches(city || ' ' || name, '[\\x{0080}-\\x{00BF}]')"""),
     ("shots: both teams of the game", "select s.* from shots s join games g using (game) where s.team not in (g.home, g.away)"),
 ]
 # every player total rebuilt from the play-by-play must equal the official box score, stat by stat
