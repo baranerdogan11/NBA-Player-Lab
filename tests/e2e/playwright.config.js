@@ -20,7 +20,7 @@ export default defineConfig({
     serviceWorkers: 'block',
   },
   webServer: {
-    command: `rm -rf _site && python3 tests/fixtures/site_fixture.py _site && python3 build.py --out=_site && python3 -m http.server ${PORT} --bind 127.0.0.1 -d _site`,
+    command: `rm -rf _site && python3 tests/fixtures/site_fixture.py _site && node tests/fixtures/league_fixture.mjs _site && python3 build.py --out=_site && python3 -m http.server ${PORT} --bind 127.0.0.1 -d _site`,
     cwd: '../..',
     url: `http://127.0.0.1:${PORT}/index.html`,
     reuseExistingServer: !process.env.CI,
