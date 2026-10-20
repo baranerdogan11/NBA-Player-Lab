@@ -285,6 +285,13 @@ a.card:active{transform:scale(.98)}
 .gate input{flex:1 1 240px;min-width:0;padding:10px 14px;border:0;border-radius:999px;background:var(--seg);font:inherit;color:inherit;outline:0}
 .gate input:focus-visible{box-shadow:0 0 0 2px var(--orange)}
 .gate button{border:0;border-radius:999px;padding:10px 18px;background:var(--orange);color:#fff;font:650 14px/1 var(--sans);cursor:pointer}
+.tbl td.rk{text-align:center;font-weight:650}
+.tbl tr.me td{font-weight:700}
+.tbl .lgf{margin-right:9px;width:26px;height:26px;font-size:10px}
+.panel>h2 .lgf{width:28px;height:28px;font-size:11px}
+.lgb{display:flex;align-items:center;gap:10px;margin-top:12px;padding:9px 14px;border-radius:var(--rs);background:var(--panel);box-shadow:var(--sh);font-weight:600;text-decoration:none;color:var(--ink)}
+.lgb::after{content:"";margin-left:auto;width:8px;height:8px;border-right:2.5px solid var(--orange);border-bottom:2.5px solid var(--orange);transform:rotate(-45deg)}
+.lgb .lgf{width:26px;height:26px;font-size:10px}
 .credit{display:flex;flex-wrap:wrap;gap:6px 14px;margin:16px 4px 0;font-size:13px;color:var(--on-floor)}
 .credit a{color:inherit}
 .credit .more{margin-left:auto;color:var(--orange);font-weight:650;text-decoration:none}
@@ -377,6 +384,7 @@ html.swap,html.swap *{transition:background-color .35s,color .35s}
   </section>
   <section class="pg" id="pg-player" hidden>
     <div class="hero" id="hero"></div>
+    <a class="lgb" id="lg-badge" href="#league" hidden></a>
     <div class="pick"><select id="team" data-kind="team" aria-label="Team" data-ta="Team"></select><select id="player" data-kind="player" aria-label="Player" data-ta="Player"></select><a class="arr" id="prev" aria-label="Previous player" data-ta="Previous player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="arr" id="next" aria-label="Next player" data-ta="Next player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 5.5 6.5 6.5-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
     <div class="tiles" id="tiles"></div>
     <section class="panel" id="sc"><h2 data-t="Shot chart">Shot chart</h2><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div></section>
@@ -493,7 +501,7 @@ try { LAST = localStorage.getItem('pl-last') || ''; } catch (e) {}
 const remember = h => { LAST = h; try { localStorage.setItem('pl-last', h); } catch (e) {} $('#tb-player').href = $('#rl-player').href = `#${h}`; };
 
 // ---- routing: the opening page on no hash (or #home), #player (the remembered player), #CODE[/pid], #compare[/a/b], #standings[/east|west|league], #games[/date], #game/gid, #leaders[/stat], #privacy,
-// #league[/roster|pick] (and the invite link #league/<id>/<key>)
+// #league[/roster|board|pick|team/<t>] (and the invite link #league/<id>/<key>)
 const PAGES = ['home', 'player', 'compare', 'standings', 'games', 'game', 'leaders', 'privacy', 'league'];
 let seq = 0;
 async function route() {
@@ -580,6 +588,7 @@ async function renderPlayer(code, pid, my) {
     return;
   }
   remember(`${code}/${p.pid}`);
+  leagueBadge(p.pid);
   const s = p.s, a = age(p.born);
   hero.innerHTML = `<div class="badge">${face(p.pid, p.name, true)}</div><div class="who"><div class="tag">${logo(code, 'mark')}${EN(tname(code))}${p.pos ? ` · ${esc(p.pos)}` : ''}</div><h1>${EN(p.name)}</h1><div class="facts">${p.height ? `<span>${t('Height')} <b>${esc(p.height)}</b></span>` : ''}${a != null ? `<span>${t('Age')} <b>${a}</b></span>` : ''}<span>${t('Games')} <b>${s.gp}</b></span><span>${t('Minutes')} <b>${mpg(s.sec, s.gp)}</b></span></div></div>${p.jersey !== '' && p.jersey != null ? `<div class="num" aria-hidden="true">${esc(p.jersey)}</div>` : ''}`;
   const tiles = [['PTS', avg(s.pts, s.gp)], ['REB', avg(s.reb, s.gp)], ['AST', avg(s.ast, s.gp)], ['STL', avg(s.stl, s.gp)], ['BLK', avg(s.blk, s.gp)], ['TOV', avg(s.tov, s.gp)],
@@ -869,14 +878,15 @@ async function renderLeague(view, arg, my) {
       `<a href="#league" data-lt="${T.t}"><span class="rk">${T.t === LTEAM ? '✓' : ''}</span>${lface(T)}<span class="nm">${esc(T.name)}<small>${esc(T.mgr)}</small></span></a>`).join('')}</div></section>`;
     return;
   }
-  view = view === 'roster' ? 'roster' : 'week';
+  const other = view === 'team' ? L.teams.find(T => String(T.t) === arg) : null;
+  view = other ? 'roster' : view === 'roster' || view === 'board' ? view : 'week';
   tabs.hidden = false;
-  tabs.innerHTML = [['week', 'This week', '#league'], ['roster', 'Roster', '#league/roster']].map(([k, l, h]) => `<a href="${h}" aria-current="${k === view}">${t(l)}</a>`).join('');
+  tabs.innerHTML = [['week', 'This week', '#league'], ['roster', 'Roster', '#league/roster'], ['board', 'League', '#league/board']].map(([k, l, h]) => `<a href="${h}" aria-current="${other ? k === 'board' : k === view}">${t(l)}</a>`).join('');
   const n = L.league.week, w = L.league.weeks[n - 1], cats = L.league.cats.filter(k => CAT[k]);
   const mu = L.matchups.find(m => m[0] === n && (m[1] === me.t || m[2] === me.t));
   const opp = mu ? L.teams.find(T => T.t === (mu[1] === me.t ? mu[2] : mu[1])) : null;
   // the players' box lines: the season board says each one's club now, and the club's file holds his log of every club
-  const pids = [...new Set([me, opp].filter(Boolean).flatMap(T => [...T.roster.map(r => r[0]), ...T.runs.map(r => r[0])]))];
+  const pids = [...new Set((view === 'board' ? L.teams : other ? [other] : [me, opp].filter(Boolean)).flatMap(T => [...T.roster.map(r => r[0]), ...T.runs.map(r => r[0])]))];
   const P = Object.fromEntries((await get('leaders.json')).players.map(p => [p.pid, p]));
   const clubs = [...new Set(pids.map(pid => P[pid] && P[pid].team).filter(Boolean))];
   const [G, ...files] = await Promise.all([get('games.json').then(d => d.games), ...clubs.map(c => get(`${c}.json`))]);
@@ -884,11 +894,15 @@ async function renderLeague(view, arg, my) {
   const logs = {};
   for (const f of files) for (const p of f.players) logs[p.pid] = p.log;
   const who = (pid, x) => { const p = P[pid], code = x ? x.team : p ? p.team : ''; return `<a href="#${esc(code)}/${esc(pid)}" style="${colours(code)}">${face(pid, p ? p.name : pid)}${esc(p ? p.name : pid)}</a>`; };
+  if (view === 'board') {
+    body.innerHTML = leagueBoard(L, me, w, cats, logs);
+    return;
+  }
   if (view === 'roster') {
     const order = s => { const i = L.league.slots.indexOf(s); return i < 0 ? 99 : i; };
     const left = code => G.filter(g => g.hs == null && g.date >= w[0] && g.date <= w[1] && (g.home === code || g.away === code));
-    const rows = [...me.roster].sort((a, b) => order(a[1]) - order(b[1]));
-    body.innerHTML = `<section class="panel"><h2>${esc(me.name)}</h2><div class="scroll"><table class="tbl" id="lg-roster"><thead><tr><th class="l">${t('Player@stat')}</th><th class="l">${t('Left@stat')}</th><th>${t('GP@stat')}</th>${cats.map(k => `<th>${t(CAT[k].l)}</th>`).join('')}</tr></thead><tbody>${rows.map(([pid, slot, , st]) => {
+    const T0 = other || me, rows = [...T0.roster].sort((a, b) => order(a[1]) - order(b[1]));
+    body.innerHTML = `<section class="panel"><h2>${lface(T0)}${esc(T0.name)}</h2><div class="scroll"><table class="tbl" id="lg-roster"><thead><tr><th class="l">${t('Player@stat')}</th><th class="l">${t('Left@stat')}</th><th>${t('GP@stat')}</th>${cats.map(k => `<th>${t(CAT[k].l)}</th>`).join('')}</tr></thead><tbody>${rows.map(([pid, slot, , st]) => {
       const p = P[pid], s = p || {gp: 0}, gl = p ? left(p.team) : [];
       return `<tr data-pid="${esc(pid)}"${ACTIVE(slot) ? '' : ' class="bn"'}><td class="l"><span class="slot">${esc(slot)}</span>${who(pid)}${st ? `<i class="inj">${esc(st)}</i>` : ''}</td><td class="l" data-left="${gl.length}"><span class="left" title="${gl.map(g => fmtDate(g.date)).join(', ')}">${gl.map(() => '<i></i>').join('')}</span></td><td>${s.gp}</td>${cats.map(k => `<td data-cat="${k}">${s.gp ? catAvg(k, s) : '–'}</td>`).join('')}</tr>`;
     }).join('')}</tbody></table></div></section>`;
@@ -916,6 +930,47 @@ async function renderLeague(view, arg, my) {
   };
   body.innerHTML = top + tiles + (night ? `<h2 class="sec-h on-floor">${t('Last game night')} · ${fmtDate(night, true)}</h2>${box(me)}${opp ? box(opp) : ''}` : `<p class="empty">${t('No games yet this week.')}</p>`);
 }
+// The league board: Yahoo's standings, the all-play record over the finished weeks (each week against every other team,
+// a match won on more categories), luck (matches won less the all-play share of them, in exact integers), and each
+// category's season rank. A finished week counts Yahoo's totals, the only ones the league keeps; this week counts ours.
+function leagueBoard(L, me, w, cats, logs) {
+  const n = L.league.week, others = L.teams.length - 1;
+  const week = (k, T) => k === n ? sum(lines(T, w, logs)) : (L.yahoo[k] || {})[T.t];
+  const match = (k, a, b) => Math.sign(cats.reduce((d, c) => d + beats(c, a, b), 0));
+  const R = L.teams.map(T => ({T, ap: [0, 0, 0], season: {gp: 0}}));
+  for (let k = 1; k <= n; k++) {
+    const tot = R.map(r => week(k, r.T));
+    if (tot.some(x => !x)) continue;
+    R.forEach((r, i) => {
+      for (const c of [...STATS, 'gp']) r.season[c] = (r.season[c] || 0) + (tot[i][c] || 0);
+      if (k < n) tot.forEach((x, j) => { if (j !== i) { const m = match(k, tot[i], x); r.ap[m > 0 ? 0 : m < 0 ? 1 : 2]++; } });
+    });
+  }
+  const rank = c => { const vals = R.map(r => r.season); return R.map(r => 1 + vals.filter(v => beats(c, v, r.season) > 0).length); };
+  const ranks = cats.map(rank);
+  const played = R[0].ap.reduce((a, b) => a + b, 0) > 0;
+  const order = [...R.keys()].sort((i, j) => (R[i].T.rank || 99) - (R[j].T.rank || 99));
+  const heat = k => `background:color-mix(in srgb,var(--orange) ${Math.round(70 * (L.teams.length - k) / others)}%,transparent)`;
+  return `<section class="panel"><h2>${esc(L.league.name)}</h2><div class="scroll"><table class="tbl" id="lg-table"><thead><tr><th>#</th><th class="l">${t('Team')}</th><th>${t('W-L-T@stat')}</th><th>${t('All-play@stat')}</th><th>${t('Luck@stat')}</th>${cats.map(c => `<th>${t(CAT[c].l)}</th>`).join('')}</tr></thead><tbody>${order.map(i => {
+    const {T, ap} = R[i], luck = played ? N(signed(rdiv(others * T.w - ap[0], others))) : '–';
+    return `<tr data-t="${T.t}"${T === me ? ' class="me"' : ''}><td>${T.rank || ''}</td><td class="l"><a href="#league/team/${T.t}">${lface(T)}${esc(T.name)}</a> <span class="dim">${esc(T.mgr)}</span></td><td class="k">${T.w}-${T.l}-${T.tie}</td><td>${played ? ap.join('-') : '–'}</td><td data-luck>${luck}</td>${ranks.map((rk, c) => `<td class="rk" data-cat="${cats[c]}" style="${heat(rk[i])}">${rk[i]}</td>`).join('')}</tr>`;
+  }).join('')}</tbody></table></div></section>`;
+}
+
+// on a device with a league unlocked, the Player page says which team in it has the player, and in which slot
+async function leagueBadge(pid) {
+  const el = $('#lg-badge');
+  el.hidden = true;
+  if (!LKEY) return;
+  let L = null;
+  try { L = await openLeague(); } catch (e) {}
+  if (!L || $('#player').value !== pid) return;
+  const T = L.teams.find(x => x.roster.some(r => r[0] === pid)), r = T && T.roster.find(x => x[0] === pid);
+  el.innerHTML = T ? `${lface(T)}<span class="lbl">${t('On {team}', {team: esc(T.name)})} · ${esc(r[1])}</span>` : `<span class="lbl">${t('Not on a team in your league')}</span>`;
+  el.href = T ? `#league/team/${T.t}` : '#league';
+  el.hidden = false;
+}
+
 // picking a team, and opening a pasted invite link
 $('#lg-body').addEventListener('click', e => {
   const a = e.target.closest('[data-lt]');

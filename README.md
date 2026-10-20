@@ -18,9 +18,12 @@ A port of [Euroleague Player Lab](https://github.com/baranerdogan11/Euroleague-P
   there is no picture
 - My league (`#league`): a Yahoo fantasy league's own room, kept off the public pages. Its invite link
   (`#league/<id>/<key>`) unlocks it on the reader's device; the page decrypts `fantasy/<id>.enc` (AES-256-GCM, the league
-  id as additional data) and shows This week (the 9-category matchup and the last game night) and Roster. The league file
-  says only who sat in which slot on which day; every number is summed from the same box-score lines as the rest of the
-  site. `tests/fixtures/league_fixture.mjs` writes a made-up, encrypted twelve-team league for the browser tests
+  id as additional data) and shows This week (the 9-category matchup and the last game night), Roster, and League (each
+  team's record, its all-play record against every other team in finished weeks, luck as wins minus all-play wins per
+  week, and its season rank in each category; a team's name opens its roster at `#league/team/<t>`). On an unlocked
+  device the Player page says which team in the league has the player. The league file says only who sat in which slot
+  on which day for the current week, and Yahoo's totals for finished weeks; every other number is summed from the same
+  box-score lines as the rest of the site. `tests/fixtures/league_fixture.mjs` writes a made-up, encrypted twelve-team league for the browser tests
 - `site_data.py`: writes the JSON the page reads under `teams/<season>/`: `index.json` (clubs), `games.json` (schedule
   and finals), `<CODE>.json` (each player's log of box-score lines), `games/<gid>.json` (both box scores) and
   `leaders.json` (season totals), all from the same box-score lines. The page turns integer totals into averages and
