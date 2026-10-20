@@ -138,6 +138,9 @@ a,button,select,.card{-webkit-tap-highlight-color:transparent}
 .pick{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 /* shot charts: each court keeps its club's colours in both themes */
 .panel>.pick{margin:0 16px 12px}
+.prose{padding:0 16px 16px;max-width:68ch;line-height:1.55}
+.prose p+p{margin-top:10px}
+.foot a{color:inherit}
 .panel>.pick .sel{flex:0 1 340px}
 .courts{display:grid;gap:16px;padding:0 16px 16px}
 .courts.two{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
@@ -364,8 +367,22 @@ html.swap,html.swap *{transition:background-color .35s,color .35s}
     <div class="tabs" id="ld-tabs" role="group" aria-label="Stat" data-ta="Stat"></div>
     <section class="panel"><div class="scroll"><table class="tbl" id="ld"></table></div></section>
   </section>
+  <section class="pg" id="pg-privacy" hidden>
+    <section class="panel"><h2 data-t="Privacy">Privacy</h2><div class="prose">
+      <p data-t="NBA Player Lab has no accounts, no ads and no tracking, and sets no cookies. Your theme, language and last player are kept in your own browser only.">NBA Player Lab has no accounts, no ads and no tracking, and sets no cookies. Your theme, language and last player are kept in your own browser only.</p>
+      <p data-t="The site is hosted on GitHub Pages, which keeps standard server logs. Player pictures and club logos load from NBA's servers (cdn.nba.com), which see your IP address as any website would.">The site is hosted on GitHub Pages, which keeps standard server logs. Player pictures and club logos load from NBA's servers (cdn.nba.com), which see your IP address as any website would.</p>
+    </div></section>
+    <section class="panel"><h2 data-t="Private fantasy league">Private fantasy league</h2><div class="prose">
+      <p data-t="With its members' agreement, one private Yahoo Fantasy league can have its own page here. A league member reads it from Yahoo with read-only access, at most a few times a day.">With its members' agreement, one private Yahoo Fantasy league can have its own page here. A league member reads it from Yahoo with read-only access, at most a few times a day.</p>
+      <p data-t="The league page is encrypted and opens only with the invite link given to the league's members. It is replaced at least every 24 hours and never kept in the site's code or its history. Yahoo account ids and email addresses are never stored or shown.">The league page is encrypted and opens only with the invite link given to the league's members. It is replaced at least every 24 hours and never kept in the site's code or its history. Yahoo account ids and email addresses are never stored or shown.</p>
+      <p data-t="Any member can ask for the league page to be removed, and it is taken down with the next update.">Any member can ask for the league page to be removed, and it is taken down with the next update.</p>
+    </div></section>
+    <section class="panel"><h2 data-t="Contact">Contact</h2><div class="prose">
+      <p><span data-t="Questions and removal requests:">Questions and removal requests:</span> <a href="https://github.com/baranerdogan11/NBA-Player-Lab/issues">github.com/baranerdogan11/NBA-Player-Lab</a></p>
+    </div></section>
+  </section>
 </main>
-<footer class="foot" id="foot"></footer>
+<footer class="foot"><span id="foot"></span> · <a href="#privacy" data-t="Privacy">Privacy</a></footer>
 <div class="veil" id="veil" hidden></div>
 <div class="menu" id="menu" hidden><input type="search" autocomplete="off" aria-label="Search" data-ta="Search"><ul role="listbox" tabindex="-1"></ul></div>
 <script>
@@ -432,8 +449,8 @@ let LAST = '';
 try { LAST = localStorage.getItem('pl-last') || ''; } catch (e) {}
 const remember = h => { LAST = h; try { localStorage.setItem('pl-last', h); } catch (e) {} $('#tb-player').href = $('#rl-player').href = `#${h}`; };
 
-// ---- routing: the opening page on no hash (or #home), #player (the remembered player), #CODE[/pid], #compare[/a/b], #standings[/east|west|league], #games[/date], #game/gid, #leaders[/stat]
-const PAGES = ['home', 'player', 'compare', 'standings', 'games', 'game', 'leaders'];
+// ---- routing: the opening page on no hash (or #home), #player (the remembered player), #CODE[/pid], #compare[/a/b], #standings[/east|west|league], #games[/date], #game/gid, #leaders[/stat], #privacy
+const PAGES = ['home', 'player', 'compare', 'standings', 'games', 'game', 'leaders', 'privacy'];
 let seq = 0;
 async function route() {
   const [a = '', b, c] = decodeURIComponent(location.hash.slice(1)).split('/');
@@ -448,6 +465,7 @@ async function route() {
     else if (page === 'games') await renderGames(b, my);
     else if (page === 'game') await renderGame(b, my);
     else if (page === 'leaders') await renderLeaders(b, my);
+    else if (page === 'privacy') document.title = `${t('Privacy')} · NBA Player Lab`;
     else {
       let [code, pid] = team(a) ? [a, b] : LAST.split('/');
       if (!team(code)) code = IDX.teams[0].code;
