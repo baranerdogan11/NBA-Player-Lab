@@ -1,7 +1,8 @@
 // A made-up Yahoo fantasy league for the browser tests, drawn from the fixture league that site_fixture.py wrote: twelve
-// teams of thirteen players picked in a snake draft, a 9-category head-to-head week, the slot each player sat in on each
-// day (one bench swap mid-week, so a week's totals span two slot runs), and Yahoo's week totals as the pipeline would
-// keep them for its gate (the box lines of players in active slots). The league is encrypted the way the pipeline
+// teams of thirteen players picked in a snake draft, 9-category head-to-head weeks, and for the current week the slot
+// each player sat in on each day (one bench swap mid-week, so a week's totals span two slot runs). Yahoo's week totals:
+// for the current week the box lines of players in active slots, as the pipeline keeps them for its gate; for the
+// finished week before it, made-up numbers, since a past week reaches the page only as Yahoo's totals. The league is encrypted the way the pipeline
 // publishes it: AES-256-GCM, the league id as additional data, iv and ciphertext (tag appended) in base64url. The key
 // is a test key, committed on purpose; a real league's key never is.
 // usage: node tests/fixtures/league_fixture.mjs OUT_DIR   (reads OUT_DIR/teams/<season>/, writes OUT_DIR/fantasy/<id>.enc)
@@ -11,7 +12,7 @@ import {webcrypto as crypto} from 'node:crypto';
 
 export const LEAGUE = '12345';
 export const KEY = Buffer.from(Array.from({length: 32}, (_, i) => i)).toString('base64url');   // AAECAwQF…Hh8
-const SEASON = '2026-27', BUILT = '2026-10-26T06:00:00Z', WEEK = ['2026-10-20', '2026-10-26'];
+const SEASON = '2026-27', BUILT = '2026-10-26T06:00:00Z', PAST = ['2026-10-13', '2026-10-19'], WEEK = ['2026-10-20', '2026-10-26'];
 const NAMES = ['Bosphorus Bigs', 'Euro Steppers', 'Pick and Roll Call', 'Kadıköy Fast Break', 'Glass Cleaners', 'Corner Three Club',
   'Midrange Merchants', 'Hack-a-Friend', 'Two-Way Contracts', 'Tank Commanders', 'Bench Mob', 'Late Scratch'];
 const MGRS = ['Baran', 'Deniz', 'Ece', 'Can', 'Selin', 'Mert', 'Ada', 'Emre', 'Zeynep', 'Kaan', 'İpek', 'Onur'];
@@ -46,17 +47,30 @@ export function league(dir) {
     }
     return {t: i + 1, name: NAMES[i], mgr: MGRS[i], w: 0, l: 0, tie: 0, rank: i + 1, roster, runs};
   });
-  // Yahoo's week totals: every box line of a player on a day he sat in an active slot
-  const yahoo = {1: {}};
+  // Yahoo's week totals. Week 2, the current one: every box line of a player on a day he sat in an active slot.
+  // Week 1, finished: made-up totals from a small generator, and the records that its matchups leave
+  const yahoo = {1: {}, 2: {}};
   for (const T of teams) {
     const s = Object.fromEntries(STATS.map(k => [k, 0]));
     for (const [pid, slot, from, to] of T.runs) if (ACTIVE(slot)) for (const x of logs[pid] || []) if (x.sec > 0 && x.date >= from && x.date <= to) for (const k of STATS) s[k] += x[k];
-    yahoo[1][T.t] = s;
+    yahoo[2][T.t] = s;
+    let seed = T.t * 7919;
+    const r = (lo, hi) => { seed = (seed * 48271) % 2147483647; return lo + seed % (hi - lo + 1); };
+    const fga = r(380, 470), fta = r(110, 170);
+    yahoo[1][T.t] = {pts: r(520, 640), reb: r(160, 220), ast: r(110, 170), stl: r(18, 36), blk: r(14, 40), tov: r(44, 70),
+      fgm: Math.round(fga * r(440, 520) / 1000), fga, fg3m: r(30, 60), ftm: Math.round(fta * r(700, 850) / 1000), fta};
+  }
+  const cats = ['fg%', 'ft%', 'fg3m', 'pts', 'reb', 'ast', 'stl', 'blk', 'tov'];
+  const matchups = [...[0, 1, 2, 3, 4, 5].map(i => [1, i + 1, 12 - i]), ...[0, 2, 4, 6, 8, 10].map(i => [2, i + 1, i + 2])];
+  const cmp = (k, a, b) => Math.sign(k === 'fg%' ? a.fgm * b.fga - b.fgm * a.fga : k === 'ft%' ? a.ftm * b.fta - b.ftm * a.fta : k === 'tov' ? b.tov - a.tov : a[k] - b[k]);
+  for (const [, x, y] of matchups.filter(m => m[0] === 1)) {
+    const d = cats.reduce((n, k) => n + cmp(k, yahoo[1][x], yahoo[1][y]), 0), X = teams[x - 1], Y = teams[y - 1];
+    if (d > 0) { X.w++; Y.l++; } else if (d < 0) { X.l++; Y.w++; } else { X.tie++; Y.tie++; }
   }
   return {
-    league: {id: LEAGUE, name: 'Friends of the Lab', season: SEASON, built: BUILT, format: 'h2h-cats', week: 1,
-      cats: ['fg%', 'ft%', 'fg3m', 'pts', 'reb', 'ast', 'stl', 'blk', 'tov'], slots: SLOTS, weeks: [WEEK, ['2026-10-27', '2026-11-02']]},
-    teams, matchups: [0, 2, 4, 6, 8, 10].map(i => [1, i + 1, i + 2]), yahoo, moves: [],
+    league: {id: LEAGUE, name: 'Friends of the Lab', season: SEASON, built: BUILT, format: 'h2h-cats', week: 2,
+      cats, slots: SLOTS, weeks: [PAST, WEEK, ['2026-10-27', '2026-11-02']]},
+    teams, matchups, yahoo, moves: [],
   };
 }
 

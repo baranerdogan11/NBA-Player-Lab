@@ -134,5 +134,10 @@
  "No matchup this week.": "Bu hafta eşleşme yok.",
  "Left@stat": "KALAN",
  "3PM@stat": "ÜÇLÜK",
- "T@tie": "B"
+ "T@tie": "B",
+ "W-L-T@stat": "G-M-B",
+ "All-play@stat": "HERKESE KARŞI",
+ "Luck@stat": "ŞANS",
+ "On {team}": "{team} kadrosunda",
+ "Not on a team in your league": "Liginde hiçbir takımda değil"
 }
