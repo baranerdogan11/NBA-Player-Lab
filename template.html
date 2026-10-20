@@ -251,6 +251,43 @@ a.card:active{transform:scale(.98)}
 .list .face{width:32px;height:32px;font-size:12px}
 .list .v{font:750 17px/1 var(--sans);letter-spacing:-.02em}
 .list a:first-child .v{color:var(--orange)}
+
+/* My league: a fantasy league's own room. The matchup is a centre-court board in the two fantasy teams' colours, the
+   categories one grouped card, each with a stripe for won or lost; a team without a club gets a disc of its colour */
+.tools .lg{display:grid;place-items:center;min-width:38px;height:32px;padding:0 10px;border-radius:999px;background:var(--seg);color:var(--glass-ink2);transition:background .2s,color .2s,transform .1s ease-out}
+.tools .lg svg{width:16px;height:16px}
+.tools .lg:active{transform:scale(.94)}
+.tools .lg[aria-current="page"]{background:var(--orange);color:#fff}
+@media (max-width:760px){.tools .lg{min-width:34px;padding:0 8px}}
+.board.lg{margin-top:14px}
+.board.lg .side b{font-size:26px;overflow-wrap:break-word;hyphens:auto}
+.board.lg .side .crest{background:var(--c1);color:#fff}
+@media (max-width:760px){.board.lg .side b{font-size:14px;letter-spacing:-.01em}.board.lg .mid small{max-width:118px;line-height:1.35}.board.lg .score{font-size:44px;gap:18px}}
+.lgf{background:var(--c1)}
+.cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:1px;margin-top:14px;border-radius:var(--r);overflow:hidden;background:var(--line);box-shadow:var(--sh)}
+.cat{background:var(--solid);padding:11px 13px 12px;box-shadow:inset 3px 0 0 var(--line)}
+.cat.w{box-shadow:inset 3px 0 0 var(--good)}
+.cat.lo{box-shadow:inset 3px 0 0 var(--bad)}
+.cat>span{display:flex;justify-content:space-between;font:650 11px/1 var(--sans);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.cat>span i{font-style:normal}
+.cat.w>span i{color:var(--good)}
+.cat.lo>span i{color:var(--bad)}
+.cat b{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:8px;font:750 21px/1 var(--sans);letter-spacing:-.02em}
+.cat b small{font:600 15px/1 var(--sans);color:var(--muted)}
+.slot{display:inline-block;min-width:38px;padding:3px 5px;margin-right:9px;border-radius:7px;background:var(--seg);text-align:center;font:700 11px/1.2 var(--sans);color:var(--muted)}
+.tbl tr.bn td{color:var(--muted)}
+.tbl tr.bn .slot{background:none;box-shadow:inset 0 0 0 1px var(--line)}
+.inj{display:inline-block;margin-left:7px;padding:1px 5px;border-radius:5px;background:var(--bad);color:#fff;font:700 10px/14px var(--sans)}
+.left{display:inline-flex;gap:3px;vertical-align:middle}
+.left i{width:9px;height:9px;border-radius:3px;background:var(--orange)}
+.gate p{padding:0 16px 12px;max-width:62ch;color:var(--ink2)}
+.gate form{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 16px}
+.gate input{flex:1 1 240px;min-width:0;padding:10px 14px;border:0;border-radius:999px;background:var(--seg);font:inherit;color:inherit;outline:0}
+.gate input:focus-visible{box-shadow:0 0 0 2px var(--orange)}
+.gate button{border:0;border-radius:999px;padding:10px 18px;background:var(--orange);color:#fff;font:650 14px/1 var(--sans);cursor:pointer}
+.credit{display:flex;flex-wrap:wrap;gap:6px 14px;margin:16px 4px 0;font-size:13px;color:var(--on-floor)}
+.credit a{color:inherit}
+.credit .more{margin-left:auto;color:var(--orange);font-weight:650;text-decoration:none}
 @media (max-width:760px){#hm-games{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:82%;overflow-x:auto;scroll-snap-type:x mandatory;margin:14px -12px 0;padding:0 12px 6px;scroll-padding:0 12px;scrollbar-width:none}#hm-games::-webkit-scrollbar{display:none}#hm-games>.card{scroll-snap-align:start}}
 
 /* compare: the two players meet on a court in their clubs' colours */
@@ -315,6 +352,7 @@ html.swap,html.swap *{transition:background-color .35s,color .35s}
     <a id="rl-leaders" href="#leaders" data-pg="leaders" data-t="Leaders">Leaders</a>
   </nav>
   <div class="tools">
+    <a class="lg" id="lg-btn" href="#league" data-pg="league" aria-label="My league" data-ta="My league" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v4a5 5 0 0 1-10 0zM7 6H4v1a4 4 0 0 0 3.5 4M17 6h3v1a4 4 0 0 1-3.5 4M12 13v4M8 20h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
     <button type="button" data-lang="en" aria-pressed="false" aria-label="English">EN</button>
     <button type="button" data-lang="tr" aria-pressed="false" aria-label="Türkçe">TR</button>
     <button type="button" id="theme" aria-pressed="false" data-ta="Dark mode" aria-label="Dark mode"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
@@ -380,6 +418,11 @@ html.swap,html.swap *{transition:background-color .35s,color .35s}
     <section class="panel"><h2 data-t="Contact">Contact</h2><div class="prose">
       <p><span data-t="Questions and removal requests:">Questions and removal requests:</span> <a href="https://github.com/baranerdogan11/NBA-Player-Lab/issues">github.com/baranerdogan11/NBA-Player-Lab</a></p>
     </div></section>
+  </section>
+  <section class="pg" id="pg-league" hidden>
+    <nav class="tabs" id="lg-tabs" aria-label="My league" data-ta="My league"></nav>
+    <div id="lg-body"></div>
+    <p class="credit"><span lang="en">Fantasy data provided by <a href="https://sports.yahoo.com/fantasy/" target="_blank" rel="noopener">Yahoo Fantasy</a></span><a class="more" id="lg-pick" href="#league/pick" data-t="Change team">Change team</a></p>
   </section>
 </main>
 <footer class="foot"><span id="foot"></span> · <a href="#privacy" data-t="Privacy">Privacy</a></footer>
@@ -449,8 +492,9 @@ let LAST = '';
 try { LAST = localStorage.getItem('pl-last') || ''; } catch (e) {}
 const remember = h => { LAST = h; try { localStorage.setItem('pl-last', h); } catch (e) {} $('#tb-player').href = $('#rl-player').href = `#${h}`; };
 
-// ---- routing: the opening page on no hash (or #home), #player (the remembered player), #CODE[/pid], #compare[/a/b], #standings[/east|west|league], #games[/date], #game/gid, #leaders[/stat], #privacy
-const PAGES = ['home', 'player', 'compare', 'standings', 'games', 'game', 'leaders', 'privacy'];
+// ---- routing: the opening page on no hash (or #home), #player (the remembered player), #CODE[/pid], #compare[/a/b], #standings[/east|west|league], #games[/date], #game/gid, #leaders[/stat], #privacy,
+// #league[/roster|pick] (and the invite link #league/<id>/<key>)
+const PAGES = ['home', 'player', 'compare', 'standings', 'games', 'game', 'leaders', 'privacy', 'league'];
 let seq = 0;
 async function route() {
   const [a = '', b, c] = decodeURIComponent(location.hash.slice(1)).split('/');
@@ -466,6 +510,7 @@ async function route() {
     else if (page === 'game') await renderGame(b, my);
     else if (page === 'leaders') await renderLeaders(b, my);
     else if (page === 'privacy') document.title = `${t('Privacy')} · NBA Player Lab`;
+    else if (page === 'league') await renderLeague(b, c, my);
     else {
       let [code, pid] = team(a) ? [a, b] : LAST.split('/');
       if (!team(code)) code = IDX.teams[0].code;
@@ -746,6 +791,148 @@ async function renderHome(my) {
   document.title = 'NBA Player Lab';
 }
 
+// ---- My league: a Yahoo fantasy league, opened on this device by its invite link (#league/<id>/<key>). The pipeline
+// publishes the league as fantasy/<id>.enc, AES-256-GCM with the league id as additional data; the page keeps the key,
+// takes it out of the address and decrypts with the browser's Web Crypto. The league says who sat in which slot on which
+// day; every number is summed from the same box-score lines as the rest of the site, through sum() and rdiv.
+let LKEY = null, LTEAM = 0, LG = null;
+try { LKEY = JSON.parse(localStorage.getItem('pl-league') || 'null'); LTEAM = Number(localStorage.getItem('pl-league-team')) || 0; } catch (e) {}
+const keep = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} };
+const b64u = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+// the decrypted league, or null when this build has no league file (a failed refresh removes it rather than leave it stale)
+async function openLeague() {
+  if (LG && LG.id === LKEY.id) return LG.data;
+  const r = await fetch(`fantasy/${encodeURIComponent(LKEY.id)}.enc`, {cache: 'no-cache'});
+  if (!r.ok) return null;
+  const env = await r.json();
+  const key = await crypto.subtle.importKey('raw', b64u(LKEY.key), 'AES-GCM', false, ['decrypt']);
+  const pt = await crypto.subtle.decrypt({name: 'AES-GCM', iv: b64u(env.iv), additionalData: new TextEncoder().encode(LKEY.id)}, key, b64u(env.ct));
+  LG = {id: LKEY.id, data: JSON.parse(new TextDecoder().decode(pt))};
+  return LG.data;
+}
+const ACTIVE = slot => slot !== 'BN' && slot !== 'IL';
+// a league category: its label, the makes (m) and attempts (a) behind a percentage, and whether fewer is better
+const CAT = {
+  'fg%': {l: 'FG%@stat', m: 'fgm', a: 'fga'}, 'ft%': {l: 'FT%@stat', m: 'ftm', a: 'fta'}, '3p%': {l: '3P%@stat', m: 'fg3m', a: 'fg3a'},
+  fg3m: {l: '3PM@stat'}, pts: {l: 'PTS@stat'}, reb: {l: 'REB@stat'}, oreb: {l: 'OREB@stat'}, dreb: {l: 'DREB@stat'}, ast: {l: 'AST@stat'},
+  stl: {l: 'STL@stat'}, blk: {l: 'BLK@stat'}, tov: {l: 'TOV@stat', low: true}, pf: {l: 'PF@stat', low: true},
+};
+const catVal = (k, s) => CAT[k].m ? pct(s[CAT[k].m], s[CAT[k].a]) : String(s[k]);
+const catAvg = (k, s) => CAT[k].m ? pct(s[CAT[k].m], s[CAT[k].a]) : avg(s[k], s.gp);
+// who takes a category: a percentage on the exact ratio (integers cross-multiplied), a side with no attempts below any make
+const beats = (k, a, b) => {
+  const c = CAT[k], m = c.m, n = c.a;
+  const d = !m ? a[k] - b[k] : a[n] && b[n] ? a[m] * b[n] - b[m] * a[n] : Math.sign(a[n] && a[m]) - Math.sign(b[n] && b[m]);
+  return Math.sign(c.low ? -d : d);
+};
+const LCOL = ['#c4521a', '#2d6a8a', '#6b4b2e', '#3d6b3a', '#7a3b69', '#2f5d62', '#8a6d1d', '#4a4f8c', '#8c3b3b', '#3b6e8c', '#5c6b2f', '#6b5a8c'];
+const lcol = T => LCOL[(T.t - 1) % LCOL.length];
+const lface = T => `<span class="face lgf" style="--c1:${lcol(T)}"><span>${esc(initials(T.name))}</span></span>`;
+// every box line a team counts in a week: its players' lines on the days they sat in an active slot (or on the bench)
+const lines = (T, w, logs, active = true) => T.runs.flatMap(([pid, slot, from, to]) => ACTIVE(slot) !== active ? [] :
+  (logs[pid] || []).filter(x => x.sec > 0 && x.date >= from && x.date <= to && x.date >= w[0] && x.date <= w[1]).map(x => ({...x, pid, slot})));
+async function renderLeague(view, arg, my) {
+  if (view && arg && /^\d+$/.test(view)) {   // the invite link: keep the key on this device, take it out of the address
+    LKEY = {id: view, key: arg};
+    LG = null;
+    keep('pl-league', JSON.stringify(LKEY));
+    history.replaceState(null, '', '#league');
+    view = '';
+  }
+  $('#lg-btn').hidden = !LKEY;
+  const tabs = $('#lg-tabs'), body = $('#lg-body');
+  const gate = (msg, paste) => {
+    tabs.hidden = $('#lg-pick').hidden = true;
+    body.innerHTML = `<section class="panel gate"><h2>${t('My league')}</h2><p>${msg}</p>${paste ? `<form id="lg-form"><input id="lg-link" autocomplete="off" aria-label="${t('Paste the invite link')}" placeholder="${t('Paste the invite link')}"><button type="submit">${t('Open')}</button></form>` : ''}</section>`;
+    document.title = `${t('My league')} · NBA Player Lab`;
+  };
+  if (!LKEY) return gate(t('Open the invite link from your league to see it here.'), true);
+  let L;
+  try {
+    L = await openLeague();
+  } catch (e) {
+    if (e.name !== 'OperationError') throw e;   // the key does not open this league file: forget it
+    LKEY = null;
+    keep('pl-league', null);
+    $('#lg-btn').hidden = true;
+    if (stale(my)) return;
+    return gate(t('This invite link does not open the league.'), true);
+  }
+  if (stale(my)) return;
+  if (!L) return gate(t('League data is unavailable right now. It comes back with the next update.'), false);
+  const me = L.teams.find(T => T.t === LTEAM);
+  $('#lg-pick').hidden = false;
+  document.title = `${L.league.name} · NBA Player Lab`;
+  if (view === 'pick' || !me) {
+    tabs.hidden = $('#lg-pick').hidden = true;
+    body.innerHTML = `<section class="panel"><h2>${t('Which team is yours?')}</h2><div class="list">${L.teams.map(T =>
+      `<a href="#league" data-lt="${T.t}"><span class="rk">${T.t === LTEAM ? '✓' : ''}</span>${lface(T)}<span class="nm">${esc(T.name)}<small>${esc(T.mgr)}</small></span></a>`).join('')}</div></section>`;
+    return;
+  }
+  view = view === 'roster' ? 'roster' : 'week';
+  tabs.hidden = false;
+  tabs.innerHTML = [['week', 'This week', '#league'], ['roster', 'Roster', '#league/roster']].map(([k, l, h]) => `<a href="${h}" aria-current="${k === view}">${t(l)}</a>`).join('');
+  const n = L.league.week, w = L.league.weeks[n - 1], cats = L.league.cats.filter(k => CAT[k]);
+  const mu = L.matchups.find(m => m[0] === n && (m[1] === me.t || m[2] === me.t));
+  const opp = mu ? L.teams.find(T => T.t === (mu[1] === me.t ? mu[2] : mu[1])) : null;
+  // the players' box lines: the season board says each one's club now, and the club's file holds his log of every club
+  const pids = [...new Set([me, opp].filter(Boolean).flatMap(T => [...T.roster.map(r => r[0]), ...T.runs.map(r => r[0])]))];
+  const P = Object.fromEntries((await get('leaders.json')).players.map(p => [p.pid, p]));
+  const clubs = [...new Set(pids.map(pid => P[pid] && P[pid].team).filter(Boolean))];
+  const [G, ...files] = await Promise.all([get('games.json').then(d => d.games), ...clubs.map(c => get(`${c}.json`))]);
+  if (stale(my)) return;
+  const logs = {};
+  for (const f of files) for (const p of f.players) logs[p.pid] = p.log;
+  const who = (pid, x) => { const p = P[pid], code = x ? x.team : p ? p.team : ''; return `<a href="#${esc(code)}/${esc(pid)}" style="${colours(code)}">${face(pid, p ? p.name : pid)}${esc(p ? p.name : pid)}</a>`; };
+  if (view === 'roster') {
+    const order = s => { const i = L.league.slots.indexOf(s); return i < 0 ? 99 : i; };
+    const left = code => G.filter(g => g.hs == null && g.date >= w[0] && g.date <= w[1] && (g.home === code || g.away === code));
+    const rows = [...me.roster].sort((a, b) => order(a[1]) - order(b[1]));
+    body.innerHTML = `<section class="panel"><h2>${esc(me.name)}</h2><div class="scroll"><table class="tbl" id="lg-roster"><thead><tr><th class="l">${t('Player@stat')}</th><th class="l">${t('Left@stat')}</th><th>${t('GP@stat')}</th>${cats.map(k => `<th>${t(CAT[k].l)}</th>`).join('')}</tr></thead><tbody>${rows.map(([pid, slot, , st]) => {
+      const p = P[pid], s = p || {gp: 0}, gl = p ? left(p.team) : [];
+      return `<tr data-pid="${esc(pid)}"${ACTIVE(slot) ? '' : ' class="bn"'}><td class="l"><span class="slot">${esc(slot)}</span>${who(pid)}${st ? `<i class="inj">${esc(st)}</i>` : ''}</td><td class="l" data-left="${gl.length}"><span class="left" title="${gl.map(g => fmtDate(g.date)).join(', ')}">${gl.map(() => '<i></i>').join('')}</span></td><td>${s.gp}</td>${cats.map(k => `<td data-cat="${k}">${s.gp ? catAvg(k, s) : '–'}</td>`).join('')}</tr>`;
+    }).join('')}</tbody></table></div></section>`;
+    return;
+  }
+  const mine = lines(me, w, logs), theirs = opp ? lines(opp, w, logs) : [];
+  const a = sum(mine), b = sum(theirs), res = opp ? cats.map(k => beats(k, a, b)) : [];
+  const won = res.filter(r => r > 0).length, lost = res.filter(r => r < 0).length, tied = res.filter(r => r === 0).length;
+  const side = (T, cls) => `<div class="side ${cls}" style="--c1:${lcol(T)}"><i class="crest">${esc(initials(T.name))}</i><small>${esc(T.mgr)} · ${T.w}-${T.l}-${T.tie}</small><b>${esc(T.name)}</b></div>`;
+  const when = `${t('Week {n}', {n})} · ${fmtDate(w[0])} – ${fmtDate(w[1])}`;
+  const top = opp ? `<div class="board lg" id="lg-board" style="--ca:${lcol(me)};--ch:${lcol(opp)}">${side(me, 'a')}<div class="mid"><div class="score"><span class="${won < lost ? 'lose' : ''}">${won}</span><span class="${lost < won ? 'lose' : ''}">${lost}</span></div><small>${when}${tied ? ` · ${tied} ${t('T@tie')}` : ''}</small></div>${side(opp, 'h')}</div>`
+    : `<div class="board lg" id="lg-board" style="--ca:${lcol(me)};--ch:${lcol(me)}">${side(me, 'a')}<div class="mid"><small>${when} · ${t('No matchup this week.')}</small></div><div></div></div>`;
+  const tiles = `<div class="cats" id="lg-cats">${cats.map((k, i) => {
+    const r = res[i];
+    return `<div class="cat${r > 0 ? ' w' : r < 0 ? ' lo' : ''}" data-cat="${k}"><span>${t(CAT[k].l)}<i>${r > 0 ? t('W') : r < 0 ? t('L') : opp ? t('T@tie') : ''}</i></span><b><span class="v">${catVal(k, a)}</span>${opp ? `<small>${catVal(k, b)}</small>` : ''}</b></div>`;
+  }).join('')}</div>`;
+  // the latest night either team had a player on the floor, active slots first and the bench dimmed below
+  const night = [...mine, ...theirs].reduce((d, x) => x.date > d ? x.date : d, '');
+  const head = ['MIN', 'PTS', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'FG', '3P', 'FT'];
+  const box = T => {
+    const on = lines(T, w, logs).filter(x => x.date === night), off = lines(T, w, logs, false).filter(x => x.date === night);
+    return `<section class="panel"><h2>${esc(T.name)}</h2><div class="scroll"><table class="tbl" data-t="${T.t}"><thead><tr><th class="l">${t('Player@stat')}</th>${head.map(h => `<th>${t(h + '@stat')}</th>`).join('')}</tr></thead><tbody>${[...on, ...off].map(x =>
+      `<tr data-pid="${esc(x.pid)}"${ACTIVE(x.slot) ? '' : ' class="bn"'}><td class="l"><span class="slot">${esc(x.slot)}</span>${who(x.pid, x)}</td><td>${clock(x.sec)}</td><td class="k">${x.pts}</td><td>${x.reb}</td><td>${x.ast}</td><td>${x.stl}</td><td>${x.blk}</td><td>${x.tov}</td><td>${x.fgm}-${x.fga}</td><td>${x.fg3m}-${x.fg3a}</td><td>${x.ftm}-${x.fta}</td></tr>`
+    ).join('') || `<tr><td class="empty l" colspan="${head.length + 1}">${t('Did not play')}</td></tr>`}</tbody></table></div></section>`;
+  };
+  body.innerHTML = top + tiles + (night ? `<h2 class="sec-h on-floor">${t('Last game night')} · ${fmtDate(night, true)}</h2>${box(me)}${opp ? box(opp) : ''}` : `<p class="empty">${t('No games yet this week.')}</p>`);
+}
+// picking a team, and opening a pasted invite link
+$('#lg-body').addEventListener('click', e => {
+  const a = e.target.closest('[data-lt]');
+  if (!a) return;
+  e.preventDefault();
+  LTEAM = Number(a.dataset.lt);
+  keep('pl-league-team', String(LTEAM));
+  if (location.hash === '#league') route(); else location.hash = 'league';
+});
+$('#lg-body').addEventListener('input', e => { if (e.target.id === 'lg-link') e.target.setCustomValidity(''); });
+$('#lg-body').addEventListener('submit', e => {
+  e.preventDefault();
+  const input = $('#lg-link'), m = /#league\/(\d+)\/([\w-]{43})/.exec(input.value);
+  input.setCustomValidity(m ? '' : t('That is not a league invite link.'));
+  if (m) location.hash = `league/${m[1]}/${m[2]}`; else input.reportValidity();
+});
+
 // ---- language and theme
 function applyLang() {
   document.documentElement.lang = LANG;
@@ -840,6 +1027,7 @@ async function boot() {
   TEAMS = Object.fromEntries(IDX.teams.map(x => [x.code, x]));
   $('#tag-season').textContent = IDX.label;
   if (LAST) remember(LAST);
+  $('#lg-btn').hidden = !LKEY;
   applyLang();
   window.addEventListener('hashchange', route);
   await route();
