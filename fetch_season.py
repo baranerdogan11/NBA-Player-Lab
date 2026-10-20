@@ -39,7 +39,9 @@ def get(url):
         r = requests.get(url, headers=H, timeout=60)
         if r.ok:
             time.sleep(0.2)
-            return r.json()
+            # the bucket serves some files (playerIndex.json, the schedule) as text/plain with no charset, which requests
+            # would decode as Latin-1 ("Luka DonÄiÄ"); the bytes are UTF-8, so they are parsed as such
+            return json.loads(r.content)
         if r.status_code in (403, 404):            # the bucket answers 403 for a file that does not exist
             raise Missing(url)
         time.sleep(6 * (attempt + 1) if r.status_code == 429 else 2)
