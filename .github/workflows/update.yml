@@ -179,6 +179,7 @@ jobs:
       contents: read
       pages: write
       id-token: write
+      actions: read
     uses: ./.github/workflows/pages.yml
     with:
       ref: ${{ needs.update.outputs.sha }}
