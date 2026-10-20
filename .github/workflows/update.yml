@@ -116,6 +116,10 @@ jobs:
         if: hashFiles('warehouse.py') != ''
         run: python site_data.py
 
+      - name: Shot charts (teams/<season>/shots/ from the warehouse; every player's shots match his box-score FG)
+        if: hashFiles('warehouse.py') != ''
+        run: python shots.py
+
       - name: Build site
         run: python build.py
 

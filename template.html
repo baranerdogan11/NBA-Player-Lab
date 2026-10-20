@@ -130,6 +130,13 @@ a,button,select,.card{-webkit-tap-highlight-color:transparent}
 .sel .face,.menu .face{flex:none;width:26px;height:26px;font-size:10px}
 .sel:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(--orange);outline-offset:2px;border-radius:var(--rs)}
 .pick{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+/* shot charts: each court keeps its club's colours in both themes */
+.panel>.pick{margin:0 16px 12px}
+.panel>.pick .sel{flex:0 1 340px}
+.courts{display:grid;gap:16px;padding:0 16px 16px}
+.courts.two{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.court{display:block;width:100%;max-width:560px;height:auto;margin:0 auto;border-radius:var(--rs)}
+.court-h{display:flex;align-items:center;justify-content:center;font-weight:650;margin-bottom:8px}
 .arr{flex:none;display:grid;place-items:center;width:44px;height:44px;border-radius:999px;background:var(--solid);box-shadow:var(--sh);color:var(--orange);transition:transform .1s ease-out,box-shadow .2s}
 .arr svg{width:22px;height:22px}
 .arr:hover{box-shadow:var(--sh),0 0 0 2px var(--orange)}
@@ -325,6 +332,7 @@ html.swap,html.swap *{transition:background-color .35s,color .35s}
     <div class="hero" id="hero"></div>
     <div class="pick"><select id="team" data-kind="team" aria-label="Team" data-ta="Team"></select><select id="player" data-kind="player" aria-label="Player" data-ta="Player"></select><a class="arr" id="prev" aria-label="Previous player" data-ta="Previous player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="arr" id="next" aria-label="Next player" data-ta="Next player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 5.5 6.5 6.5-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
     <div class="tiles" id="tiles"></div>
+    <section class="panel" id="sc"><h2 data-t="Shot chart">Shot chart</h2><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div></section>
     <section class="panel"><h2 data-t="Game log">Game log</h2><div class="scroll"><table class="tbl" id="log"></table></div></section>
   </section>
   <section class="pg" id="pg-compare" hidden>
@@ -343,6 +351,7 @@ html.swap,html.swap *{transition:background-color .35s,color .35s}
   <section class="pg" id="pg-game" hidden>
     <div class="board" id="gm-board"></div>
     <section class="panel"><h2 data-t="Score by period">Score by period</h2><div class="scroll"><table class="tbl" id="gm-periods"></table></div></section>
+    <section class="panel"><h2 data-t="Shot charts">Shot charts</h2><div class="courts two" id="gm-shots"></div></section>
     <div id="gm-box"></div>
   </section>
   <section class="pg" id="pg-leaders" hidden>
@@ -456,6 +465,28 @@ async function route() {
 }
 const stale = my => my !== seq;
 
+// ---- Shot charts: a half court dressed like a sportypy court, the apron in the club's first colour and the paint in its
+// second, with every field-goal attempt of the play-by-play at its spot (shots.py: tenths of a foot from the rim, x to the
+// shooter's right, y away from the baseline); a make is a dot, a miss a cross. The rim is at the bottom, as the shooter sees it.
+const FLOOR = '#e8e0d7';
+const light = hex => { const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)); return 299 * r + 587 * g + 114 * b > 150000; };
+function court(code, shots) {
+  const [c1, c2] = team(code) ? team(code).colors : ['#333333', '#999999'];
+  const lane = light(c2) ? c1 : '#fff', ln = (c, w = 3) => `fill="none" stroke="${c}" stroke-width="${w}"`;
+  const made = shots.filter(s => s[3]).map(([, x, y]) => `<circle cx="${x}" cy="${-y}" r="6.5"/>`).join('');
+  const miss = shots.filter(s => !s[3]).map(([, x, y]) => `M${x - 5} ${-y - 5}l10 10m0-10-10 10`).join('');
+  return `<svg class="court" viewBox="-280 -417.5 560 500" role="img" aria-label="${esc(t('Shot chart'))}"><rect x="-280" y="-417.5" width="560" height="500" fill="${c1}"/><rect x="-250" y="-417.5" width="500" height="470" fill="${FLOOR}"/>`
+    + `<rect x="-80" y="-137.5" width="160" height="190" fill="${c2}" ${ln(lane)}/><path d="${[70, 110, 140, 170].map(d => `M-80 ${52.5 - d}h-9M80 ${52.5 - d}h9`).join('')}" ${ln(lane)}/>`
+    + `<path d="M-60 -137.5a60 60 0 0 1 120 0" ${ln(c1)}/><path d="M60 -137.5a60 60 0 0 1-120 0" ${ln(lane)} stroke-dasharray="10 9"/>`
+    + `<path d="M-220 52.5V-89.5A237.5 237.5 0 0 1 220-89.5V52.5M-40 12.5V0a40 40 0 0 1 80 0v12.5M-60-417.5a60 60 0 0 0 120 0M-20-417.5a20 20 0 0 0 40 0" ${ln(c1)}/>`
+    + `<path d="M-30 12.5h60" ${ln(c1, 5)}/><path d="M0 12.5v-5" ${ln(c1, 2.5)}/><circle r="7.5" ${ln(c1, 2.5)}/><rect x="-250" y="-417.5" width="500" height="470" ${ln(c1, 5)}/>`
+    + `<path d="${miss}" ${ln('#fff', 5)} stroke-linecap="round"/><path class="miss" d="${miss}" ${ln(c1, 2.5)} stroke-linecap="round"/><g class="made" fill="${c1}" stroke="#fff" stroke-width="1.5">${made}</g></svg>`;
+}
+// the Player page's chart: his season, or one game picked from his log, on the court of the club he shot for
+let SC = {code: '', shots: [], club: {}};
+const drawShots = () => { const g = $('#sc-game').value; $('#sc-court').innerHTML = court(g ? SC.club[g] : SC.code, g ? SC.shots.filter(s => s[0] === g) : SC.shots); };
+$('#sc-game').addEventListener('change', drawShots);
+
 // ---- Player
 async function renderPlayer(code, pid, my) {
   const data = await get(`${code}.json`);
@@ -474,6 +505,7 @@ async function renderPlayer(code, pid, my) {
   if (!p) {
     hero.innerHTML = `<div class="badge">${logo(code, 'crest')}</div><div class="who"><div class="tag">${logo(code, 'mark')}${EN(tname(code))}</div><h1>${EN(T.name)}</h1></div>`;
     $('#tiles').innerHTML = '';
+    $('#sc').hidden = true;
     $('#log').innerHTML = `<tbody><tr><td class="empty">${t('No players yet.')}</td></tr></tbody>`;
     remember(code);
     return;
@@ -491,6 +523,13 @@ async function renderPlayer(code, pid, my) {
     const won = x.ts > x.os;
     return `<tr data-gid="${esc(x.gid)}"><td>${fmtDate(x.date)}</td><td class="l">${x.home ? t('vs') : '@'} ${esc(x.opp)}</td><td class="l"><a href="#game/${esc(x.gid)}" class="${won ? 'w' : 'lo'}">${won ? t('W') : t('L')} ${x.ts}-${x.os}</a></td>${x.sec > 0 ? `<td>${x.start ? '<i class="st"></i>' : ''}${clock(x.sec)}</td><td class="k">${x.pts}</td><td>${x.reb}</td><td>${x.ast}</td><td>${x.stl}</td><td>${x.blk}</td><td>${x.tov}</td><td>${x.fgm}-${x.fga}</td><td>${x.fg3m}-${x.fg3a}</td><td>${x.ftm}-${x.fta}</td><td>${N(signed(String(x.pm)))}</td>` : `<td class="dim l" colspan="11">${t('Did not play')}</td>`}</tr>`;
   }).join('') : `<tr><td class="empty l" colspan="${head.length}">${t('No games played yet.')}</td></tr>`}</tbody>`;
+  const played = log.filter(x => x.sec > 0), clubs = [...new Set([code, ...played.map(x => x.team)])];
+  const files = await Promise.all(clubs.map(c => get(`shots/${c}.json`).catch(() => null)));
+  if (stale(my)) return;
+  SC = {code, shots: files.flatMap(f => f && f.players[p.pid] ? f.players[p.pid].map(s => [f.games[s[0]], s[1], s[2], s[3]]) : []), club: Object.fromEntries(played.map(x => [x.gid, x.team]))};
+  $('#sc-game').innerHTML = `<option value="" data-c="${esc(code)}" selected>${t('Season')}</option>${played.map(x => `<option value="${esc(x.gid)}" data-c="${esc(x.opp)}">${fmtDate(x.date)} ${x.home ? t('vs') : '@'} ${esc(x.opp)}</option>`).join('')}`;
+  $('#sc').hidden = false;
+  drawShots();
   document.title = `${p.name} · NBA Player Lab`;
 }
 $('#team').addEventListener('change', e => { location.hash = e.target.value; });
@@ -609,6 +648,12 @@ async function renderGame(gid, my) {
     return `<section class="panel"><h2>${EN(tname(code))}</h2><div class="scroll"><table class="tbl" data-team="${esc(code)}" style="${tc(code)}"><thead><tr>${head.map(h => `<th>${t(h + '@stat')}</th>`).join('')}</tr></thead><tbody>${rows.map(x => `<tr data-pid="${esc(x.pid)}"><td class="l"><a href="#${esc(code)}/${esc(x.pid)}">${x.start ? '<i class="st"></i>' : ''}${face(x.pid, x.name)}${esc(x.name)}</a></td>${x.sec > 0 ? `<td>${clock(x.sec)}</td><td class="k">${x.pts}</td><td>${x.reb}</td><td>${x.oreb}</td><td>${x.dreb}</td><td>${x.ast}</td><td>${x.stl}</td><td>${x.blk}</td><td>${x.tov}</td><td>${x.pf}</td><td>${x.fgm}-${x.fga}</td><td>${x.fg3m}-${x.fg3a}</td><td>${x.ftm}-${x.fta}</td><td>${N(signed(String(x.pm)))}</td>` : `<td class="dim l" colspan="14">${t('Did not play')}</td>`}</tr>`).join('')}<tr class="tot"><td class="l">${t('Totals')}</td><td></td><td class="k" data-k="pts">${s.pts}</td><td>${s.reb}</td><td>${s.oreb}</td><td>${s.dreb}</td><td>${s.ast}</td><td>${s.stl}</td><td>${s.blk}</td><td>${s.tov}</td><td>${s.pf}</td><td>${s.fgm}-${s.fga}</td><td>${s.fg3m}-${s.fg3a}</td><td>${s.ftm}-${s.fta}</td><td></td></tr></tbody></table></div></section>`;
   };
   $('#gm-box').innerHTML = box(g.away) + box(g.home);
+  const files = await Promise.all([g.away, g.home].map(c => get(`shots/${c}.json`).catch(() => null)));
+  if (stale(my)) return;
+  $('#gm-shots').innerHTML = [g.away, g.home].map((c, i) => {
+    const f = files[i], k = f ? f.games.indexOf(gid) : -1;
+    return `<div data-team="${esc(c)}"><div class="court-h">${logo(c)}${EN(tname(c))}</div>${court(c, k < 0 ? [] : Object.values(f.players).flatMap(s => s.filter(x => x[0] === k)))}</div>`;
+  }).join('');
   document.title = `${g.away} ${g.as} · ${g.home} ${g.hs} · NBA Player Lab`;
 }
 
@@ -702,8 +747,8 @@ $('#theme').addEventListener('click', () => {
 // ---- pickers: a button in the select's place and one shared menu; the select keeps the options, the value and the change event
 const MENU = $('#menu'), VEIL = $('#veil'), Q = $('#menu input'), LIST = $('#menu ul');
 let OPEN = null;
-const icon = (sel, v, name) => sel.dataset.kind === 'team' ? logo(v) : face(v, name);
-const label = (sel, o) => `${icon(sel, o.value, o.textContent)}${o.dataset.j ? `<i class="j">${esc(o.dataset.j)}</i>` : ''}<span>${esc(o.textContent)}</span>`;
+const icon = (sel, o) => sel.dataset.kind === 'team' ? logo(o.value) : sel.dataset.kind === 'game' ? logo(o.dataset.c) : face(o.value, o.textContent);
+const label = (sel, o) => `${icon(sel, o)}${o.dataset.j ? `<i class="j">${esc(o.dataset.j)}</i>` : ''}<span>${esc(o.textContent)}</span>`;
 const item = (sel, o) => `<li role="option" id="mo-${esc(o.value)}" data-v="${esc(o.value)}" aria-selected="${o.selected}">${label(sel, o)}</li>`;
 const activate = li => { for (const x of $$('.on', LIST)) x.classList.remove('on'); if (li) { li.classList.add('on'); LIST.setAttribute('aria-activedescendant', li.id); } };
 function fillMenu(sel, q = '') {
