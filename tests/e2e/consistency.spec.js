@@ -87,3 +87,27 @@ test('the page rounds as rounding.py does', async ({page}) => {
   const got = await page.evaluate(cs => cs.map(([n, d, k]) => /** @type {any} */ (window).eval(`rdiv(${n}, ${d}, ${k})`)), cases);
   expect(got).toEqual(cases.map(c => c[3]));
 });
+
+// The shot charts hold the FG column: each club's court on a game page has its box score's FGM dots and FGA - FGM
+// crosses, and a player's court has his game log's for the game picked, and his season's for the season
+const marks = el => ({made: el.querySelectorAll('.made circle').length, miss: (el.querySelector('path.miss').getAttribute('d').match(/M/g) || []).length});
+const fg = cells => cells.reduce((a, c) => { const [m, n] = c.split('-').map(Number); return {made: a.made + m, miss: a.miss + n - m}; }, {made: 0, miss: 0});
+test('shot charts match the box score and the game log', async ({page}) => {
+  const problems = await prepare(page);
+  await page.goto('./#games/2026-10-21');
+  await settled(page);
+  const gid = await page.evaluate(() => document.querySelector('#gm-list a.card').dataset.gid);
+  await go(page, `#game/${gid}`, () => document.querySelectorAll('#gm-shots svg').length === 2);
+  for (const code of await page.$$eval('#gm-box table', ts => ts.map(t => t.dataset.team))) {
+    const box = await page.$eval(`#gm-box table[data-team="${code}"] tr.tot`, tr => tr.cells[11].textContent);
+    expect(await page.$eval(`#gm-shots [data-team="${code}"]`, marks), `${code} in ${gid}`).toEqual(fg([box]));
+  }
+  const pid = await page.$$eval('#gm-box tr[data-pid]', trs => trs.find(tr => tr.cells.length > 2).dataset.pid);
+  await page.click(`#gm-box tr[data-pid="${pid}"] a`);
+  await page.waitForFunction(p => document.querySelector('#player').value === p && !document.querySelector('#sc').hidden, pid);
+  const log = await page.$$eval('#log tr[data-gid]', trs => trs.filter(tr => tr.cells.length > 4).map(tr => tr.cells[10].textContent));
+  expect(await page.$eval('#sc-court', marks), 'season chart vs game log').toEqual(fg(log));
+  await page.selectOption('#sc-game', gid, {force: true});
+  expect(await page.$eval('#sc-court', marks), 'game chart vs game log').toEqual(fg([await page.$eval(`#log tr[data-gid="${gid}"]`, tr => tr.cells[10].textContent)]));
+  expect(problems, 'the page reported errors').toEqual([]);
+});

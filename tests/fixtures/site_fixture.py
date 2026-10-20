@@ -2,12 +2,14 @@
 played and two to come. Every box score adds up to its final, quarters add up to the score, and a game is never tied.
 usage: python tests/fixtures/site_fixture.py OUT_DIR   (writes OUT_DIR/teams/<season>/, the layout build.py serves)
 """
+import math
 import os
 import random
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, ROOT)
+from shots import write_shots  # noqa: E402
 from site_data import STATS, load_teams, write_site  # noqa: E402
 
 SEASON, LABEL, BUILT = "2026-27", "2026-27", "2026-10-26T06:00:00Z"
@@ -79,6 +81,23 @@ def side(rng, roster):
     return out
 
 
+def spots(rng, games, lines):
+    """Every box line's field-goal attempts as shots: its threes beyond the arc, its twos inside it, its makes first."""
+    when = {g["gid"]: g["time"] for g in games}
+    out = []
+    for x in lines:
+        for k in range(x["fga"]):
+            three = k < x["fg3a"]
+            made = k < x["fg3m"] if three else k - x["fg3a"] < x["fgm"] - x["fg3m"]
+            if three and rng.random() < .25:
+                px, py = rng.choice((-1, 1)) * rng.randint(222, 240), rng.randint(-40, 85)
+            else:
+                a, r = rng.uniform(.4, math.pi - .4) if three else rng.uniform(0, math.pi), rng.uniform(245, 275) if three else rng.uniform(0, 210)
+                px, py = round(r * math.cos(a)), round(r * math.sin(a))
+            out.append({"gid": x["gid"], "time": when[x["gid"]], "team": x["team"], "pid": x["pid"], "x": px, "y": py, "made": made})
+    return out
+
+
 def hits(rng, n, p):
     return sum(rng.random() < p for _ in range(n))
 
@@ -90,5 +109,7 @@ def quarters(rng, total):
 
 if __name__ == "__main__":
     out = os.path.join(sys.argv[1] if len(sys.argv) > 1 else "_site", "teams", SEASON)
-    write_site(out, SEASON, LABEL, BUILT, *make(random.Random(7)))
+    teams, players, games, lines = make(random.Random(7))
+    write_site(out, SEASON, LABEL, BUILT, teams, players, games, lines)
+    write_shots(out, teams, spots(random.Random(13), games, lines))
     print(f"fixture league written to {out}")
