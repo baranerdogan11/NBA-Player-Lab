@@ -107,5 +107,14 @@
  "Next player": "Sonraki oyuncu",
  "Shot chart": "Şut haritası",
  "Shot charts": "Şut haritaları",
- "Game": "Maç"
+ "Game": "Maç",
+ "Privacy": "Gizlilik",
+ "NBA Player Lab has no accounts, no ads and no tracking, and sets no cookies. Your theme, language and last player are kept in your own browser only.": "NBA Player Lab'de hesap, reklam ve takip yoktur; çerez de kullanılmaz. Tema, dil ve son baktığınız oyuncu yalnızca kendi tarayıcınızda saklanır.",
+ "The site is hosted on GitHub Pages, which keeps standard server logs. Player pictures and club logos load from NBA's servers (cdn.nba.com), which see your IP address as any website would.": "Site GitHub Pages üzerinde barındırılır ve GitHub olağan sunucu kayıtlarını tutar. Oyuncu fotoğrafları ve kulüp logoları NBA'in sunucularından (cdn.nba.com) yüklenir; bu sunucular, her web sitesinde olduğu gibi IP adresinizi görür.",
+ "Private fantasy league": "Özel fantezi ligi",
+ "With its members' agreement, one private Yahoo Fantasy league can have its own page here. A league member reads it from Yahoo with read-only access, at most a few times a day.": "Üyelerinin onayıyla tek bir özel Yahoo Fantasy liginin burada kendi sayfası olabilir. Lig üyelerinden biri ligi Yahoo'dan yalnızca okuma izniyle, günde en fazla birkaç kez okur.",
+ "The league page is encrypted and opens only with the invite link given to the league's members. It is replaced at least every 24 hours and never kept in the site's code or its history. Yahoo account ids and email addresses are never stored or shown.": "Lig sayfası şifrelidir ve yalnızca lig üyelerine verilen davet bağlantısıyla açılır. En geç 24 saatte bir yenilenir; sitenin kodunda ya da geçmişinde hiç tutulmaz. Yahoo hesap kimlikleri ve e-posta adresleri asla saklanmaz ve gösterilmez.",
+ "Any member can ask for the league page to be removed, and it is taken down with the next update.": "Her üye lig sayfasının kaldırılmasını isteyebilir; sayfa bir sonraki güncellemede kaldırılır.",
+ "Contact": "İletişim",
+ "Questions and removal requests:": "Sorular ve kaldırma talepleri:"
 }

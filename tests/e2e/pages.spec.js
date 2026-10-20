@@ -12,6 +12,7 @@ const ROUTES = [
   ['leaders', '#leaders', () => document.body.dataset.page === 'leaders' && document.querySelectorAll('#ld tbody tr').length > 0],
   ['leaders-rapm', '#leaders/rapm', () => document.body.dataset.page === 'leaders' && document.querySelector('#ld-tabs [aria-current="true"]')?.getAttribute('href') === '#leaders/rapm' && document.querySelectorAll('#ld tbody tr').length > 0],
   ['home', '#home', () => document.body.dataset.page === 'home' && document.querySelectorAll('#hm-leaders .panel').length === 3],
+  ['privacy', '#privacy', () => document.body.dataset.page === 'privacy' && document.querySelectorAll('#pg-privacy .panel').length === 3],
 ];
 
 for (const [device, size] of [['phone', PHONE], ['desktop', DESKTOP]]) {
