@@ -16,6 +16,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: read             # the private league file from fantasy.yml's last run
 
 concurrency:
   group: pages
@@ -40,6 +41,25 @@ jobs:
           git rev-parse HEAD > "$RUNNER_TEMP/site/version.txt"
           python3 build.py --out="$RUNNER_TEMP/site"   # the page from this commit's template.html, not a stale index.html
           du -sh "$RUNNER_TEMP/site"
+
+      # the private league file (fantasy.yml): this run's, else the newest successful run's while under 23 hours old
+      - name: League file from this run
+        id: league
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: league
+          path: ${{ runner.temp }}/site
+
+      - name: League file from the last league run
+        if: steps.league.outcome != 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RUN=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow fantasy.yml --status success --limit 1 \
+            --json databaseId,createdAt --jq '.[] | select(now - (.createdAt | fromdate) < 23*3600) | .databaseId' 2>/dev/null || true)
+          if [ -n "$RUN" ]; then gh run download "$RUN" --repo "$GITHUB_REPOSITORY" --name league --dir "$RUNNER_TEMP/site" || true; fi
+          echo "league files: $(find "$RUNNER_TEMP/site/fantasy" -name '*.enc' 2>/dev/null | wc -l)"
 
       - uses: actions/configure-pages@v6
 

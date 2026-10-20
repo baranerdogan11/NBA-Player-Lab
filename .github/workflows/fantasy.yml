@@ -1,0 +1,92 @@
+name: Fantasy league
+
+# The private fantasy league: every 4 hours fantasy.py reads the Yahoo league, seals it for the invite link and hands it
+# to the deploy as a one-day artifact. Nothing about the league is committed, and every deploy (this one, update.yml's
+# and test.yml's) adds the newest file only while it is under 23 hours old, so a league that stops refreshing leaves
+# the site within Yahoo's 24 hours. Until the secrets below exist the run does nothing.
+#
+# Secrets: YAHOO_CLIENT_ID, YAHOO_CLIENT_SECRET, YAHOO_REFRESH_TOKEN and FANTASY_KEY (set by fantasy_auth.py), and
+# SECRETS_PAT (a fine-grained token with Secrets read/write on this repository) so a refresh token Yahoo rotates is
+# saved. Variable: FANTASY_LEAGUE, the league id.
+
+on:
+  schedule:
+    - cron: "23 */4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fantasy
+  cancel-in-progress: false
+
+jobs:
+  league:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      ready: ${{ steps.ready.outputs.ready }}
+    steps:
+      - name: Set up yet?
+        id: ready
+        env:
+          TOKEN: ${{ secrets.YAHOO_REFRESH_TOKEN }}
+          KEY: ${{ secrets.FANTASY_KEY }}
+          LEAGUE: ${{ vars.FANTASY_LEAGUE }}
+        run: |
+          if [ -n "$TOKEN" ] && [ -n "$KEY" ] && [ -n "$LEAGUE" ]; then echo "ready=true" >> "$GITHUB_OUTPUT"
+          else echo "The league is not set up yet (fantasy_auth.py sets it up); nothing to do."; fi
+
+      - uses: actions/checkout@v7
+        if: steps.ready.outputs.ready == 'true'
+
+      - uses: actions/setup-python@v7
+        if: steps.ready.outputs.ready == 'true'
+        with:
+          python-version-file: .python-version
+          cache: pip
+
+      - name: Read and seal the league
+        if: steps.ready.outputs.ready == 'true'
+        env:
+          YAHOO_CLIENT_ID: ${{ secrets.YAHOO_CLIENT_ID }}
+          YAHOO_CLIENT_SECRET: ${{ secrets.YAHOO_CLIENT_SECRET }}
+          YAHOO_REFRESH_TOKEN: ${{ secrets.YAHOO_REFRESH_TOKEN }}
+          YAHOO_REFRESH_OUT: ${{ runner.temp }}/refresh
+          FANTASY_LEAGUE: ${{ vars.FANTASY_LEAGUE }}
+          FANTASY_KEY: ${{ secrets.FANTASY_KEY }}
+        run: |
+          pip install -r requirements.txt
+          python fantasy.py
+
+      - name: Save a rotated refresh token
+        if: always() && steps.ready.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.SECRETS_PAT }}
+        run: |
+          [ -f "$RUNNER_TEMP/refresh" ] || exit 0
+          if [ -z "$GH_TOKEN" ]; then echo "::error::Yahoo rotated the refresh token and SECRETS_PAT is not set: run fantasy_auth.py again"; exit 1; fi
+          gh secret set YAHOO_REFRESH_TOKEN --repo "$GITHUB_REPOSITORY" < "$RUNNER_TEMP/refresh"
+          rm "$RUNNER_TEMP/refresh"
+
+      - uses: actions/upload-artifact@v7
+        if: steps.ready.outputs.ready == 'true'
+        with:
+          name: league
+          path: _league/
+          if-no-files-found: error
+          retention-days: 1
+
+  deploy:
+    # also after a failed read, so a file that has turned 23 hours old leaves the site
+    needs: league
+    if: always() && needs.league.outputs.ready == 'true'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+      actions: read
+    uses: ./.github/workflows/pages.yml
+    with:
+      ref: ${{ github.sha }}
