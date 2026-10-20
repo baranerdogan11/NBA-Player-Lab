@@ -80,8 +80,14 @@ a,button,select,.card{-webkit-tap-highlight-color:transparent}
 
 /* panels: frosted cards on the floor; every heading opens with a centre-circle mark */
 .panel{background:var(--panel);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-radius:var(--r);box-shadow:var(--sh);margin-top:16px;overflow:hidden}
-.panel>h2,.sec-h{display:flex;align-items:center;gap:10px;font-size:19px;padding:14px 16px 12px}
-.panel>h2::before,.sec-h::before{content:"";flex:none;width:9px;height:9px;border-radius:50%;border:2.5px solid var(--orange);box-shadow:0 0 0 2.5px var(--panel),0 0 0 4px rgba(232,97,26,.35)}
+.panel>h2,.sec-h,.panel>summary{display:flex;align-items:center;gap:10px;font-size:19px;padding:14px 16px 12px}
+.panel>summary{cursor:pointer;list-style:none;-webkit-user-select:none;user-select:none}
+.panel>summary::-webkit-details-marker{display:none}
+.panel>summary h2{display:contents;font-size:19px}
+.panel>summary::after{content:"";margin-left:auto;width:9px;height:9px;border-right:2.5px solid var(--orange);border-bottom:2.5px solid var(--orange);transform:translateY(2px) rotate(-135deg);transition:transform .25s var(--spring)}
+.panel:not([open])>summary::after{transform:translateY(-3px) rotate(45deg)}
+.panel>summary:focus-visible{outline:2px solid var(--orange);outline-offset:-4px;border-radius:var(--r)}
+.panel>h2::before,.sec-h::before,.panel>summary h2::before{content:"";flex:none;width:9px;height:9px;border-radius:50%;border:2.5px solid var(--orange);box-shadow:0 0 0 2.5px var(--panel),0 0 0 4px rgba(232,97,26,.35)}
 .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 
 /* tables: the header wears the club colour (--tc), league tables the stained-walnut house colour */
@@ -333,7 +339,7 @@ html.swap,html.swap *{transition:background-color .35s,color .35s}
     <div class="pick"><select id="team" data-kind="team" aria-label="Team" data-ta="Team"></select><select id="player" data-kind="player" aria-label="Player" data-ta="Player"></select><a class="arr" id="prev" aria-label="Previous player" data-ta="Previous player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="arr" id="next" aria-label="Next player" data-ta="Next player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 5.5 6.5 6.5-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
     <div class="tiles" id="tiles"></div>
     <section class="panel" id="sc"><h2 data-t="Shot chart">Shot chart</h2><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div></section>
-    <section class="panel"><h2 data-t="Game log">Game log</h2><div class="scroll"><table class="tbl" id="log"></table></div></section>
+    <details class="panel" id="log-sec" open><summary><h2 data-t="Game log">Game log</h2></summary><div class="scroll"><table class="tbl" id="log"></table></div></details>
   </section>
   <section class="pg" id="pg-compare" hidden>
     <div class="pick"><select id="cmp-a" data-kind="player" aria-label="First player" data-ta="First player"></select><select id="cmp-b" data-kind="player" aria-label="Second player" data-ta="Second player"></select></div>
@@ -533,6 +539,9 @@ async function renderPlayer(code, pid, my) {
   document.title = `${p.name} · NBA Player Lab`;
 }
 $('#team').addEventListener('change', e => { location.hash = e.target.value; });
+const LOG = $('#log-sec');
+try { if (localStorage.getItem('pl-log') === 'closed') LOG.open = false; } catch (e) {}
+LOG.addEventListener('toggle', () => { try { localStorage.setItem('pl-log', LOG.open ? 'open' : 'closed'); } catch (e) {} });
 const stepPlayer = back => { const a = $(back ? '#prev' : '#next'); if (a.href) location.hash = a.hash; };
 document.addEventListener('keydown', e => {
   if (document.body.dataset.page !== 'player' || e.altKey || e.ctrlKey || e.metaKey || e.target.closest('input,#menu')) return;
