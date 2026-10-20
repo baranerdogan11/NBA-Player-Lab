@@ -80,8 +80,14 @@ a,button,select,.card{-webkit-tap-highlight-color:transparent}
 
 /* panels: frosted cards on the floor; every heading opens with a centre-circle mark */
 .panel{background:var(--panel);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-radius:var(--r);box-shadow:var(--sh);margin-top:16px;overflow:hidden}
-.panel>h2,.sec-h{display:flex;align-items:center;gap:10px;font-size:19px;padding:14px 16px 12px}
-.panel>h2::before,.sec-h::before{content:"";flex:none;width:9px;height:9px;border-radius:50%;border:2.5px solid var(--orange);box-shadow:0 0 0 2.5px var(--panel),0 0 0 4px rgba(232,97,26,.35)}
+.panel>h2,.sec-h,.panel>summary{display:flex;align-items:center;gap:10px;font-size:19px;padding:14px 16px 12px}
+.panel>summary{cursor:pointer;list-style:none;-webkit-user-select:none;user-select:none}
+.panel>summary::-webkit-details-marker{display:none}
+.panel>summary h2{display:contents;font-size:19px}
+.panel>summary::after{content:"";margin-left:auto;width:9px;height:9px;border-right:2.5px solid var(--orange);border-bottom:2.5px solid var(--orange);transform:translateY(2px) rotate(-135deg);transition:transform .25s var(--spring)}
+.panel:not([open])>summary::after{transform:translateY(-3px) rotate(45deg)}
+.panel>summary:focus-visible{outline:2px solid var(--orange);outline-offset:-4px;border-radius:var(--r)}
+.panel>h2::before,.sec-h::before,.panel>summary h2::before{content:"";flex:none;width:9px;height:9px;border-radius:50%;border:2.5px solid var(--orange);box-shadow:0 0 0 2.5px var(--panel),0 0 0 4px rgba(232,97,26,.35)}
 .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 
 /* tables: the header wears the club colour (--tc), league tables the stained-walnut house colour */
@@ -120,11 +126,45 @@ a,button,select,.card{-webkit-tap-highlight-color:transparent}
 .mark{width:22px;height:22px;margin-right:7px;border-radius:50%;background:rgba(255,255,255,.94)}
 .mark img{inset:3px;width:16px;height:16px}
 
-/* controls: rounded selects and segmented controls inside a page */
-select{appearance:none;-webkit-appearance:none;background:var(--solid) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5l4.5 4.5 4.5-4.5' fill='none' stroke='%23e8611a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center/12px 8px;border:0;border-radius:var(--rs);box-shadow:var(--sh);padding:11px 36px 11px 14px;min-width:0;max-width:100%;font-weight:600;cursor:pointer}
-select:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(--orange);outline-offset:2px;border-radius:var(--rs)}
+/* pickers: each <select> keeps its options and value but is drawn as a rounded button that opens a frosted menu of its own */
+.sel{display:flex;align-items:center;gap:10px;flex:1 1 220px;min-width:0;max-width:100%;border:0;border-radius:var(--rs);box-shadow:var(--sh);padding:9px 36px 9px 12px;font-weight:600;text-align:left;cursor:pointer;color:var(--ink);transition:transform .1s ease-out,box-shadow .2s;
+  background:var(--solid) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5l4.5 4.5 4.5-4.5' fill='none' stroke='%23e8611a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center/12px 8px}
+.sel>span:last-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sel:active{transform:scale(.985)}
+.sel[aria-expanded="true"]{box-shadow:var(--sh),0 0 0 2px var(--orange)}
+.sel:disabled{opacity:.5;cursor:default}
+.sel .face,.menu .face{flex:none;width:26px;height:26px;font-size:10px}
+.sel:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(--orange);outline-offset:2px;border-radius:var(--rs)}
 .pick{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-.pick select{flex:1 1 220px}
+/* shot charts: each court keeps its club's colours in both themes */
+.panel>.pick{margin:0 16px 12px}
+.prose{padding:0 16px 16px;max-width:68ch;line-height:1.55}
+.prose p+p{margin-top:10px}
+.foot a{color:inherit}
+.panel>.pick .sel{flex:0 1 340px}
+.courts{display:grid;gap:16px;padding:0 16px 16px}
+.courts.two{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.court{display:block;width:100%;max-width:560px;height:auto;margin:0 auto;border-radius:var(--rs)}
+.court-h{display:flex;align-items:center;justify-content:center;font-weight:650;margin-bottom:8px}
+.arr{flex:none;display:grid;place-items:center;width:44px;height:44px;border-radius:999px;background:var(--solid);box-shadow:var(--sh);color:var(--orange);transition:transform .1s ease-out,box-shadow .2s}
+.arr svg{width:22px;height:22px}
+.arr:hover{box-shadow:var(--sh),0 0 0 2px var(--orange)}
+.arr:active{transform:scale(.92)}
+.arr:not([href]){opacity:.35;pointer-events:none}
+.j{flex:none;min-width:22px;padding:0 5px;border-radius:7px;background:var(--seg);text-align:center;font:700 11px/20px var(--sans);color:var(--muted)}
+.veil{position:fixed;inset:0;z-index:59}
+.menu{position:fixed;z-index:60;display:flex;flex-direction:column;max-height:min(420px,70vh);background:var(--panel);-webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);border-radius:var(--r);box-shadow:var(--sh),0 0 0 1px var(--line);overflow:hidden;animation:rise .25s var(--spring)}
+.menu input{margin:10px 10px 4px;padding:9px 14px;border:0;border-radius:999px;background:var(--seg);font:inherit;color:inherit;outline:0}
+.menu input:focus-visible{box-shadow:0 0 0 2px var(--orange)}
+.menu ul{list-style:none;margin:0;padding:6px;overflow-y:auto;overscroll-behavior:contain;outline:0}
+.menu li{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;cursor:pointer;font-weight:600}
+.menu li>span:last-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.menu li.h{padding:12px 10px 4px;font:600 11px/1 var(--sans);text-transform:uppercase;letter-spacing:.07em;color:var(--muted);cursor:default}
+.menu li.on{background:var(--panel2)}
+.menu li[aria-selected="true"]{color:var(--orange)}
+.menu li[aria-selected="true"]::after{content:"\2713";font-weight:800}
+.menu .empty{padding:10px}
+@media (max-width:760px){.veil{background:rgba(0,0,0,.35)}.menu{left:10px!important;right:10px;width:auto!important;top:auto!important;bottom:calc(10px + env(safe-area-inset-bottom));max-height:60vh!important;border-radius:22px}}
 .tabs,.dates{display:flex;gap:2px;overflow-x:auto;padding:4px;border-radius:14px;background:var(--panel);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:var(--sh);scrollbar-width:none}
 .tabs::-webkit-scrollbar,.dates::-webkit-scrollbar{display:none}
 .tabs button,.tabs a,.dates a{flex:none;border:0;background:none;padding:9px 14px;border-radius:10px;cursor:pointer;font:600 14px/1 var(--sans);color:var(--muted);text-decoration:none;transition:background .2s,color .2s,transform .1s ease-out}
@@ -187,6 +227,76 @@ a.card:active{transform:scale(.98)}
 .board .mid small{display:inline-block;margin-top:8px;padding:5px 10px;border-radius:999px;background:rgba(0,0,0,.35);font:650 11px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:#ffb27f}
 @media (max-width:760px){.board{padding:18px 12px;gap:8px;border-radius:18px;background-size:auto,auto,auto}.board .side small,.board .full{display:none}.board .abbr{display:inline}.board .side b{font-size:22px}.board .side .crest{width:42px;height:42px;font-size:11px}.board .side .crest img{inset:6px;width:30px;height:30px}.board .score{font-size:36px;gap:20px}}
 
+/* the opening page: centre court at tip-off, the house orange running into walnut, the centre circle painted over the grain;
+   then the latest night's cards and three leader boards */
+.intro{--cx:82%;background:radial-gradient(circle at var(--cx) 50%,rgba(255,255,255,.3) 0 30px,transparent 30.5px),radial-gradient(circle at var(--cx) 50%,transparent 0 104px,rgba(255,255,255,.35) 104px 106.5px,transparent 107px),
+  linear-gradient(90deg,transparent calc(var(--cx) - 1.25px),rgba(255,255,255,.35) 0 calc(var(--cx) + 1.25px),transparent 0),linear-gradient(115deg,var(--orange) 0%,#b8470e 32%,#3a1d0c 74%,#15100c 100%);border-bottom-color:var(--orange)}
+@media (max-width:760px){.intro{--cx:100%}}
+.intro .badge{box-shadow:inset 0 0 0 3px rgba(255,255,255,.85),0 6px 18px rgba(0,0,0,.25)}
+.intro .badge i{width:62%;height:62%;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff9a52,var(--orange) 55%,#b8470e);box-shadow:inset 0 0 0 2px rgba(0,0,0,.2)}
+.sec-h.on-floor{padding:22px 4px 0}
+.sec-h.on-floor::before{box-shadow:0 0 0 2.5px var(--solid),0 0 0 4px rgba(232,97,26,.35)}
+.sec-h .more{margin-left:auto;font:650 14px/1 var(--sans);letter-spacing:0;color:var(--orange);text-decoration:none}
+.sec-h .more:hover{text-decoration:underline;text-underline-offset:2px}
+.trio{display:grid;gap:12px 16px;grid-template-columns:repeat(3,minmax(0,1fr))}
+.trio>.panel{margin-top:14px}
+@media (max-width:900px){.trio{grid-template-columns:minmax(0,1fr)}}
+.list a{display:flex;align-items:center;gap:10px;min-height:46px;padding:7px 16px;border-top:1px solid var(--line);text-decoration:none;transition:background .15s}
+.list a:hover{background:var(--panel2)}
+.list a:active{background:var(--panel2)}
+.list .rk{flex:none;width:18px;color:var(--muted);font-weight:650;font-size:13px}
+.list .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.list .nm small{display:block;margin-top:2px;font:600 11.5px/1.2 var(--sans);color:var(--muted);letter-spacing:.04em}
+.list .chip{margin-right:0;width:22px;height:22px}
+.list .face{width:32px;height:32px;font-size:12px}
+.list .v{font:750 17px/1 var(--sans);letter-spacing:-.02em}
+.list a:first-child .v{color:var(--orange)}
+
+/* My league: a fantasy league's own room. The matchup is a centre-court board in the two fantasy teams' colours, the
+   categories one grouped card, each with a stripe for won or lost; a team without a club gets a disc of its colour */
+.tools .lg{display:grid;place-items:center;min-width:38px;height:32px;padding:0 10px;border-radius:999px;background:var(--seg);color:var(--glass-ink2);transition:background .2s,color .2s,transform .1s ease-out}
+.tools .lg svg{width:16px;height:16px}
+.tools .lg:active{transform:scale(.94)}
+.tools .lg[aria-current="page"]{background:var(--orange);color:#fff}
+@media (max-width:760px){.tools .lg{min-width:34px;padding:0 8px}}
+.board.lg{margin-top:14px}
+.board.lg .side b{font-size:26px;overflow-wrap:break-word;hyphens:auto}
+.board.lg .side .crest{background:var(--c1);color:#fff}
+@media (max-width:760px){.board.lg .side b{font-size:14px;letter-spacing:-.01em}.board.lg .mid small{max-width:118px;line-height:1.35}.board.lg .score{font-size:44px;gap:18px}}
+.lgf{background:var(--c1)}
+.cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:1px;margin-top:14px;border-radius:var(--r);overflow:hidden;background:var(--line);box-shadow:var(--sh)}
+.cat{background:var(--solid);padding:11px 13px 12px;box-shadow:inset 3px 0 0 var(--line)}
+.cat.w{box-shadow:inset 3px 0 0 var(--good)}
+.cat.lo{box-shadow:inset 3px 0 0 var(--bad)}
+.cat>span{display:flex;justify-content:space-between;font:650 11px/1 var(--sans);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.cat>span i{font-style:normal}
+.cat.w>span i{color:var(--good)}
+.cat.lo>span i{color:var(--bad)}
+.cat b{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:8px;font:750 21px/1 var(--sans);letter-spacing:-.02em}
+.cat b small{font:600 15px/1 var(--sans);color:var(--muted)}
+.slot{display:inline-block;min-width:38px;padding:3px 5px;margin-right:9px;border-radius:7px;background:var(--seg);text-align:center;font:700 11px/1.2 var(--sans);color:var(--muted)}
+.tbl tr.bn td{color:var(--muted)}
+.tbl tr.bn .slot{background:none;box-shadow:inset 0 0 0 1px var(--line)}
+.inj{display:inline-block;margin-left:7px;padding:1px 5px;border-radius:5px;background:var(--bad);color:#fff;font:700 10px/14px var(--sans)}
+.left{display:inline-flex;gap:3px;vertical-align:middle}
+.left i{width:9px;height:9px;border-radius:3px;background:var(--orange)}
+.gate p{padding:0 16px 12px;max-width:62ch;color:var(--ink2)}
+.gate form{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 16px}
+.gate input{flex:1 1 240px;min-width:0;padding:10px 14px;border:0;border-radius:999px;background:var(--seg);font:inherit;color:inherit;outline:0}
+.gate input:focus-visible{box-shadow:0 0 0 2px var(--orange)}
+.gate button{border:0;border-radius:999px;padding:10px 18px;background:var(--orange);color:#fff;font:650 14px/1 var(--sans);cursor:pointer}
+.tbl td.rk{text-align:center;font-weight:650}
+.tbl tr.me td{font-weight:700}
+.tbl .lgf{margin-right:9px;width:26px;height:26px;font-size:10px}
+.panel>h2 .lgf{width:28px;height:28px;font-size:11px}
+.lgb{display:flex;align-items:center;gap:10px;margin-top:12px;padding:9px 14px;border-radius:var(--rs);background:var(--panel);box-shadow:var(--sh);font-weight:600;text-decoration:none;color:var(--ink)}
+.lgb::after{content:"";margin-left:auto;width:8px;height:8px;border-right:2.5px solid var(--orange);border-bottom:2.5px solid var(--orange);transform:rotate(-45deg)}
+.lgb .lgf{width:26px;height:26px;font-size:10px}
+.credit{display:flex;flex-wrap:wrap;gap:6px 14px;margin:16px 4px 0;font-size:13px;color:var(--on-floor)}
+.credit a{color:inherit}
+.credit .more{margin-left:auto;color:var(--orange);font-weight:650;text-decoration:none}
+@media (max-width:760px){#hm-games{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:82%;overflow-x:auto;scroll-snap-type:x mandatory;margin:14px -12px 0;padding:0 12px 6px;scroll-padding:0 12px;scrollbar-width:none}#hm-games::-webkit-scrollbar{display:none}#hm-games>.card{scroll-snap-align:start}}
+
 /* compare: the two players meet on a court in their clubs' colours */
 .vs{display:grid;grid-template-columns:1fr 1fr;gap:2px;color:#fff;margin-top:14px;border-radius:var(--r);overflow:hidden;box-shadow:var(--sh)}
 .vs>div{position:relative;isolation:isolate;display:flex;align-items:center;gap:14px;padding:18px;min-width:0;border-bottom:5px solid var(--c2)}
@@ -209,28 +319,54 @@ a.card:active{transform:scale(.98)}
 .fail button:active{transform:scale(.95)}
 .foot{max-width:1180px;margin:0 auto;padding:4px 20px 28px;font-size:13px;color:var(--on-floor)}
 
+/* polish: form dots on Standings, a bar behind each leader's value, W/L pills in the game log, the winner's crest ringed */
+.form{display:inline-flex;gap:2.5px;margin-left:8px;vertical-align:middle}
+.form b{width:5px;height:5px;border-radius:50%;background:var(--good)}
+.form b.lo{background:var(--bad)}
+#ld td.k{position:relative;min-width:120px}
+#ld td.k .bar{position:absolute;right:12px;top:50%;height:24px;transform:translateY(-50%);border-radius:6px;background:color-mix(in srgb,var(--orange) 14%,transparent);transition:width .5s var(--spring)}
+#ld td.k .bar+*{position:relative}
+#ld tbody tr:nth-child(-n+3) td:first-child{color:var(--orange);font-weight:800}
+.tbl a.w,.tbl a.lo{display:inline-block;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--good) 13%,transparent)}
+.tbl a.lo{background:color-mix(in srgb,var(--bad) 12%,transparent)}
+.board .side.won .crest{box-shadow:inset 0 0 0 2px var(--c2,transparent),0 0 0 3px var(--orange),0 4px 14px rgba(0,0,0,.25)}
+.top.down{box-shadow:0 1px 0 var(--glass-line),0 10px 30px rgba(60,32,10,.14)}
+
+/* motion: each page rises onto the floor and its rows, tiles and cards follow a beat apart; a theme change fades */
+@keyframes rise{from{opacity:0;transform:translateY(10px)}}
+.pg.in{animation:rise .4s var(--spring) both}
+.pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a){animation:rise .45s var(--spring) both}
+.pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a):nth-child(2){animation-delay:.04s}
+.pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a):nth-child(3){animation-delay:.08s}
+.pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a):nth-child(4){animation-delay:.12s}
+.pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a):nth-child(5){animation-delay:.16s}
+.pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a):nth-child(6){animation-delay:.2s}
+.pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a):nth-child(n+7){animation-delay:.24s}
+html.swap,html.swap *{transition:background-color .35s,color .35s}
+
 /* accessibility: gentler motion, solid surfaces, stronger edges */
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}a:active,button:active,.card:active{transform:none!important}}
 @media (prefers-reduced-transparency:reduce){.top,.tabbar,.panel,.card,.tabs,.dates{background:var(--solid);-webkit-backdrop-filter:none;backdrop-filter:none}}
-@media (prefers-contrast:more){:root{--line:rgba(92,58,26,.4)}html[data-theme="dark"]{--line:rgba(255,232,206,.35)}.top,.tabbar,.panel,.card,.tabs,.dates,.tiles,select{background:var(--solid);box-shadow:0 0 0 1px var(--ink)}}
+@media (prefers-contrast:more){:root{--line:rgba(92,58,26,.4)}html[data-theme="dark"]{--line:rgba(255,232,206,.35)}.top,.tabbar,.panel,.card,.tabs,.dates,.tiles,.sel,.menu{background:var(--solid);box-shadow:0 0 0 1px var(--ink)}}
 </style>
 <header class="top">
-  <a class="id" href="#" title="Player Lab"><i></i>NBA Player Lab <span id="tag-season"></span></a>
+  <a class="id" href="#" title="NBA Player Lab"><i></i>NBA Player Lab <span id="tag-season"></span></a>
   <nav class="rail" id="rail" aria-label="Pages">
-    <a id="rl-player" href="#" data-pg="player" data-t="Player">Player</a>
+    <a id="rl-player" href="#player" data-pg="player" data-t="Player">Player</a>
     <a id="rl-compare" href="#compare" data-pg="compare" data-t="Compare">Compare</a>
     <a id="rl-standings" href="#standings" data-pg="standings" data-t="Standings">Standings</a>
     <a id="rl-games" href="#games" data-pg="games" data-t="Games@page">Games</a>
     <a id="rl-leaders" href="#leaders" data-pg="leaders" data-t="Leaders">Leaders</a>
   </nav>
   <div class="tools">
+    <a class="lg" id="lg-btn" href="#league" data-pg="league" aria-label="My league" data-ta="My league" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v4a5 5 0 0 1-10 0zM7 6H4v1a4 4 0 0 0 3.5 4M17 6h3v1a4 4 0 0 1-3.5 4M12 13v4M8 20h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
     <button type="button" data-lang="en" aria-pressed="false" aria-label="English">EN</button>
     <button type="button" data-lang="tr" aria-pressed="false" aria-label="Türkçe">TR</button>
     <button type="button" id="theme" aria-pressed="false" data-ta="Dark mode" aria-label="Dark mode"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
   </div>
 </header>
 <nav class="tabbar" id="tabbar" aria-label="Pages">
-  <a id="tb-player" href="#" data-pg="player"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 20c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span data-t="Player">Player</span></a>
+  <a id="tb-player" href="#player" data-pg="player"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 20c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span data-t="Player">Player</span></a>
   <a id="tb-compare" href="#compare" data-pg="compare"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h13M14 4l4 4-4 4M20 16H7M10 12l-4 4 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-t="Compare">Compare</span></a>
   <a id="tb-standings" href="#standings" data-pg="standings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span data-t="Standings@tab">Standings</span></a>
   <a id="tb-games" href="#games" data-pg="games"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 5v14M7 10v4M17 10v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span data-t="Games@page">Games</span></a>
@@ -239,14 +375,23 @@ a.card:active{transform:scale(.98)}
 <div class="wipe" id="wipe" aria-hidden="true"></div>
 <main class="wrap">
   <div class="fail" id="fail" hidden><b data-t="Data unavailable">Data unavailable</b><span id="fail-sub"></span><button type="button" id="retry" data-t="Retry">Retry</button></div>
+  <section class="pg" id="pg-home" hidden>
+    <div class="hero intro" id="hm-intro"></div>
+    <h2 class="sec-h on-floor" id="hm-games-h"></h2>
+    <div class="cards" id="hm-games"></div>
+    <h2 class="sec-h on-floor"><span data-t="Leaders">Leaders</span><a class="more" href="#leaders" data-t="See all">See all</a></h2>
+    <div class="trio" id="hm-leaders"></div>
+  </section>
   <section class="pg" id="pg-player" hidden>
     <div class="hero" id="hero"></div>
-    <div class="pick"><select id="team" aria-label="Team" data-ta="Team"></select><select id="player" aria-label="Player" data-ta="Player"></select></div>
+    <a class="lgb" id="lg-badge" href="#league" hidden></a>
+    <div class="pick"><select id="team" data-kind="team" aria-label="Team" data-ta="Team"></select><select id="player" data-kind="player" aria-label="Player" data-ta="Player"></select><a class="arr" id="prev" aria-label="Previous player" data-ta="Previous player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="arr" id="next" aria-label="Next player" data-ta="Next player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 5.5 6.5 6.5-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
     <div class="tiles" id="tiles"></div>
-    <section class="panel"><h2 data-t="Game log">Game log</h2><div class="scroll"><table class="tbl" id="log"></table></div></section>
+    <section class="panel" id="sc"><h2 data-t="Shot chart">Shot chart</h2><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div></section>
+    <details class="panel" id="log-sec" open><summary><h2 data-t="Game log">Game log</h2></summary><div class="scroll"><table class="tbl" id="log"></table></div></details>
   </section>
   <section class="pg" id="pg-compare" hidden>
-    <div class="pick"><select id="cmp-a" aria-label="First player" data-ta="First player"></select><select id="cmp-b" aria-label="Second player" data-ta="Second player"></select></div>
+    <div class="pick"><select id="cmp-a" data-kind="player" aria-label="First player" data-ta="First player"></select><select id="cmp-b" data-kind="player" aria-label="Second player" data-ta="Second player"></select></div>
     <div class="vs" id="cmp-vs"></div>
     <section class="panel"><div class="scroll"><table class="tbl cmp" id="cmp"></table></div></section>
   </section>
@@ -261,17 +406,39 @@ a.card:active{transform:scale(.98)}
   <section class="pg" id="pg-game" hidden>
     <div class="board" id="gm-board"></div>
     <section class="panel"><h2 data-t="Score by period">Score by period</h2><div class="scroll"><table class="tbl" id="gm-periods"></table></div></section>
+    <section class="panel"><h2 data-t="Shot charts">Shot charts</h2><div class="courts two" id="gm-shots"></div></section>
     <div id="gm-box"></div>
   </section>
   <section class="pg" id="pg-leaders" hidden>
     <div class="tabs" id="ld-tabs" role="group" aria-label="Stat" data-ta="Stat"></div>
     <section class="panel"><div class="scroll"><table class="tbl" id="ld"></table></div></section>
   </section>
+  <section class="pg" id="pg-privacy" hidden>
+    <section class="panel"><h2 data-t="Privacy">Privacy</h2><div class="prose">
+      <p data-t="NBA Player Lab has no accounts, no ads and no tracking, and sets no cookies. Your theme, language and last player are kept in your own browser only.">NBA Player Lab has no accounts, no ads and no tracking, and sets no cookies. Your theme, language and last player are kept in your own browser only.</p>
+      <p data-t="The site is hosted on GitHub Pages, which keeps standard server logs. Player pictures and club logos load from NBA's servers (cdn.nba.com), which see your IP address as any website would.">The site is hosted on GitHub Pages, which keeps standard server logs. Player pictures and club logos load from NBA's servers (cdn.nba.com), which see your IP address as any website would.</p>
+    </div></section>
+    <section class="panel"><h2 data-t="Private fantasy league">Private fantasy league</h2><div class="prose">
+      <p data-t="With its members' agreement, one private Yahoo Fantasy league can have its own page here. A league member reads it from Yahoo with read-only access, at most a few times a day.">With its members' agreement, one private Yahoo Fantasy league can have its own page here. A league member reads it from Yahoo with read-only access, at most a few times a day.</p>
+      <p data-t="The league page is encrypted and opens only with the invite link given to the league's members. It is replaced at least every 24 hours and never kept in the site's code or its history. Yahoo account ids and email addresses are never stored or shown.">The league page is encrypted and opens only with the invite link given to the league's members. It is replaced at least every 24 hours and never kept in the site's code or its history. Yahoo account ids and email addresses are never stored or shown.</p>
+      <p data-t="Any member can ask for the league page to be removed, and it is taken down with the next update.">Any member can ask for the league page to be removed, and it is taken down with the next update.</p>
+    </div></section>
+    <section class="panel"><h2 data-t="Contact">Contact</h2><div class="prose">
+      <p><span data-t="Questions and removal requests:">Questions and removal requests:</span> <a href="https://github.com/baranerdogan11/NBA-Player-Lab/issues">github.com/baranerdogan11/NBA-Player-Lab</a></p>
+    </div></section>
+  </section>
+  <section class="pg" id="pg-league" hidden>
+    <nav class="tabs" id="lg-tabs" aria-label="My league" data-ta="My league"></nav>
+    <div id="lg-body"></div>
+    <p class="credit"><span lang="en">Fantasy data provided by <a href="https://sports.yahoo.com/fantasy/" target="_blank" rel="noopener">Yahoo Fantasy</a></span><a class="more" id="lg-pick" href="#league/pick" data-t="Change team">Change team</a></p>
+  </section>
 </main>
-<footer class="foot" id="foot"></footer>
+<footer class="foot"><span id="foot"></span> · <a href="#privacy" data-t="Privacy">Privacy</a></footer>
+<div class="veil" id="veil" hidden></div>
+<div class="menu" id="menu" hidden><input type="search" autocomplete="off" aria-label="Search" data-ta="Search"><ul role="listbox" tabindex="-1"></ul></div>
 <script>
-const META = {"season": "2026-27", "base": "teams/2026-27/", "built": "2026-10-19T21:09:51Z"};
-const TR = {"Compare": "Karşılaştır", "Leaders": "Liderler", "Player": "Oyuncu", "Season": "Sezon", "Standings": "Puan durumu", "Games@page": "Maçlar", "Dark mode": "Koyu mod", "Data unavailable": "Veri yok", "Retry": "Tekrar dene", "This page could not be drawn ({err}).": "Bu sayfa çizilemedi ({err}).", "Data: NBA official box scores and play-by-play. Built {d}.": "Veri: NBA resmi maç istatistikleri ve oyun akışı. Güncelleme {d}.", "Team": "Takım", "First player": "Birinci oyuncu", "Second player": "İkinci oyuncu", "Table": "Tablo", "Game days": "Maç günleri", "Stat": "İstatistik", "Game log": "Maç maç", "Score by period": "Periyotlara göre skor", "No players yet.": "Henüz oyuncu yok.", "No games played yet.": "Henüz maç oynamadı.", "No games on this day.": "Bu gün maç yok.", "No player qualifies yet.": "Henüz barajı geçen oyuncu yok.", "Did not play": "Oynamadı", "Height": "Boy", "Age": "Yaş", "Games": "Maç", "Minutes": "Dakika", "vs": "vs", "W": "G", "L": "M", "Final": "Maç sonu", "OT": "UZ", "Q": "Ç", "Totals": "Toplamlar", "Home": "İç saha", "Away": "Deplasman", "Conferences": "Konferanslar", "East": "Doğu", "West": "Batı", "League": "Lig", "Eastern Conference": "Doğu Konferansı", "Western Conference": "Batı Konferansı", "Points": "Sayı", "Rebounds": "Ribaund", "Assists": "Asist", "Steals": "Top çalma", "Blocks": "Blok", "Turnovers": "Top kaybı", "3-pointers": "Üçlük", "FG%": "FG%", "3P%": "3S%", "FT%": "SA%", "TS%": "GŞ%", "+/-": "+/-", "PTS@stat": "SAYI", "REB@stat": "RİB", "OREB@stat": "HR", "DREB@stat": "SR", "AST@stat": "AST", "STL@stat": "TÇ", "BLK@stat": "BLK", "TOV@stat": "TK", "PF@stat": "F", "MIN@stat": "DK", "FG@stat": "FG", "3P@stat": "3S", "FT@stat": "SA", "FG%@stat": "FG%", "3P%@stat": "3S%", "FT%@stat": "SA%", "TS%@stat": "GŞ%", "+/-@stat": "+/-", "Date@stat": "Tarih", "Opp@stat": "Rakip", "Result@stat": "Sonuç", "Player@stat": "Oyuncu", "GP@stat": "M", "M-A@stat": "İ-D", "W@stat": "G", "L@stat": "M", "PCT@stat": "YÜZDE", "GB@stat": "FARK", "L10@stat": "SON 10", "STRK@stat": "SERİ", "PPG@stat": "SAYI", "OPP PPG@stat": "YEDİĞİ", "DIFF@stat": "AVERAJ", "T@total": "T", "Standings@tab": "Sıralama"};
+const META = {"season": "2026-27", "base": "teams/2026-27/", "built": "2026-10-20T14:29:37Z"};
+const TR = {"Compare": "Karşılaştır", "Leaders": "Liderler", "Player": "Oyuncu", "Season": "Sezon", "Standings": "Puan durumu", "Games@page": "Maçlar", "Dark mode": "Koyu mod", "Data unavailable": "Veri yok", "Retry": "Tekrar dene", "This page could not be drawn ({err}).": "Bu sayfa çizilemedi ({err}).", "Data: NBA official box scores and play-by-play. Built {d}.": "Veri: NBA resmi maç istatistikleri ve oyun akışı. Güncelleme {d}.", "Team": "Takım", "First player": "Birinci oyuncu", "Second player": "İkinci oyuncu", "Table": "Tablo", "Game days": "Maç günleri", "Stat": "İstatistik", "Game log": "Maç maç", "Score by period": "Periyotlara göre skor", "No players yet.": "Henüz oyuncu yok.", "No games played yet.": "Henüz maç oynamadı.", "No games on this day.": "Bu gün maç yok.", "No player qualifies yet.": "Henüz barajı geçen oyuncu yok.", "Did not play": "Oynamadı", "Height": "Boy", "Age": "Yaş", "Games": "Maç", "Minutes": "Dakika", "vs": "vs", "W": "G", "L": "M", "Final": "Maç sonu", "OT": "UZ", "Q": "Ç", "Totals": "Toplamlar", "Home": "İç saha", "Away": "Deplasman", "Conferences": "Konferanslar", "East": "Doğu", "West": "Batı", "League": "Lig", "Eastern Conference": "Doğu Konferansı", "Western Conference": "Batı Konferansı", "Points": "Sayı", "Rebounds": "Ribaund", "Assists": "Asist", "Steals": "Top çalma", "Blocks": "Blok", "Turnovers": "Top kaybı", "3-pointers": "Üçlük", "FG%": "FG%", "3P%": "3S%", "FT%": "SA%", "TS%": "GŞ%", "USG%": "KUL%", "RAPM": "RAPM", "O-RAPM": "H-RAPM", "D-RAPM": "S-RAPM", "+/-": "+/-", "PTS@stat": "SAYI", "REB@stat": "RİB", "OREB@stat": "HR", "DREB@stat": "SR", "AST@stat": "AST", "STL@stat": "TÇ", "BLK@stat": "BLK", "TOV@stat": "TK", "PF@stat": "F", "MIN@stat": "DK", "FG@stat": "FG", "3P@stat": "3S", "FT@stat": "SA", "FG%@stat": "FG%", "3P%@stat": "3S%", "FT%@stat": "SA%", "TS%@stat": "GŞ%", "+/-@stat": "+/-", "Date@stat": "Tarih", "Opp@stat": "Rakip", "Result@stat": "Sonuç", "Player@stat": "Oyuncu", "GP@stat": "M", "M-A@stat": "İ-D", "W@stat": "G", "L@stat": "M", "PCT@stat": "YÜZDE", "GB@stat": "FARK", "L10@stat": "SON 10", "STRK@stat": "SERİ", "PPG@stat": "SAYI", "OPP PPG@stat": "YEDİĞİ", "DIFF@stat": "AVERAJ", "T@total": "T", "Standings@tab": "Sıralama", "Every player. Every game.": "Her oyuncu. Her maç.", "Games played": "Oynanan maç", "Games to play": "Kalan maç", "Latest": "Son maç günü", "Tip-off": "Sezon açılışı", "Latest results": "Son sonuçlar", "Up next": "Sıradaki maçlar", "See all": "Tümü", "Search": "Ara", "No matches": "Eşleşme yok", "Previous player": "Önceki oyuncu", "Next player": "Sonraki oyuncu", "Shot chart": "Şut haritası", "Shot charts": "Şut haritaları", "Game": "Maç", "Privacy": "Gizlilik", "NBA Player Lab has no accounts, no ads and no tracking, and sets no cookies. Your theme, language and last player are kept in your own browser only.": "NBA Player Lab'de hesap, reklam ve takip yoktur; çerez de kullanılmaz. Tema, dil ve son baktığınız oyuncu yalnızca kendi tarayıcınızda saklanır.", "The site is hosted on GitHub Pages, which keeps standard server logs. Player pictures and club logos load from NBA's servers (cdn.nba.com), which see your IP address as any website would.": "Site GitHub Pages üzerinde barındırılır ve GitHub olağan sunucu kayıtlarını tutar. Oyuncu fotoğrafları ve kulüp logoları NBA'in sunucularından (cdn.nba.com) yüklenir; bu sunucular, her web sitesinde olduğu gibi IP adresinizi görür.", "Private fantasy league": "Özel fantezi ligi", "With its members' agreement, one private Yahoo Fantasy league can have its own page here. A league member reads it from Yahoo with read-only access, at most a few times a day.": "Üyelerinin onayıyla tek bir özel Yahoo Fantasy liginin burada kendi sayfası olabilir. Lig üyelerinden biri ligi Yahoo'dan yalnızca okuma izniyle, günde en fazla birkaç kez okur.", "The league page is encrypted and opens only with the invite link given to the league's members. It is replaced at least every 24 hours and never kept in the site's code or its history. Yahoo account ids and email addresses are never stored or shown.": "Lig sayfası şifrelidir ve yalnızca lig üyelerine verilen davet bağlantısıyla açılır. En geç 24 saatte bir yenilenir; sitenin kodunda ya da geçmişinde hiç tutulmaz. Yahoo hesap kimlikleri ve e-posta adresleri asla saklanmaz ve gösterilmez.", "Any member can ask for the league page to be removed, and it is taken down with the next update.": "Her üye lig sayfasının kaldırılmasını isteyebilir; sayfa bir sonraki güncellemede kaldırılır.", "Contact": "İletişim", "Questions and removal requests:": "Sorular ve kaldırma talepleri:", "My league": "Ligim", "This week": "Bu hafta", "Roster": "Kadro", "Change team": "Takımı değiştir", "Which team is yours?": "Hangi takım senin?", "Open the invite link from your league to see it here.": "Ligini burada görmek için davet bağlantısını aç.", "Paste the invite link": "Davet bağlantısını yapıştır", "Open": "Aç", "That is not a league invite link.": "Bu bir lig davet bağlantısı değil.", "This invite link does not open the league.": "Bu davet bağlantısı ligi açmıyor.", "League data is unavailable right now. It comes back with the next update.": "Lig verisi şu an yok. Bir sonraki güncellemeyle geri gelir.", "Week {n}": "{n}. hafta", "Last game night": "Son maç gecesi", "No games yet this week.": "Bu hafta henüz maç yok.", "No matchup this week.": "Bu hafta eşleşme yok.", "Left@stat": "KALAN", "3PM@stat": "ÜÇLÜK", "T@tie": "B", "W-L-T@stat": "G-M-B", "All-play@stat": "HERKESE KARŞI", "Luck@stat": "ŞANS", "On {team}": "{team} kadrosunda", "Not on a team in your league": "Liginde hiçbir takımda değil"};
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 let LANG = 'en';
@@ -311,11 +478,12 @@ const sum = log => { const s = {gp: 0, sec: 0}; for (const k of STATS) s[k] = 0;
 const loc = () => LANG === 'tr' ? 'tr-TR' : 'en-US';
 const fmtDate = (d, long) => new Intl.DateTimeFormat(loc(), long ? {weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC'} : {month: 'short', day: 'numeric', timeZone: 'UTC'}).format(new Date(`${d}T12:00:00Z`));
 const fmtTime = iso => new Intl.DateTimeFormat(loc(), {hour: '2-digit', minute: '2-digit'}).format(new Date(iso));
-// a club's logo by its NBA team id (cls: chip in tables and cards, crest on the boards, mark beside a name on colour)
-const logo = (code, cls = 'chip') => team(code) ? `<i class="${cls}" style="${colours(code)}"><b>${esc(code)}</b><img src="https://cdn.nba.com/logos/nba/${team(code).id}/primary/L/logo.svg" alt="" loading="lazy" onload="this.parentNode.classList.add('on')" onerror="this.remove()"></i>` : '';
+// a club's logo by its NBA team id (cls: chip in tables and cards, crest on the boards, mark beside a name on colour);
+// no referrer: NBA's CDN serves the file to a direct request but not to one that says it came from another site
+const logo = (code, cls = 'chip') => team(code) ? `<i class="${cls}" style="${colours(code)}"><b>${esc(code)}</b><img src="https://cdn.nba.com/logos/nba/${team(code).id}/primary/L/logo.svg" alt="" loading="lazy" referrerpolicy="no-referrer" onload="this.parentNode.classList.add('on')" onerror="this.remove()"></i>` : '';
 const initials = n => n.split(/\s+/).filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase();
 // a player's face: the NBA headshot (by his NBA person id) over his initials; the initials hide once the picture is in, and a picture that fails to load removes itself
-const face = (pid, name, big) => `<span class="face"><span>${esc(initials(name))}</span><img src="https://cdn.nba.com/headshots/nba/latest/${big ? '1040x760' : '260x190'}/${encodeURIComponent(pid)}.png" alt="" loading="lazy" onload="this.parentNode.classList.add('on')" onerror="this.remove()"></span>`;
+const face = (pid, name, big) => `<span class="face"><span>${esc(initials(name))}</span><img src="https://cdn.nba.com/headshots/nba/latest/${big ? '1040x760' : '260x190'}/${encodeURIComponent(pid)}.png" alt="" loading="lazy" referrerpolicy="no-referrer" onload="this.parentNode.classList.add('on')" onerror="this.remove()"></span>`;
 const age = born => { if (!born) return null; const b = new Date(born + 'T00:00:00Z'), n = new Date(); let a = n.getUTCFullYear() - b.getUTCFullYear(); if (n.getUTCMonth() < b.getUTCMonth() || (n.getUTCMonth() === b.getUTCMonth() && n.getUTCDate() < b.getUTCDate())) a--; return a; };
 
 // ---- data: every file once per page load, cache-busted by the build time
@@ -332,21 +500,25 @@ let LAST = '';
 try { LAST = localStorage.getItem('pl-last') || ''; } catch (e) {}
 const remember = h => { LAST = h; try { localStorage.setItem('pl-last', h); } catch (e) {} $('#tb-player').href = $('#rl-player').href = `#${h}`; };
 
-// ---- routing: #CODE[/pid], #compare[/a/b], #standings[/east|west|league], #games[/date], #game/gid, #leaders[/stat]
-const PAGES = ['player', 'compare', 'standings', 'games', 'game', 'leaders'];
+// ---- routing: the opening page on no hash (or #home), #player (the remembered player), #CODE[/pid], #compare[/a/b], #standings[/east|west|league], #games[/date], #game/gid, #leaders[/stat], #privacy,
+// #league[/roster|board|pick|team/<t>] (and the invite link #league/<id>/<key>)
+const PAGES = ['home', 'player', 'compare', 'standings', 'games', 'game', 'leaders', 'privacy', 'league'];
 let seq = 0;
 async function route() {
   const [a = '', b, c] = decodeURIComponent(location.hash.slice(1)).split('/');
   const my = ++seq;
-  const page = a === 'game' ? 'game' : PAGES.includes(a) && a !== 'player' ? a : 'player';
+  const page = a === '' ? 'home' : a === 'game' ? 'game' : PAGES.includes(a) && a !== 'player' ? a : 'player';
   $('#wipe').classList.add('on');
   $('#fail').hidden = true;
   try {
-    if (page === 'compare') await renderCompare(b, c, my);
+    if (page === 'home') await renderHome(my);
+    else if (page === 'compare') await renderCompare(b, c, my);
     else if (page === 'standings') await renderStandings(b, my);
     else if (page === 'games') await renderGames(b, my);
     else if (page === 'game') await renderGame(b, my);
     else if (page === 'leaders') await renderLeaders(b, my);
+    else if (page === 'privacy') document.title = `${t('Privacy')} · NBA Player Lab`;
+    else if (page === 'league') await renderLeague(b, c, my);
     else {
       let [code, pid] = team(a) ? [a, b] : LAST.split('/');
       if (!team(code)) code = IDX.teams[0].code;
@@ -357,6 +529,8 @@ async function route() {
     const tab = page === 'game' ? 'games' : page;
     for (const el of $$('[data-pg]')) { if (el.dataset.pg === tab) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current'); }
     document.body.dataset.page = page;
+    const pg = $(`#pg-${page}`);
+    pg.classList.remove('in'); void pg.offsetWidth; pg.classList.add('in');
   } catch (e) {
     if (my !== seq) return;
     console.warn(e);
@@ -368,14 +542,39 @@ async function route() {
 }
 const stale = my => my !== seq;
 
+// ---- Shot charts: a half court dressed like a sportypy court, the apron in the club's first colour and the paint in its
+// second, with every field-goal attempt of the play-by-play at its spot (shots.py: tenths of a foot from the rim, x to the
+// shooter's right, y away from the baseline); a make is a dot, a miss a cross. The rim is at the bottom, as the shooter sees it.
+const FLOOR = '#e8e0d7';
+const light = hex => { const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)); return 299 * r + 587 * g + 114 * b > 150000; };
+function court(code, shots) {
+  const [c1, c2] = team(code) ? team(code).colors : ['#333333', '#999999'];
+  const lane = light(c2) ? c1 : '#fff', ln = (c, w = 3) => `fill="none" stroke="${c}" stroke-width="${w}"`;
+  const made = shots.filter(s => s[3]).map(([, x, y]) => `<circle cx="${x}" cy="${-y}" r="6.5"/>`).join('');
+  const miss = shots.filter(s => !s[3]).map(([, x, y]) => `M${x - 5} ${-y - 5}l10 10m0-10-10 10`).join('');
+  return `<svg class="court" viewBox="-280 -417.5 560 500" role="img" aria-label="${esc(t('Shot chart'))}"><rect x="-280" y="-417.5" width="560" height="500" fill="${c1}"/><rect x="-250" y="-417.5" width="500" height="470" fill="${FLOOR}"/>`
+    + `<rect x="-80" y="-137.5" width="160" height="190" fill="${c2}" ${ln(lane)}/><path d="${[70, 110, 140, 170].map(d => `M-80 ${52.5 - d}h-9M80 ${52.5 - d}h9`).join('')}" ${ln(lane)}/>`
+    + `<path d="M-60 -137.5a60 60 0 0 1 120 0" ${ln(c1)}/><path d="M60 -137.5a60 60 0 0 1-120 0" ${ln(lane)} stroke-dasharray="10 9"/>`
+    + `<path d="M-220 52.5V-89.5A237.5 237.5 0 0 1 220-89.5V52.5M-40 12.5V0a40 40 0 0 1 80 0v12.5M-60-417.5a60 60 0 0 0 120 0M-20-417.5a20 20 0 0 0 40 0" ${ln(c1)}/>`
+    + `<path d="M-30 12.5h60" ${ln(c1, 5)}/><path d="M0 12.5v-5" ${ln(c1, 2.5)}/><circle r="7.5" ${ln(c1, 2.5)}/><rect x="-250" y="-417.5" width="500" height="470" ${ln(c1, 5)}/>`
+    + `<path d="${miss}" ${ln('#fff', 5)} stroke-linecap="round"/><path class="miss" d="${miss}" ${ln(c1, 2.5)} stroke-linecap="round"/><g class="made" fill="${c1}" stroke="#fff" stroke-width="1.5">${made}</g></svg>`;
+}
+// the Player page's chart: his season, or one game picked from his log, on the court of the club he shot for
+let SC = {code: '', shots: [], club: {}};
+const drawShots = () => { const g = $('#sc-game').value; $('#sc-court').innerHTML = court(g ? SC.club[g] : SC.code, g ? SC.shots.filter(s => s[0] === g) : SC.shots); };
+$('#sc-game').addEventListener('change', drawShots);
+
 // ---- Player
 async function renderPlayer(code, pid, my) {
   const data = await get(`${code}.json`);
   if (stale(my)) return;
-  const ps = data.players.map(p => ({...p, s: sum(p.log)})).sort((x, y) => y.s.sec - x.s.sec || x.name.localeCompare(y.name));
+  const jersey = p => p.jersey && /^\d+$/.test(p.jersey) ? [Number(p.jersey), p.jersey.length] : [Infinity, 0];
+  const ps = data.players.map(p => ({...p, s: sum(p.log)})).sort((x, y) => { const a = jersey(x), b = jersey(y); return (a[0] - b[0]) || (a[1] - b[1]) || x.name.localeCompare(y.name); });
   const p = ps.find(x => x.pid === pid) || ps[0];
   $('#team').innerHTML = IDX.teams.map(x => `<option value="${x.code}"${x.code === code ? ' selected' : ''}>${esc(x.city)} ${esc(x.name)}</option>`).join('');
-  $('#player').innerHTML = ps.map(x => `<option value="${esc(x.pid)}"${x === p ? ' selected' : ''}>${esc(x.name)}</option>`).join('');
+  $('#player').innerHTML = ps.map(x => `<option value="${esc(x.pid)}"${x.jersey ? ` data-j="${esc(x.jersey)}"` : ''}${x === p ? ' selected' : ''}>${esc(x.name)}</option>`).join('');
+  const i = ps.indexOf(p), step = (el, k) => { if (ps.length > 1) el.href = `#${code}/${ps[(i + k + ps.length) % ps.length].pid}`; else el.removeAttribute('href'); };
+  step($('#prev'), -1); step($('#next'), 1);
   $('#player').disabled = !p;
   const T = team(code);
   const hero = $('#hero');
@@ -383,11 +582,13 @@ async function renderPlayer(code, pid, my) {
   if (!p) {
     hero.innerHTML = `<div class="badge">${logo(code, 'crest')}</div><div class="who"><div class="tag">${logo(code, 'mark')}${EN(tname(code))}</div><h1>${EN(T.name)}</h1></div>`;
     $('#tiles').innerHTML = '';
+    $('#sc').hidden = true;
     $('#log').innerHTML = `<tbody><tr><td class="empty">${t('No players yet.')}</td></tr></tbody>`;
     remember(code);
     return;
   }
   remember(`${code}/${p.pid}`);
+  leagueBadge(p.pid);
   const s = p.s, a = age(p.born);
   hero.innerHTML = `<div class="badge">${face(p.pid, p.name, true)}</div><div class="who"><div class="tag">${logo(code, 'mark')}${EN(tname(code))}${p.pos ? ` · ${esc(p.pos)}` : ''}</div><h1>${EN(p.name)}</h1><div class="facts">${p.height ? `<span>${t('Height')} <b>${esc(p.height)}</b></span>` : ''}${a != null ? `<span>${t('Age')} <b>${a}</b></span>` : ''}<span>${t('Games')} <b>${s.gp}</b></span><span>${t('Minutes')} <b>${mpg(s.sec, s.gp)}</b></span></div></div>${p.jersey !== '' && p.jersey != null ? `<div class="num" aria-hidden="true">${esc(p.jersey)}</div>` : ''}`;
   const tiles = [['PTS', avg(s.pts, s.gp)], ['REB', avg(s.reb, s.gp)], ['AST', avg(s.ast, s.gp)], ['STL', avg(s.stl, s.gp)], ['BLK', avg(s.blk, s.gp)], ['TOV', avg(s.tov, s.gp)],
@@ -400,9 +601,32 @@ async function renderPlayer(code, pid, my) {
     const won = x.ts > x.os;
     return `<tr data-gid="${esc(x.gid)}"><td>${fmtDate(x.date)}</td><td class="l">${x.home ? t('vs') : '@'} ${esc(x.opp)}</td><td class="l"><a href="#game/${esc(x.gid)}" class="${won ? 'w' : 'lo'}">${won ? t('W') : t('L')} ${x.ts}-${x.os}</a></td>${x.sec > 0 ? `<td>${x.start ? '<i class="st"></i>' : ''}${clock(x.sec)}</td><td class="k">${x.pts}</td><td>${x.reb}</td><td>${x.ast}</td><td>${x.stl}</td><td>${x.blk}</td><td>${x.tov}</td><td>${x.fgm}-${x.fga}</td><td>${x.fg3m}-${x.fg3a}</td><td>${x.ftm}-${x.fta}</td><td>${N(signed(String(x.pm)))}</td>` : `<td class="dim l" colspan="11">${t('Did not play')}</td>`}</tr>`;
   }).join('') : `<tr><td class="empty l" colspan="${head.length}">${t('No games played yet.')}</td></tr>`}</tbody>`;
+  const played = log.filter(x => x.sec > 0), clubs = [...new Set([code, ...played.map(x => x.team)])];
+  const files = await Promise.all(clubs.map(c => get(`shots/${c}.json`).catch(() => null)));
+  if (stale(my)) return;
+  SC = {code, shots: files.flatMap(f => f && f.players[p.pid] ? f.players[p.pid].map(s => [f.games[s[0]], s[1], s[2], s[3]]) : []), club: Object.fromEntries(played.map(x => [x.gid, x.team]))};
+  $('#sc-game').innerHTML = `<option value="" data-c="${esc(code)}" selected>${t('Season')}</option>${played.map(x => `<option value="${esc(x.gid)}" data-c="${esc(x.opp)}">${fmtDate(x.date)} ${x.home ? t('vs') : '@'} ${esc(x.opp)}</option>`).join('')}`;
+  $('#sc').hidden = false;
+  drawShots();
   document.title = `${p.name} · NBA Player Lab`;
 }
 $('#team').addEventListener('change', e => { location.hash = e.target.value; });
+const LOG = $('#log-sec');
+try { if (localStorage.getItem('pl-log') === 'closed') LOG.open = false; } catch (e) {}
+LOG.addEventListener('toggle', () => { try { localStorage.setItem('pl-log', LOG.open ? 'open' : 'closed'); } catch (e) {} });
+const stepPlayer = back => { const a = $(back ? '#prev' : '#next'); if (a.href) location.hash = a.hash; };
+document.addEventListener('keydown', e => {
+  if (document.body.dataset.page !== 'player' || e.altKey || e.ctrlKey || e.metaKey || e.target.closest('input,#menu')) return;
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { stepPlayer(e.key === 'ArrowLeft'); e.preventDefault(); }
+});
+let swipe = null;
+$('#hero').addEventListener('touchstart', e => { swipe = [e.touches[0].clientX, e.touches[0].clientY]; }, {passive: true});
+$('#hero').addEventListener('touchend', e => {
+  if (!swipe) return;
+  const dx = e.changedTouches[0].clientX - swipe[0], dy = e.changedTouches[0].clientY - swipe[1];
+  swipe = null;
+  if (Math.abs(dx) > 60 && Math.abs(dy) < 40) stepPlayer(dx > 0);
+});
 $('#player').addEventListener('change', e => { location.hash = `${$('#team').value}/${e.target.value}`; });
 
 // ---- Compare: any two players, per game, from the same season totals the leaders use
@@ -458,7 +682,7 @@ async function renderStandings(view, my) {
     const gb = r => { const v = (lead.w - r.w) + (r.l - lead.l); return v === 0 ? '–' : N(rdiv(v, 2)); };
     return `<section class="panel">${title ? `<h2>${title}</h2>` : ''}<div class="scroll"><table class="tbl"><thead><tr><th>#</th><th class="l">${t('Team')}</th><th>${t('W@stat')}</th><th>${t('L@stat')}</th><th>${t('PCT@stat')}</th><th>${t('GB@stat')}</th><th>${t('Home')}</th><th>${t('Away')}</th><th>${t('L10@stat')}</th><th>${t('STRK@stat')}</th><th>${t('PPG@stat')}</th><th>${t('OPP PPG@stat')}</th><th>${t('DIFF@stat')}</th></tr></thead><tbody>${rows.map((r, i) => {
       const gp = r.w + r.l, d = signed(rdiv(r.pf - r.pa, gp));
-      return `<tr data-team="${r.code}"><td>${i + 1}</td><td class="l"><a href="#${r.code}">${logo(r.code)}${EN(tname(r.code))}</a></td><td class="k">${r.w}</td><td>${r.l}</td><td>${winPct(r.w, gp)}</td><td>${gb(r)}</td><td>${r.hw}-${r.hl}</td><td>${r.aw}-${r.al}</td><td>${l10(r.seq)}</td><td>${streak(r.seq)}</td><td>${avg(r.pf, gp)}</td><td>${avg(r.pa, gp)}</td><td class="${d[0] === '+' ? 'w' : d[0] === '−' ? 'lo' : ''}">${N(d)}</td></tr>`;
+      return `<tr data-team="${r.code}"><td>${i + 1}</td><td class="l"><a href="#${r.code}">${logo(r.code)}${EN(tname(r.code))}</a></td><td class="k">${r.w}</td><td>${r.l}</td><td>${winPct(r.w, gp)}</td><td>${gb(r)}</td><td>${r.hw}-${r.hl}</td><td>${r.aw}-${r.al}</td><td>${l10(r.seq)}${r.seq.length ? `<i class="form">${r.seq.slice(-10).map(w => `<b class="${w ? 'w' : 'lo'}"></b>`).join('')}</i>` : ''}</td><td>${streak(r.seq)}</td><td>${avg(r.pf, gp)}</td><td>${avg(r.pa, gp)}</td><td class="${d[0] === '+' ? 'w' : d[0] === '−' ? 'lo' : ''}">${N(d)}</td></tr>`;
     }).join('')}</tbody></table></div></section>`;
   };
   const all = Object.values(R).sort(order);
@@ -479,12 +703,14 @@ async function renderGames(date, my) {
   const cur = $('#gm-dates [aria-current="true"]');
   if (cur) $('#gm-dates').scrollLeft = cur.offsetLeft - 40;
   const today = G.filter(g => g.date === date);
-  const row = (code, score, win) => `<div class="row${win ? ' win' : ''}">${logo(code)}<span class="nm">${EN(tname(code))}</span>${score != null ? `<span class="sc">${score}</span>` : ''}</div>`;
-  $('#gm-list').innerHTML = today.length ? today.map(g => {
-    const fin = g.hs != null, inner = `${row(g.away, g.as, fin && g.as > g.hs)}${row(g.home, g.hs, fin && g.hs > g.as)}<div class="ft">${fin ? t('Final') : fmtTime(g.time)}</div>`;
-    return fin ? `<a class="card" href="#game/${esc(g.gid)}" data-gid="${esc(g.gid)}">${inner}</a>` : `<div class="card">${inner}</div>`;
-  }).join('') : `<p class="empty">${t('No games on this day.')}</p>`;
+  $('#gm-list').innerHTML = today.length ? today.map(gameCard).join('') : `<p class="empty">${t('No games on this day.')}</p>`;
 }
+// one game: away over home, a final opens its game page, a game to come shows its tip-off in the reader's time
+const gameCard = g => {
+  const row = (code, score, win) => `<div class="row${win ? ' win' : ''}">${logo(code)}<span class="nm">${EN(tname(code))}</span>${score != null ? `<span class="sc">${score}</span>` : ''}</div>`;
+  const fin = g.hs != null, inner = `${row(g.away, g.as, fin && g.as > g.hs)}${row(g.home, g.hs, fin && g.hs > g.as)}<div class="ft">${fin ? t('Final') : fmtTime(g.time)}</div>`;
+  return fin ? `<a class="card" href="#game/${esc(g.gid)}" data-gid="${esc(g.gid)}">${inner}</a>` : `<div class="card">${inner}</div>`;
+};
 
 // ---- Game: the scoreboard in both clubs' colours, the periods and both box scores
 async function renderGame(gid, my) {
@@ -493,7 +719,7 @@ async function renderGame(gid, my) {
   const H = team(g.home), A = team(g.away);
   const board = $('#gm-board');
   board.setAttribute('style', `--ch:${H ? H.colors[0] : '#333'};--ca:${A ? A.colors[0] : '#333'}`);
-  board.innerHTML = `<div class="side a">${logo(g.away, 'crest')}<small>${EN(A ? A.city : g.away)}</small><b><span class="full">${EN(A ? A.name : g.away)}</span><span class="abbr">${esc(g.away)}</span></b></div><div class="mid"><div class="score"><span class="${g.as < g.hs ? 'lose' : ''}">${g.as}</span><span class="${g.hs < g.as ? 'lose' : ''}">${g.hs}</span></div><small>${t('Final')}${g.periods.length > 4 ? ` · ${g.periods.length === 5 ? t('OT') : `${g.periods.length - 4}${t('OT')}`}` : ''} · ${fmtDate(g.date, true)}</small></div><div class="side h">${logo(g.home, 'crest')}<small>${EN(H ? H.city : g.home)}</small><b><span class="full">${EN(H ? H.name : g.home)}</span><span class="abbr">${esc(g.home)}</span></b></div>`;
+  board.innerHTML = `<div class="side a${g.as > g.hs ? ' won' : ''}">${logo(g.away, 'crest')}<small>${EN(A ? A.city : g.away)}</small><b><span class="full">${EN(A ? A.name : g.away)}</span><span class="abbr">${esc(g.away)}</span></b></div><div class="mid"><div class="score"><span class="${g.as < g.hs ? 'lose' : ''}">${g.as}</span><span class="${g.hs < g.as ? 'lose' : ''}">${g.hs}</span></div><small>${t('Final')}${g.periods.length > 4 ? ` · ${g.periods.length === 5 ? t('OT') : `${g.periods.length - 4}${t('OT')}`}` : ''} · ${fmtDate(g.date, true)}</small></div><div class="side h${g.hs > g.as ? ' won' : ''}">${logo(g.home, 'crest')}<small>${EN(H ? H.city : g.home)}</small><b><span class="full">${EN(H ? H.name : g.home)}</span><span class="abbr">${esc(g.home)}</span></b></div>`;
   const per = g.periods.map((_, i) => i < 4 ? `${t('Q')}${i + 1}` : g.periods.length === 5 ? t('OT') : `${t('OT')}${i - 3}`);
   $('#gm-periods').innerHTML = `<thead><tr><th>${t('Team')}</th>${per.map(p => `<th>${p}</th>`).join('')}<th>${t('T@total')}</th></tr></thead><tbody>${[[g.away, 1, g.as], [g.home, 0, g.hs]].map(([c, i, tot]) => `<tr><td class="l"><a href="#${c}">${logo(c)}${EN(tname(c))}</a></td>${g.periods.map(p => `<td>${p[i]}</td>`).join('')}<td class="k">${tot}</td></tr>`).join('')}</tbody>`;
   const head = ['Player', 'MIN', 'PTS', 'REB', 'OREB', 'DREB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'FG', '3P', 'FT', '+/-'];
@@ -503,11 +729,22 @@ async function renderGame(gid, my) {
     return `<section class="panel"><h2>${EN(tname(code))}</h2><div class="scroll"><table class="tbl" data-team="${esc(code)}" style="${tc(code)}"><thead><tr>${head.map(h => `<th>${t(h + '@stat')}</th>`).join('')}</tr></thead><tbody>${rows.map(x => `<tr data-pid="${esc(x.pid)}"><td class="l"><a href="#${esc(code)}/${esc(x.pid)}">${x.start ? '<i class="st"></i>' : ''}${face(x.pid, x.name)}${esc(x.name)}</a></td>${x.sec > 0 ? `<td>${clock(x.sec)}</td><td class="k">${x.pts}</td><td>${x.reb}</td><td>${x.oreb}</td><td>${x.dreb}</td><td>${x.ast}</td><td>${x.stl}</td><td>${x.blk}</td><td>${x.tov}</td><td>${x.pf}</td><td>${x.fgm}-${x.fga}</td><td>${x.fg3m}-${x.fg3a}</td><td>${x.ftm}-${x.fta}</td><td>${N(signed(String(x.pm)))}</td>` : `<td class="dim l" colspan="14">${t('Did not play')}</td>`}</tr>`).join('')}<tr class="tot"><td class="l">${t('Totals')}</td><td></td><td class="k" data-k="pts">${s.pts}</td><td>${s.reb}</td><td>${s.oreb}</td><td>${s.dreb}</td><td>${s.ast}</td><td>${s.stl}</td><td>${s.blk}</td><td>${s.tov}</td><td>${s.pf}</td><td>${s.fgm}-${s.fga}</td><td>${s.fg3m}-${s.fg3a}</td><td>${s.ftm}-${s.fta}</td><td></td></tr></tbody></table></div></section>`;
   };
   $('#gm-box').innerHTML = box(g.away) + box(g.home);
+  const files = await Promise.all([g.away, g.home].map(c => get(`shots/${c}.json`).catch(() => null)));
+  if (stale(my)) return;
+  $('#gm-shots').innerHTML = [g.away, g.home].map((c, i) => {
+    const f = files[i], k = f ? f.games.indexOf(gid) : -1;
+    return `<div data-team="${esc(c)}"><div class="court-h">${logo(c)}${EN(tname(c))}</div>${court(c, k < 0 ? [] : Object.values(f.players).flatMap(s => s.filter(x => x[0] === k)))}</div>`;
+  }).join('');
   document.title = `${g.away} ${g.as} · ${g.home} ${g.hs} · NBA Player Lab`;
 }
 
 // ---- Leaders: per game, or a percentage with the league's own minimums prorated to the games played (FG 300 makes,
-// 3P 82, FT 125 over 82 games); per-game boards need 70% of the club's games
+// 3P 82, FT 125 over 82 games); per-game boards need 70% of the club's games, usage and RAPM also 15 minutes a game.
+// Usage: (FGA + 0.44 FTA + TOV) × (club minutes / 5) / (minutes × the club's FGA + 0.44 FTA + TOV), over his games, in integers.
+// RAPM comes from rapm.py already rounded; the boards rank and show that value
+const usg = s => rdiv(100 * (25 * s.fga + 11 * s.fta + 25 * s.tov) * s.tm_sec, 5 * s.sec * (25 * s.tm_fga + 11 * s.tm_fta + 25 * s.tm_tov));
+const busy = (s, tg) => 10 * s.gp >= 7 * tg && s.sec >= 900 * s.gp;
+const rapm = k => [s => s[k], s => N(signed(s[k].toFixed(1))), (s, tg) => s[k] != null && busy(s, tg)];
 const LEAD = {
   pts: ['Points', s => s.pts / s.gp, s => avg(s.pts, s.gp)], reb: ['Rebounds', s => s.reb / s.gp, s => avg(s.reb, s.gp)],
   ast: ['Assists', s => s.ast / s.gp, s => avg(s.ast, s.gp)], stl: ['Steals', s => s.stl / s.gp, s => avg(s.stl, s.gp)],
@@ -517,22 +754,239 @@ const LEAD = {
   fg3: ['3P%', s => s.fg3m / s.fg3a, s => pct(s.fg3m, s.fg3a), (s, tg) => 82 * s.fg3m >= 82 * tg, s => `${s.fg3m}-${s.fg3a}`],
   ft: ['FT%', s => s.ftm / s.fta, s => pct(s.ftm, s.fta), (s, tg) => 82 * s.ftm >= 125 * tg, s => `${s.ftm}-${s.fta}`],
   ts: ['TS%', s => s.pts / (s.fga + 0.44 * s.fta), s => ts(s.pts, s.fga, s.fta), (s, tg) => 82 * s.fgm >= 300 * tg, s => String(s.pts)],
+  usg: ['USG%', s => Number(usg(s)), s => N(usg(s)), busy],
+  rapm: ['RAPM', ...rapm('rapm')], orapm: ['O-RAPM', ...rapm('orapm')], drapm: ['D-RAPM', ...rapm('drapm')],
+};
+// the top 25 who qualify for a board, each with the shown value and a rank that ties on it
+const board = (L, stat) => {
+  const [, val, fmt, qual] = LEAD[stat];
+  const ok = qual || ((s, tg) => 10 * s.gp >= 7 * tg);
+  let rank = 0, prev = null;
+  return L.filter(p => p.gp > 0 && ok(p, team(p.team) ? team(p.team).gp : 0)).sort((x, y) => val(y) - val(x) || x.name.localeCompare(y.name)).slice(0, 25).map((p, i) => {
+    const v = fmt(p);
+    if (v !== prev) { rank = i + 1; prev = v; }
+    return {p, v, rank};
+  });
 };
 async function renderLeaders(stat, my) {
   const L = (await get('leaders.json')).players;
   if (stale(my)) return;
   if (!LEAD[stat]) stat = 'pts';
-  const [, val, fmt, qual, extra] = LEAD[stat];
+  const extra = LEAD[stat][4], rows = board(L, stat), val = LEAD[stat][1], top = rows.length ? val(rows[0].p) : 0;
+  const bar = p => top > 0 ? `<i class="bar" style="width:${Math.max(0, Math.min(100, Math.round(100 * val(p) / top)))}%"></i>` : '';
   $('#ld-tabs').innerHTML = Object.entries(LEAD).map(([k, [l]]) => `<a href="#leaders/${k}" aria-current="${k === stat}">${t(l)}</a>`).join('');
-  const ok = qual || ((s, tg) => 10 * s.gp >= 7 * tg);
-  const rows = L.filter(p => p.gp > 0 && ok(p, team(p.team) ? team(p.team).gp : 0)).sort((x, y) => val(y) - val(x) || x.name.localeCompare(y.name)).slice(0, 25);
-  let rank = 0, prev = null;
-  $('#ld').innerHTML = `<thead><tr><th>#</th><th class="l">${t('Player')}</th><th class="l">${t('Team')}</th><th>${t('GP@stat')}</th>${extra ? `<th>${t(stat === 'ts' ? 'PTS@stat' : 'M-A@stat')}</th>` : ''}<th>${t(LEAD[stat][0])}</th></tr></thead><tbody>${rows.length ? rows.map((p, i) => {
-    const v = fmt(p);
-    if (v !== prev) { rank = i + 1; prev = v; }
-    return `<tr data-pid="${esc(p.pid)}"><td>${rank}</td><td class="l"><a href="#${esc(p.team)}/${esc(p.pid)}">${esc(p.name)}</a></td><td class="l">${logo(p.team)}${esc(p.team)}</td><td>${p.gp}</td>${extra ? `<td>${extra(p)}</td>` : ''}<td class="k">${v}</td></tr>`;
-  }).join('') : `<tr><td class="empty l" colspan="6">${t('No player qualifies yet.')}</td></tr>`}</tbody>`;
+  $('#ld').innerHTML = `<thead><tr><th>#</th><th class="l">${t('Player')}</th><th class="l">${t('Team')}</th><th>${t('GP@stat')}</th>${extra ? `<th>${t(stat === 'ts' ? 'PTS@stat' : 'M-A@stat')}</th>` : ''}<th>${t(LEAD[stat][0])}</th></tr></thead><tbody>${rows.length ? rows.map(({p, v, rank}) =>
+    `<tr data-pid="${esc(p.pid)}"><td>${rank}</td><td class="l"><a href="#${esc(p.team)}/${esc(p.pid)}">${esc(p.name)}</a></td><td class="l">${logo(p.team)}${esc(p.team)}</td><td>${p.gp}</td>${extra ? `<td>${extra(p)}</td>` : ''}<td class="k">${bar(p)}<span>${v}</span></td></tr>`
+  ).join('') : `<tr><td class="empty l" colspan="6">${t('No player qualifies yet.')}</td></tr>`}</tbody>`;
 }
+
+// ---- Home: the season so far, the latest night with a final (or the first night to come) and the top five on three
+// boards; every value is drawn by the same code as its own page
+async function renderHome(my) {
+  const [G, L] = await Promise.all([get('games.json').then(d => d.games), get('leaders.json').then(d => d.players)]);
+  if (stale(my)) return;
+  const played = G.filter(g => g.hs != null), last = played.length ? played[played.length - 1].date : null;
+  const day = last || (G.find(g => g.hs == null) || {}).date;
+  $('#hm-intro').innerHTML = `<div class="badge"><i></i></div><div class="who"><div class="tag">NBA Player Lab · ${esc(IDX.label)}</div><h1>${t('Every player. Every game.')}</h1><div class="facts"><span>${t('Games played')} <b>${played.length}</b></span><span>${t('Games to play')} <b>${G.length - played.length}</b></span>${day ? `<span>${t(last ? 'Latest' : 'Tip-off')} <b>${fmtDate(day, true)}</b></span>` : ''}</div></div>`;
+  $('#hm-games-h').innerHTML = `<span>${t(last ? 'Latest results' : 'Up next')}</span>${day ? `<a class="more" href="#games/${day}">${t('See all')}</a>` : ''}`;
+  const today = G.filter(g => g.date === day);
+  $('#hm-games').innerHTML = today.length ? today.map(gameCard).join('') : `<p class="empty">${t('No games on this day.')}</p>`;
+  $('#hm-leaders').innerHTML = ['pts', 'reb', 'ast'].map(stat => {
+    const rows = board(L, stat).slice(0, 5);
+    return `<section class="panel" data-stat="${stat}"><h2>${t(LEAD[stat][0])}</h2><div class="list">${rows.length ? rows.map(({p, v, rank}) =>
+      `<a href="#${esc(p.team)}/${esc(p.pid)}" data-pid="${esc(p.pid)}"><span class="rk">${rank}</span>${face(p.pid, p.name)}<span class="nm">${EN(p.name)}<small>${esc(p.team)}</small></span><b class="v">${v}</b></a>`
+    ).join('') : `<p class="empty">${t('No player qualifies yet.')}</p>`}</div></section>`;
+  }).join('');
+  document.title = 'NBA Player Lab';
+}
+
+// ---- My league: a Yahoo fantasy league, opened on this device by its invite link (#league/<id>/<key>). The pipeline
+// publishes the league as fantasy/<id>.enc, AES-256-GCM with the league id as additional data; the page keeps the key,
+// takes it out of the address and decrypts with the browser's Web Crypto. The league says who sat in which slot on which
+// day; every number is summed from the same box-score lines as the rest of the site, through sum() and rdiv.
+let LKEY = null, LTEAM = 0, LG = null;
+try { LKEY = JSON.parse(localStorage.getItem('pl-league') || 'null'); LTEAM = Number(localStorage.getItem('pl-league-team')) || 0; } catch (e) {}
+const keep = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} };
+const b64u = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+// the decrypted league, or null when this build has no league file (a failed refresh removes it rather than leave it stale)
+async function openLeague() {
+  if (LG && LG.id === LKEY.id) return LG.data;
+  const r = await fetch(`fantasy/${encodeURIComponent(LKEY.id)}.enc`, {cache: 'no-cache'});
+  if (!r.ok) return null;
+  const env = await r.json();
+  const key = await crypto.subtle.importKey('raw', b64u(LKEY.key), 'AES-GCM', false, ['decrypt']);
+  const pt = await crypto.subtle.decrypt({name: 'AES-GCM', iv: b64u(env.iv), additionalData: new TextEncoder().encode(LKEY.id)}, key, b64u(env.ct));
+  LG = {id: LKEY.id, data: JSON.parse(new TextDecoder().decode(pt))};
+  return LG.data;
+}
+const ACTIVE = slot => slot !== 'BN' && slot !== 'IL';
+// a league category: its label, the makes (m) and attempts (a) behind a percentage, and whether fewer is better
+const CAT = {
+  'fg%': {l: 'FG%@stat', m: 'fgm', a: 'fga'}, 'ft%': {l: 'FT%@stat', m: 'ftm', a: 'fta'}, '3p%': {l: '3P%@stat', m: 'fg3m', a: 'fg3a'},
+  fg3m: {l: '3PM@stat'}, pts: {l: 'PTS@stat'}, reb: {l: 'REB@stat'}, oreb: {l: 'OREB@stat'}, dreb: {l: 'DREB@stat'}, ast: {l: 'AST@stat'},
+  stl: {l: 'STL@stat'}, blk: {l: 'BLK@stat'}, tov: {l: 'TOV@stat', low: true}, pf: {l: 'PF@stat', low: true},
+};
+const catVal = (k, s) => CAT[k].m ? pct(s[CAT[k].m], s[CAT[k].a]) : String(s[k]);
+const catAvg = (k, s) => CAT[k].m ? pct(s[CAT[k].m], s[CAT[k].a]) : avg(s[k], s.gp);
+// who takes a category: a percentage on the exact ratio (integers cross-multiplied), a side with no attempts below any make
+const beats = (k, a, b) => {
+  const c = CAT[k], m = c.m, n = c.a;
+  const d = !m ? a[k] - b[k] : a[n] && b[n] ? a[m] * b[n] - b[m] * a[n] : Math.sign(a[n] && a[m]) - Math.sign(b[n] && b[m]);
+  return Math.sign(c.low ? -d : d);
+};
+const LCOL = ['#c4521a', '#2d6a8a', '#6b4b2e', '#3d6b3a', '#7a3b69', '#2f5d62', '#8a6d1d', '#4a4f8c', '#8c3b3b', '#3b6e8c', '#5c6b2f', '#6b5a8c'];
+const lcol = T => LCOL[(T.t - 1) % LCOL.length];
+const lface = T => `<span class="face lgf" style="--c1:${lcol(T)}"><span>${esc(initials(T.name))}</span></span>`;
+// every box line a team counts in a week: its players' lines on the days they sat in an active slot (or on the bench)
+const lines = (T, w, logs, active = true) => T.runs.flatMap(([pid, slot, from, to]) => ACTIVE(slot) !== active ? [] :
+  (logs[pid] || []).filter(x => x.sec > 0 && x.date >= from && x.date <= to && x.date >= w[0] && x.date <= w[1]).map(x => ({...x, pid, slot})));
+async function renderLeague(view, arg, my) {
+  if (view && arg && /^\d+$/.test(view)) {   // the invite link: keep the key on this device, take it out of the address
+    LKEY = {id: view, key: arg};
+    LG = null;
+    keep('pl-league', JSON.stringify(LKEY));
+    history.replaceState(null, '', '#league');
+    view = '';
+  }
+  $('#lg-btn').hidden = !LKEY;
+  const tabs = $('#lg-tabs'), body = $('#lg-body');
+  const gate = (msg, paste) => {
+    tabs.hidden = $('#lg-pick').hidden = true;
+    body.innerHTML = `<section class="panel gate"><h2>${t('My league')}</h2><p>${msg}</p>${paste ? `<form id="lg-form"><input id="lg-link" autocomplete="off" aria-label="${t('Paste the invite link')}" placeholder="${t('Paste the invite link')}"><button type="submit">${t('Open')}</button></form>` : ''}</section>`;
+    document.title = `${t('My league')} · NBA Player Lab`;
+  };
+  if (!LKEY) return gate(t('Open the invite link from your league to see it here.'), true);
+  let L;
+  try {
+    L = await openLeague();
+  } catch (e) {
+    if (e.name !== 'OperationError') throw e;   // the key does not open this league file: forget it
+    LKEY = null;
+    keep('pl-league', null);
+    $('#lg-btn').hidden = true;
+    if (stale(my)) return;
+    return gate(t('This invite link does not open the league.'), true);
+  }
+  if (stale(my)) return;
+  if (!L) return gate(t('League data is unavailable right now. It comes back with the next update.'), false);
+  const me = L.teams.find(T => T.t === LTEAM);
+  $('#lg-pick').hidden = false;
+  document.title = `${L.league.name} · NBA Player Lab`;
+  if (view === 'pick' || !me) {
+    tabs.hidden = $('#lg-pick').hidden = true;
+    body.innerHTML = `<section class="panel"><h2>${t('Which team is yours?')}</h2><div class="list">${L.teams.map(T =>
+      `<a href="#league" data-lt="${T.t}"><span class="rk">${T.t === LTEAM ? '✓' : ''}</span>${lface(T)}<span class="nm">${esc(T.name)}<small>${esc(T.mgr)}</small></span></a>`).join('')}</div></section>`;
+    return;
+  }
+  const other = view === 'team' ? L.teams.find(T => String(T.t) === arg) : null;
+  view = other ? 'roster' : view === 'roster' || view === 'board' ? view : 'week';
+  tabs.hidden = false;
+  tabs.innerHTML = [['week', 'This week', '#league'], ['roster', 'Roster', '#league/roster'], ['board', 'League', '#league/board']].map(([k, l, h]) => `<a href="${h}" aria-current="${other ? k === 'board' : k === view}">${t(l)}</a>`).join('');
+  const n = L.league.week, w = L.league.weeks[n - 1], cats = L.league.cats.filter(k => CAT[k]);
+  const mu = L.matchups.find(m => m[0] === n && (m[1] === me.t || m[2] === me.t));
+  const opp = mu ? L.teams.find(T => T.t === (mu[1] === me.t ? mu[2] : mu[1])) : null;
+  // the players' box lines: the season board says each one's club now, and the club's file holds his log of every club
+  const pids = [...new Set((view === 'board' ? L.teams : other ? [other] : [me, opp].filter(Boolean)).flatMap(T => [...T.roster.map(r => r[0]), ...T.runs.map(r => r[0])]))];
+  const P = Object.fromEntries((await get('leaders.json')).players.map(p => [p.pid, p]));
+  const clubs = [...new Set(pids.map(pid => P[pid] && P[pid].team).filter(Boolean))];
+  const [G, ...files] = await Promise.all([get('games.json').then(d => d.games), ...clubs.map(c => get(`${c}.json`))]);
+  if (stale(my)) return;
+  const logs = {};
+  for (const f of files) for (const p of f.players) logs[p.pid] = p.log;
+  const who = (pid, x) => { const p = P[pid], code = x ? x.team : p ? p.team : ''; return `<a href="#${esc(code)}/${esc(pid)}" style="${colours(code)}">${face(pid, p ? p.name : pid)}${esc(p ? p.name : pid)}</a>`; };
+  if (view === 'board') {
+    body.innerHTML = leagueBoard(L, me, w, cats, logs);
+    return;
+  }
+  if (view === 'roster') {
+    const order = s => { const i = L.league.slots.indexOf(s); return i < 0 ? 99 : i; };
+    const left = code => G.filter(g => g.hs == null && g.date >= w[0] && g.date <= w[1] && (g.home === code || g.away === code));
+    const T0 = other || me, rows = [...T0.roster].sort((a, b) => order(a[1]) - order(b[1]));
+    body.innerHTML = `<section class="panel"><h2>${lface(T0)}${esc(T0.name)}</h2><div class="scroll"><table class="tbl" id="lg-roster"><thead><tr><th class="l">${t('Player@stat')}</th><th class="l">${t('Left@stat')}</th><th>${t('GP@stat')}</th>${cats.map(k => `<th>${t(CAT[k].l)}</th>`).join('')}</tr></thead><tbody>${rows.map(([pid, slot, , st]) => {
+      const p = P[pid], s = p || {gp: 0}, gl = p ? left(p.team) : [];
+      return `<tr data-pid="${esc(pid)}"${ACTIVE(slot) ? '' : ' class="bn"'}><td class="l"><span class="slot">${esc(slot)}</span>${who(pid)}${st ? `<i class="inj">${esc(st)}</i>` : ''}</td><td class="l" data-left="${gl.length}"><span class="left" title="${gl.map(g => fmtDate(g.date)).join(', ')}">${gl.map(() => '<i></i>').join('')}</span></td><td>${s.gp}</td>${cats.map(k => `<td data-cat="${k}">${s.gp ? catAvg(k, s) : '–'}</td>`).join('')}</tr>`;
+    }).join('')}</tbody></table></div></section>`;
+    return;
+  }
+  const mine = lines(me, w, logs), theirs = opp ? lines(opp, w, logs) : [];
+  const a = sum(mine), b = sum(theirs), res = opp ? cats.map(k => beats(k, a, b)) : [];
+  const won = res.filter(r => r > 0).length, lost = res.filter(r => r < 0).length, tied = res.filter(r => r === 0).length;
+  const side = (T, cls) => `<div class="side ${cls}" style="--c1:${lcol(T)}"><i class="crest">${esc(initials(T.name))}</i><small>${esc(T.mgr)} · ${T.w}-${T.l}-${T.tie}</small><b>${esc(T.name)}</b></div>`;
+  const when = `${t('Week {n}', {n})} · ${fmtDate(w[0])} – ${fmtDate(w[1])}`;
+  const top = opp ? `<div class="board lg" id="lg-board" style="--ca:${lcol(me)};--ch:${lcol(opp)}">${side(me, 'a')}<div class="mid"><div class="score"><span class="${won < lost ? 'lose' : ''}">${won}</span><span class="${lost < won ? 'lose' : ''}">${lost}</span></div><small>${when}${tied ? ` · ${tied} ${t('T@tie')}` : ''}</small></div>${side(opp, 'h')}</div>`
+    : `<div class="board lg" id="lg-board" style="--ca:${lcol(me)};--ch:${lcol(me)}">${side(me, 'a')}<div class="mid"><small>${when} · ${t('No matchup this week.')}</small></div><div></div></div>`;
+  const tiles = `<div class="cats" id="lg-cats">${cats.map((k, i) => {
+    const r = res[i];
+    return `<div class="cat${r > 0 ? ' w' : r < 0 ? ' lo' : ''}" data-cat="${k}"><span>${t(CAT[k].l)}<i>${r > 0 ? t('W') : r < 0 ? t('L') : opp ? t('T@tie') : ''}</i></span><b><span class="v">${catVal(k, a)}</span>${opp ? `<small>${catVal(k, b)}</small>` : ''}</b></div>`;
+  }).join('')}</div>`;
+  // the latest night either team had a player on the floor, active slots first and the bench dimmed below
+  const night = [...mine, ...theirs].reduce((d, x) => x.date > d ? x.date : d, '');
+  const head = ['MIN', 'PTS', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'FG', '3P', 'FT'];
+  const box = T => {
+    const on = lines(T, w, logs).filter(x => x.date === night), off = lines(T, w, logs, false).filter(x => x.date === night);
+    return `<section class="panel"><h2>${esc(T.name)}</h2><div class="scroll"><table class="tbl" data-t="${T.t}"><thead><tr><th class="l">${t('Player@stat')}</th>${head.map(h => `<th>${t(h + '@stat')}</th>`).join('')}</tr></thead><tbody>${[...on, ...off].map(x =>
+      `<tr data-pid="${esc(x.pid)}"${ACTIVE(x.slot) ? '' : ' class="bn"'}><td class="l"><span class="slot">${esc(x.slot)}</span>${who(x.pid, x)}</td><td>${clock(x.sec)}</td><td class="k">${x.pts}</td><td>${x.reb}</td><td>${x.ast}</td><td>${x.stl}</td><td>${x.blk}</td><td>${x.tov}</td><td>${x.fgm}-${x.fga}</td><td>${x.fg3m}-${x.fg3a}</td><td>${x.ftm}-${x.fta}</td></tr>`
+    ).join('') || `<tr><td class="empty l" colspan="${head.length + 1}">${t('Did not play')}</td></tr>`}</tbody></table></div></section>`;
+  };
+  body.innerHTML = top + tiles + (night ? `<h2 class="sec-h on-floor">${t('Last game night')} · ${fmtDate(night, true)}</h2>${box(me)}${opp ? box(opp) : ''}` : `<p class="empty">${t('No games yet this week.')}</p>`);
+}
+// The league board: Yahoo's standings, the all-play record over the finished weeks (each week against every other team,
+// a match won on more categories), luck (matches won less the all-play share of them, in exact integers), and each
+// category's season rank. A finished week counts Yahoo's totals, the only ones the league keeps; this week counts ours.
+function leagueBoard(L, me, w, cats, logs) {
+  const n = L.league.week, others = L.teams.length - 1;
+  const week = (k, T) => k === n ? sum(lines(T, w, logs)) : (L.yahoo[k] || {})[T.t];
+  const match = (k, a, b) => Math.sign(cats.reduce((d, c) => d + beats(c, a, b), 0));
+  const R = L.teams.map(T => ({T, ap: [0, 0, 0], season: {gp: 0}}));
+  for (let k = 1; k <= n; k++) {
+    const tot = R.map(r => week(k, r.T));
+    if (tot.some(x => !x)) continue;
+    R.forEach((r, i) => {
+      for (const c of [...STATS, 'gp']) r.season[c] = (r.season[c] || 0) + (tot[i][c] || 0);
+      if (k < n) tot.forEach((x, j) => { if (j !== i) { const m = match(k, tot[i], x); r.ap[m > 0 ? 0 : m < 0 ? 1 : 2]++; } });
+    });
+  }
+  const rank = c => { const vals = R.map(r => r.season); return R.map(r => 1 + vals.filter(v => beats(c, v, r.season) > 0).length); };
+  const ranks = cats.map(rank);
+  const played = R[0].ap.reduce((a, b) => a + b, 0) > 0;
+  const order = [...R.keys()].sort((i, j) => (R[i].T.rank || 99) - (R[j].T.rank || 99));
+  const heat = k => `background:color-mix(in srgb,var(--orange) ${Math.round(70 * (L.teams.length - k) / others)}%,transparent)`;
+  return `<section class="panel"><h2>${esc(L.league.name)}</h2><div class="scroll"><table class="tbl" id="lg-table"><thead><tr><th>#</th><th class="l">${t('Team')}</th><th>${t('W-L-T@stat')}</th><th>${t('All-play@stat')}</th><th>${t('Luck@stat')}</th>${cats.map(c => `<th>${t(CAT[c].l)}</th>`).join('')}</tr></thead><tbody>${order.map(i => {
+    const {T, ap} = R[i], luck = played ? N(signed(rdiv(others * T.w - ap[0], others))) : '–';
+    return `<tr data-t="${T.t}"${T === me ? ' class="me"' : ''}><td>${T.rank || ''}</td><td class="l"><a href="#league/team/${T.t}">${lface(T)}${esc(T.name)}</a> <span class="dim">${esc(T.mgr)}</span></td><td class="k">${T.w}-${T.l}-${T.tie}</td><td>${played ? ap.join('-') : '–'}</td><td data-luck>${luck}</td>${ranks.map((rk, c) => `<td class="rk" data-cat="${cats[c]}" style="${heat(rk[i])}">${rk[i]}</td>`).join('')}</tr>`;
+  }).join('')}</tbody></table></div></section>`;
+}
+
+// on a device with a league unlocked, the Player page says which team in it has the player, and in which slot
+async function leagueBadge(pid) {
+  const el = $('#lg-badge');
+  el.hidden = true;
+  if (!LKEY) return;
+  let L = null;
+  try { L = await openLeague(); } catch (e) {}
+  if (!L || $('#player').value !== pid) return;
+  const T = L.teams.find(x => x.roster.some(r => r[0] === pid)), r = T && T.roster.find(x => x[0] === pid);
+  el.innerHTML = T ? `${lface(T)}<span class="lbl">${t('On {team}', {team: esc(T.name)})} · ${esc(r[1])}</span>` : `<span class="lbl">${t('Not on a team in your league')}</span>`;
+  el.href = T ? `#league/team/${T.t}` : '#league';
+  el.hidden = false;
+}
+
+// picking a team, and opening a pasted invite link
+$('#lg-body').addEventListener('click', e => {
+  const a = e.target.closest('[data-lt]');
+  if (!a) return;
+  e.preventDefault();
+  LTEAM = Number(a.dataset.lt);
+  keep('pl-league-team', String(LTEAM));
+  if (location.hash === '#league') route(); else location.hash = 'league';
+});
+$('#lg-body').addEventListener('input', e => { if (e.target.id === 'lg-link') e.target.setCustomValidity(''); });
+$('#lg-body').addEventListener('submit', e => {
+  e.preventDefault();
+  const input = $('#lg-link'), m = /#league\/(\d+)\/([\w-]{43})/.exec(input.value);
+  input.setCustomValidity(m ? '' : t('That is not a league invite link.'));
+  if (m) location.hash = `league/${m[1]}/${m[2]}`; else input.reportValidity();
+});
 
 // ---- language and theme
 function applyLang() {
@@ -549,11 +1003,72 @@ for (const b of $$('[data-lang]')) b.addEventListener('click', () => {
   route();
 });
 const setTheme = dark => { document.documentElement.dataset.theme = dark ? 'dark' : 'light'; $('#theme').setAttribute('aria-pressed', String(dark)); };
+window.addEventListener('scroll', () => $('.top').classList.toggle('down', scrollY > 8), {passive: true});
 setTheme(document.documentElement.dataset.theme === 'dark');
 $('#theme').addEventListener('click', () => {
   const dark = document.documentElement.dataset.theme !== 'dark';
+  document.documentElement.classList.add('swap');
+  setTimeout(() => document.documentElement.classList.remove('swap'), 400);
   setTheme(dark);
   try { localStorage.setItem('pl-theme', dark ? 'dark' : 'light'); } catch (e) {}
+});
+
+// ---- pickers: a button in the select's place and one shared menu; the select keeps the options, the value and the change event
+const MENU = $('#menu'), VEIL = $('#veil'), Q = $('#menu input'), LIST = $('#menu ul');
+let OPEN = null;
+const icon = (sel, o) => sel.dataset.kind === 'team' ? logo(o.value) : sel.dataset.kind === 'game' ? logo(o.dataset.c) : face(o.value, o.textContent);
+const label = (sel, o) => `${icon(sel, o)}${o.dataset.j ? `<i class="j">${esc(o.dataset.j)}</i>` : ''}<span>${esc(o.textContent)}</span>`;
+const item = (sel, o) => `<li role="option" id="mo-${esc(o.value)}" data-v="${esc(o.value)}" aria-selected="${o.selected}">${label(sel, o)}</li>`;
+const activate = li => { for (const x of $$('.on', LIST)) x.classList.remove('on'); if (li) { li.classList.add('on'); LIST.setAttribute('aria-activedescendant', li.id); } };
+function fillMenu(sel, q = '') {
+  const f = q.trim().toLocaleLowerCase(loc()), hit = o => !f || o.textContent.toLocaleLowerCase(loc()).includes(f);
+  const groups = $$('optgroup', sel);
+  LIST.innerHTML = (groups.length ? groups.map(g => { const rows = $$('option', g).filter(o => hit(o) || g.label.toLocaleLowerCase(loc()).includes(f)); return rows.length ? `<li class="h">${esc(g.label)}</li>${rows.map(o => item(sel, o)).join('')}` : ''; }).join('')
+    : $$('option', sel).filter(hit).map(o => item(sel, o)).join('')) || `<li class="empty">${t('No matches')}</li>`;
+  activate($('[aria-selected="true"]', LIST) || $('[role="option"]', LIST));
+}
+function closeMenu() {
+  if (!OPEN) return;
+  MENU.hidden = VEIL.hidden = true;
+  OPEN.btn.setAttribute('aria-expanded', 'false');
+  OPEN.btn.focus({preventScroll: true});
+  OPEN = null;
+}
+function openMenu(sel, btn) {
+  OPEN = {sel, btn};
+  btn.setAttribute('aria-expanded', 'true');
+  Q.value = ''; Q.placeholder = t('Search'); Q.hidden = sel.options.length <= 12;
+  fillMenu(sel);
+  MENU.hidden = VEIL.hidden = false;
+  const r = btn.getBoundingClientRect(), w = Math.max(r.width, 260);
+  MENU.style.left = `${Math.max(10, Math.min(r.left, innerWidth - w - 10))}px`; MENU.style.width = `${w}px`; MENU.style.top = `${r.bottom + 6}px`;
+  MENU.style.maxHeight = `${Math.max(220, Math.min(420, innerHeight - r.bottom - 16))}px`;
+  (Q.hidden || !matchMedia('(hover:hover)').matches ? LIST : Q).focus({preventScroll: true});   // no keyboard popping up over a phone's sheet
+  const on = $('.on', LIST); if (on) on.scrollIntoView({block: 'center'});
+}
+const choose = v => { const {sel} = OPEN; closeMenu(); if (sel.value !== v) { sel.value = v; sel.dispatchEvent(new Event('change', {bubbles: true})); } };
+for (const sel of $$('select')) {
+  const btn = document.createElement('button');
+  btn.type = 'button'; btn.className = 'sel'; btn.setAttribute('aria-haspopup', 'listbox'); btn.setAttribute('aria-expanded', 'false');
+  sel.after(btn); sel.hidden = true;
+  const sync = () => { const o = sel.selectedOptions[0]; btn.innerHTML = o ? label(sel, o) : '<span>–</span>'; btn.disabled = sel.disabled; btn.setAttribute('aria-label', sel.getAttribute('aria-label')); };
+  new MutationObserver(sync).observe(sel, {childList: true, attributes: true});
+  sel.addEventListener('change', sync);
+  btn.addEventListener('click', () => OPEN && OPEN.sel === sel ? closeMenu() : openMenu(sel, btn));
+}
+VEIL.addEventListener('click', closeMenu);
+window.addEventListener('resize', closeMenu);
+window.addEventListener('scroll', closeMenu, {passive: true});
+Q.addEventListener('input', () => fillMenu(OPEN.sel, Q.value));
+LIST.addEventListener('click', e => { const li = e.target.closest('[role="option"]'); if (li) choose(li.dataset.v); });
+LIST.addEventListener('mousemove', e => { const li = e.target.closest('[role="option"]'); if (li && !li.classList.contains('on')) activate(li); });
+MENU.addEventListener('keydown', e => {
+  const rows = $$('[role="option"]', LIST), i = rows.findIndex(x => x.classList.contains('on'));
+  if (e.key === 'Escape') closeMenu();
+  else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { const li = rows[Math.max(0, Math.min(rows.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)))]; if (li) { activate(li); li.scrollIntoView({block: 'nearest'}); } }
+  else if (e.key === 'Enter') { if (rows[i]) choose(rows[i].dataset.v); }
+  else return;
+  e.preventDefault();
 });
 
 async function boot() {
@@ -567,6 +1082,7 @@ async function boot() {
   TEAMS = Object.fromEntries(IDX.teams.map(x => [x.code, x]));
   $('#tag-season').textContent = IDX.label;
   if (LAST) remember(LAST);
+  $('#lg-btn').hidden = !LKEY;
   applyLang();
   window.addEventListener('hashchange', route);
   await route();
