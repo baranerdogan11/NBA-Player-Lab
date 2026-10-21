@@ -120,6 +120,8 @@ a,button,select,.card{-webkit-tap-highlight-color:transparent}
 .five .faces .face:first-child{margin-left:0}
 .five .nm{display:block;font-size:12.5px;color:var(--muted);line-height:1.35}
 #lu .scroll+.scroll{margin-top:12px}
+.fives{display:grid;gap:16px;padding-bottom:4px}
+@media (min-width:1100px){.fives{grid-template-columns:1fr 1fr}}
 @media (max-width:760px){.tbl .x{display:none}}
 /* a club's logo from NBA's CDN; until it loads (or if it never does) the club's two colours, or its code on a crest */
 .chip,.crest,.mark{position:relative;display:inline-grid;place-items:center;flex:none;vertical-align:middle}
@@ -416,6 +418,7 @@ html.swap,html.swap *{transition:background-color .35s,color .35s}
     <section class="panel"><h2 data-t="Score by period">Score by period</h2><div class="scroll"><table class="tbl" id="gm-periods"></table></div></section>
     <section class="panel"><h2 data-t="Shot charts">Shot charts</h2><div class="courts two" id="gm-shots"></div></section>
     <div id="gm-box"></div>
+    <section class="panel" id="gm-lu" hidden><h2 data-t="Lineups">Lineups</h2><div class="fives" id="gm-fives"></div></section>
   </section>
   <section class="pg" id="pg-leaders" hidden>
     <div class="tabs" id="ld-tabs" role="group" aria-label="Stat" data-ta="Stat"></div>
@@ -793,6 +796,17 @@ async function renderGame(gid, my) {
     const f = files[i], k = f ? f.games.indexOf(gid) : -1;
     return `<div data-team="${esc(c)}"><div class="court-h">${logo(c)}${EN(tname(c))}</div>${court(c, k < 0 ? [] : Object.values(f.players).flatMap(s => s.filter(x => x[0] === k)))}</div>`;
   }).join('');
+  // each club's five units with the most minutes in this game; their points for and against tie to the box score's +/-
+  const lus = await Promise.all([g.away, g.home].map(c => get(`lineups/${c}.json`).catch(() => null)));
+  if (stale(my)) return;
+  const names = Object.fromEntries(Object.values(g.box).flat().map(x => [x.pid, x.name])), name = pid => names[pid] || pid;
+  const sides = [g.away, g.home].map((c, i) => {
+    const f = lus[i], k = f ? f.games.indexOf(gid) : -1;
+    return {c, f, rows: k < 0 ? [] : f.rows.filter(r => r[0] === k).sort((a, b) => b[2] - a[2]).slice(0, 5)};
+  });
+  $('#gm-lu').hidden = !sides.some(s => s.rows.length);
+  $('#gm-fives').innerHTML = sides.map(({c, f, rows}) => `<div data-team="${esc(c)}"><div class="court-h">${logo(c)}${EN(tname(c))}</div><div class="scroll"><table class="tbl" style="${tc(c)}"><thead><tr><th class="l">${t('Lineup@stat')}</th><th>${t('MIN@stat')}</th><th>${t('PTS@stat')}</th><th>${t('+/-@stat')}</th></tr></thead><tbody>${rows.map(r =>
+    `<tr data-five="${esc(f.fives[r[1]].join(','))}">${fiveCell(c, f.fives[r[1]], name)}<td>${clock(rq(r[2], 10, 0))}</td><td>${r[3]}-${r[4]}</td><td class="k">${N(signed(String(r[3] - r[4])))}</td></tr>`).join('')}</tbody></table></div></div>`).join('');
   document.title = `${g.away} ${g.as} · ${g.home} ${g.hs} · NBA Player Lab`;
 }
 

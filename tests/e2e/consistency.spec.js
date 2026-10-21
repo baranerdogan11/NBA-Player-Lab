@@ -137,3 +137,30 @@ test('lineups and on/off agree with the game log', async ({page}) => {
   }
   expect(problems, 'the page reported errors').toEqual([]);
 });
+
+// A game's lineups: at most five units a club, most minutes first, each row's +/- its points for minus against; the
+// fixture plays four or fewer fives a game, so every unit is shown and their points add up to the final
+test('a game\'s lineups add up to its score', async ({page}) => {
+  const problems = await prepare(page);
+  await page.goto('./#games/2026-10-21');
+  await settled(page);
+  const gid = await page.evaluate(() => document.querySelector('#gm-list a.card').dataset.gid);
+  await go(page, `#game/${gid}`, () => !document.querySelector('#gm-lu').hidden);
+  const score = await page.$$eval('#gm-board .score span', s => s.map(x => +x.textContent));
+  const sides = await page.$$eval('#gm-fives > div', ds => ds.map(d => [...d.querySelectorAll('tbody tr')].map(tr => ({
+    n: tr.dataset.five.split(',').length, faces: tr.querySelectorAll('.face').length, min: tr.cells[1].textContent, pts: tr.cells[2].textContent, pm: tr.cells[3].textContent}))));
+  expect(sides.length).toBe(2);
+  sides.forEach((rows, i) => {
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.length).toBeLessThanOrEqual(5);
+    const sec = rows.map(r => r.min.split(':').reduce((m, s) => 60 * +m + +s));
+    expect(sec, 'most minutes first').toEqual([...sec].sort((a, b) => b - a));
+    for (const r of rows) {
+      const [f, a] = r.pts.split('-').map(Number);
+      expect([r.n, r.faces]).toEqual([5, 5]);
+      expect(Number(r.pm.replace('−', '-'))).toBe(f - a);
+    }
+    expect(rows.reduce((s, r) => s + Number(r.pts.split('-')[0]), 0), 'points add up to the final').toBe(score[i]);
+  });
+  expect(problems, 'the page reported errors').toEqual([]);
+});
