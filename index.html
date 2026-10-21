@@ -114,6 +114,15 @@ a,button,select,.card{-webkit-tap-highlight-color:transparent}
 .face.on>span{visibility:hidden}
 .face img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 12%}
 .tbl .face{margin-right:9px;width:26px;height:26px;font-size:10px}
+.tbl td.five{white-space:normal;min-width:170px}
+.five .faces{display:flex;margin-bottom:4px}
+.five .faces .face{margin:0 0 0 -4px;box-shadow:0 0 0 2px var(--panel),inset 0 0 0 1.5px var(--c2,transparent)}
+.five .faces .face:first-child{margin-left:0}
+.five .nm{display:block;font-size:12.5px;color:var(--muted);line-height:1.35}
+#lu .scroll+.scroll{margin-top:12px}
+.fives{display:grid;gap:16px;padding-bottom:4px}
+@media (min-width:1100px){.fives{grid-template-columns:1fr 1fr}}
+@media (max-width:760px){.tbl .x{display:none}}
 /* a club's logo from NBA's CDN; until it loads (or if it never does) the club's two colours, or its code on a crest */
 .chip,.crest,.mark{position:relative;display:inline-grid;place-items:center;flex:none;vertical-align:middle}
 .chip{width:18px;height:18px;margin-right:8px;border-radius:50%;background:linear-gradient(135deg,var(--c1) 55%,var(--c2) 55%);box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
@@ -388,6 +397,7 @@ html.swap,html.swap *{transition:background-color .35s,color .35s}
     <div class="pick"><select id="team" data-kind="team" aria-label="Team" data-ta="Team"></select><select id="player" data-kind="player" aria-label="Player" data-ta="Player"></select><a class="arr" id="prev" aria-label="Previous player" data-ta="Previous player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="arr" id="next" aria-label="Next player" data-ta="Next player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 5.5 6.5 6.5-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
     <div class="tiles" id="tiles"></div>
     <section class="panel" id="sc"><h2 data-t="Shot chart">Shot chart</h2><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div></section>
+    <section class="panel" id="lu" hidden><h2 data-t="Lineups">Lineups</h2><div class="scroll"><table class="tbl" id="onoff"></table></div><div class="scroll"><table class="tbl" id="fives"></table></div></section>
     <details class="panel" id="log-sec" open><summary><h2 data-t="Game log">Game log</h2></summary><div class="scroll"><table class="tbl" id="log"></table></div></details>
   </section>
   <section class="pg" id="pg-compare" hidden>
@@ -408,6 +418,7 @@ html.swap,html.swap *{transition:background-color .35s,color .35s}
     <section class="panel"><h2 data-t="Score by period">Score by period</h2><div class="scroll"><table class="tbl" id="gm-periods"></table></div></section>
     <section class="panel"><h2 data-t="Shot charts">Shot charts</h2><div class="courts two" id="gm-shots"></div></section>
     <div id="gm-box"></div>
+    <section class="panel" id="gm-lu" hidden><h2 data-t="Lineups">Lineups</h2><div class="fives" id="gm-fives"></div></section>
   </section>
   <section class="pg" id="pg-leaders" hidden>
     <div class="tabs" id="ld-tabs" role="group" aria-label="Stat" data-ta="Stat"></div>
@@ -437,8 +448,8 @@ html.swap,html.swap *{transition:background-color .35s,color .35s}
 <div class="veil" id="veil" hidden></div>
 <div class="menu" id="menu" hidden><input type="search" autocomplete="off" aria-label="Search" data-ta="Search"><ul role="listbox" tabindex="-1"></ul></div>
 <script>
-const META = {"season": "2026-27", "base": "teams/2026-27/", "built": "2026-10-21T08:28:47Z"};
-const TR = {"Compare": "Karşılaştır", "Leaders": "Liderler", "Player": "Oyuncu", "Season": "Sezon", "Standings": "Puan durumu", "Games@page": "Maçlar", "Dark mode": "Koyu mod", "Data unavailable": "Veri yok", "Retry": "Tekrar dene", "This page could not be drawn ({err}).": "Bu sayfa çizilemedi ({err}).", "Data: NBA official box scores and play-by-play. Built {d}.": "Veri: NBA resmi maç istatistikleri ve oyun akışı. Güncelleme {d}.", "Team": "Takım", "First player": "Birinci oyuncu", "Second player": "İkinci oyuncu", "Table": "Tablo", "Game days": "Maç günleri", "Stat": "İstatistik", "Game log": "Maç maç", "Score by period": "Periyotlara göre skor", "No players yet.": "Henüz oyuncu yok.", "No games played yet.": "Henüz maç oynamadı.", "No games on this day.": "Bu gün maç yok.", "No player qualifies yet.": "Henüz barajı geçen oyuncu yok.", "Did not play": "Oynamadı", "Height": "Boy", "Age": "Yaş", "Games": "Maç", "Minutes": "Dakika", "vs": "vs", "W": "G", "L": "M", "Final": "Maç sonu", "OT": "UZ", "Q": "Ç", "Totals": "Toplamlar", "Home": "İç saha", "Away": "Deplasman", "Conferences": "Konferanslar", "East": "Doğu", "West": "Batı", "League": "Lig", "Eastern Conference": "Doğu Konferansı", "Western Conference": "Batı Konferansı", "Points": "Sayı", "Rebounds": "Ribaund", "Assists": "Asist", "Steals": "Top çalma", "Blocks": "Blok", "Turnovers": "Top kaybı", "3-pointers": "Üçlük", "FG%": "FG%", "3P%": "3S%", "FT%": "SA%", "TS%": "GŞ%", "USG%": "KUL%", "RAPM": "RAPM", "O-RAPM": "H-RAPM", "D-RAPM": "S-RAPM", "+/-": "+/-", "PTS@stat": "SAYI", "REB@stat": "RİB", "OREB@stat": "HR", "DREB@stat": "SR", "AST@stat": "AST", "STL@stat": "TÇ", "BLK@stat": "BLK", "TOV@stat": "TK", "PF@stat": "F", "MIN@stat": "DK", "FG@stat": "FG", "3P@stat": "3S", "FT@stat": "SA", "FG%@stat": "FG%", "3P%@stat": "3S%", "FT%@stat": "SA%", "TS%@stat": "GŞ%", "+/-@stat": "+/-", "Date@stat": "Tarih", "Opp@stat": "Rakip", "Result@stat": "Sonuç", "Player@stat": "Oyuncu", "GP@stat": "M", "M-A@stat": "İ-D", "W@stat": "G", "L@stat": "M", "PCT@stat": "YÜZDE", "GB@stat": "FARK", "L10@stat": "SON 10", "STRK@stat": "SERİ", "PPG@stat": "SAYI", "OPP PPG@stat": "YEDİĞİ", "DIFF@stat": "AVERAJ", "T@total": "T", "Standings@tab": "Sıralama", "Every player. Every game.": "Her oyuncu. Her maç.", "Games played": "Oynanan maç", "Games to play": "Kalan maç", "Latest": "Son maç günü", "Tip-off": "Sezon açılışı", "Latest results": "Son sonuçlar", "Up next": "Sıradaki maçlar", "See all": "Tümü", "Search": "Ara", "No matches": "Eşleşme yok", "Previous player": "Önceki oyuncu", "Next player": "Sonraki oyuncu", "Shot chart": "Şut haritası", "Shot charts": "Şut haritaları", "Game": "Maç", "Privacy": "Gizlilik", "NBA Player Lab has no accounts, no ads and no tracking, and sets no cookies. Your theme, language and last player are kept in your own browser only.": "NBA Player Lab'de hesap, reklam ve takip yoktur; çerez de kullanılmaz. Tema, dil ve son baktığınız oyuncu yalnızca kendi tarayıcınızda saklanır.", "The site is hosted on GitHub Pages, which keeps standard server logs. Player pictures and club logos load from NBA's servers (cdn.nba.com), which see your IP address as any website would.": "Site GitHub Pages üzerinde barındırılır ve GitHub olağan sunucu kayıtlarını tutar. Oyuncu fotoğrafları ve kulüp logoları NBA'in sunucularından (cdn.nba.com) yüklenir; bu sunucular, her web sitesinde olduğu gibi IP adresinizi görür.", "Private fantasy league": "Özel fantezi ligi", "With its members' agreement, one private Yahoo Fantasy league can have its own page here. A league member reads it from Yahoo with read-only access, at most a few times a day.": "Üyelerinin onayıyla tek bir özel Yahoo Fantasy liginin burada kendi sayfası olabilir. Lig üyelerinden biri ligi Yahoo'dan yalnızca okuma izniyle, günde en fazla birkaç kez okur.", "The league page is encrypted and opens only with the invite link given to the league's members. It is replaced at least every 24 hours and never kept in the site's code or its history. Yahoo account ids and email addresses are never stored or shown.": "Lig sayfası şifrelidir ve yalnızca lig üyelerine verilen davet bağlantısıyla açılır. En geç 24 saatte bir yenilenir; sitenin kodunda ya da geçmişinde hiç tutulmaz. Yahoo hesap kimlikleri ve e-posta adresleri asla saklanmaz ve gösterilmez.", "Any member can ask for the league page to be removed, and it is taken down with the next update.": "Her üye lig sayfasının kaldırılmasını isteyebilir; sayfa bir sonraki güncellemede kaldırılır.", "Contact": "İletişim", "Questions and removal requests:": "Sorular ve kaldırma talepleri:", "My league": "Ligim", "This week": "Bu hafta", "Roster": "Kadro", "Change team": "Takımı değiştir", "Which team is yours?": "Hangi takım senin?", "Open the invite link from your league to see it here.": "Ligini burada görmek için davet bağlantısını aç.", "Paste the invite link": "Davet bağlantısını yapıştır", "Open": "Aç", "That is not a league invite link.": "Bu bir lig davet bağlantısı değil.", "This invite link does not open the league.": "Bu davet bağlantısı ligi açmıyor.", "League data is unavailable right now. It comes back with the next update.": "Lig verisi şu an yok. Bir sonraki güncellemeyle geri gelir.", "Week {n}": "{n}. hafta", "Last game night": "Son maç gecesi", "No games yet this week.": "Bu hafta henüz maç yok.", "No matchup this week.": "Bu hafta eşleşme yok.", "Left@stat": "KALAN", "3PM@stat": "ÜÇLÜK", "T@tie": "B", "W-L-T@stat": "G-M-B", "All-play@stat": "HERKESE KARŞI", "Luck@stat": "ŞANS", "On {team}": "{team} kadrosunda", "Not on a team in your league": "Liginde hiçbir takımda değil"};
+const META = {"season": "2026-27", "base": "teams/2026-27/", "built": "2026-10-21T14:35:19Z"};
+const TR = {"Compare": "Karşılaştır", "Leaders": "Liderler", "Player": "Oyuncu", "Season": "Sezon", "Standings": "Puan durumu", "Games@page": "Maçlar", "Dark mode": "Koyu mod", "Data unavailable": "Veri yok", "Retry": "Tekrar dene", "This page could not be drawn ({err}).": "Bu sayfa çizilemedi ({err}).", "Data: NBA official box scores and play-by-play. Built {d}.": "Veri: NBA resmi maç istatistikleri ve oyun akışı. Güncelleme {d}.", "Team": "Takım", "First player": "Birinci oyuncu", "Second player": "İkinci oyuncu", "Table": "Tablo", "Game days": "Maç günleri", "Stat": "İstatistik", "Game log": "Maç maç", "Score by period": "Periyotlara göre skor", "No players yet.": "Henüz oyuncu yok.", "No games played yet.": "Henüz maç oynamadı.", "No games on this day.": "Bu gün maç yok.", "No player qualifies yet.": "Henüz barajı geçen oyuncu yok.", "Did not play": "Oynamadı", "Height": "Boy", "Age": "Yaş", "Games": "Maç", "Minutes": "Dakika", "vs": "vs", "W": "G", "L": "M", "Final": "Maç sonu", "OT": "UZ", "Q": "Ç", "Totals": "Toplamlar", "Home": "İç saha", "Away": "Deplasman", "Conferences": "Konferanslar", "East": "Doğu", "West": "Batı", "League": "Lig", "Eastern Conference": "Doğu Konferansı", "Western Conference": "Batı Konferansı", "Points": "Sayı", "Rebounds": "Ribaund", "Assists": "Asist", "Steals": "Top çalma", "Blocks": "Blok", "Turnovers": "Top kaybı", "3-pointers": "Üçlük", "FG%": "FG%", "3P%": "3S%", "FT%": "SA%", "TS%": "GŞ%", "USG%": "KUL%", "RAPM": "RAPM", "O-RAPM": "H-RAPM", "D-RAPM": "S-RAPM", "+/-": "+/-", "PTS@stat": "SAYI", "REB@stat": "RİB", "OREB@stat": "HR", "DREB@stat": "SR", "AST@stat": "AST", "STL@stat": "TÇ", "BLK@stat": "BLK", "TOV@stat": "TK", "PF@stat": "F", "MIN@stat": "DK", "FG@stat": "FG", "3P@stat": "3S", "FT@stat": "SA", "FG%@stat": "FG%", "3P%@stat": "3S%", "FT%@stat": "SA%", "TS%@stat": "GŞ%", "+/-@stat": "+/-", "Date@stat": "Tarih", "Opp@stat": "Rakip", "Result@stat": "Sonuç", "Player@stat": "Oyuncu", "GP@stat": "M", "M-A@stat": "İ-D", "W@stat": "G", "L@stat": "M", "PCT@stat": "YÜZDE", "GB@stat": "FARK", "L10@stat": "SON 10", "STRK@stat": "SERİ", "PPG@stat": "SAYI", "OPP PPG@stat": "YEDİĞİ", "DIFF@stat": "AVERAJ", "T@total": "T", "Standings@tab": "Sıralama", "Every player. Every game.": "Her oyuncu. Her maç.", "Games played": "Oynanan maç", "Games to play": "Kalan maç", "Latest": "Son maç günü", "Tip-off": "Sezon açılışı", "Latest results": "Son sonuçlar", "Up next": "Sıradaki maçlar", "See all": "Tümü", "Search": "Ara", "No matches": "Eşleşme yok", "Previous player": "Önceki oyuncu", "Next player": "Sonraki oyuncu", "Shot chart": "Şut haritası", "Shot charts": "Şut haritaları", "Game": "Maç", "Privacy": "Gizlilik", "NBA Player Lab has no accounts, no ads and no tracking, and sets no cookies. Your theme, language and last player are kept in your own browser only.": "NBA Player Lab'de hesap, reklam ve takip yoktur; çerez de kullanılmaz. Tema, dil ve son baktığınız oyuncu yalnızca kendi tarayıcınızda saklanır.", "The site is hosted on GitHub Pages, which keeps standard server logs. Player pictures and club logos load from NBA's servers (cdn.nba.com), which see your IP address as any website would.": "Site GitHub Pages üzerinde barındırılır ve GitHub olağan sunucu kayıtlarını tutar. Oyuncu fotoğrafları ve kulüp logoları NBA'in sunucularından (cdn.nba.com) yüklenir; bu sunucular, her web sitesinde olduğu gibi IP adresinizi görür.", "Private fantasy league": "Özel fantezi ligi", "With its members' agreement, one private Yahoo Fantasy league can have its own page here. A league member reads it from Yahoo with read-only access, at most a few times a day.": "Üyelerinin onayıyla tek bir özel Yahoo Fantasy liginin burada kendi sayfası olabilir. Lig üyelerinden biri ligi Yahoo'dan yalnızca okuma izniyle, günde en fazla birkaç kez okur.", "The league page is encrypted and opens only with the invite link given to the league's members. It is replaced at least every 24 hours and never kept in the site's code or its history. Yahoo account ids and email addresses are never stored or shown.": "Lig sayfası şifrelidir ve yalnızca lig üyelerine verilen davet bağlantısıyla açılır. En geç 24 saatte bir yenilenir; sitenin kodunda ya da geçmişinde hiç tutulmaz. Yahoo hesap kimlikleri ve e-posta adresleri asla saklanmaz ve gösterilmez.", "Any member can ask for the league page to be removed, and it is taken down with the next update.": "Her üye lig sayfasının kaldırılmasını isteyebilir; sayfa bir sonraki güncellemede kaldırılır.", "Contact": "İletişim", "Questions and removal requests:": "Sorular ve kaldırma talepleri:", "My league": "Ligim", "This week": "Bu hafta", "Roster": "Kadro", "Change team": "Takımı değiştir", "Which team is yours?": "Hangi takım senin?", "Open the invite link from your league to see it here.": "Ligini burada görmek için davet bağlantısını aç.", "Paste the invite link": "Davet bağlantısını yapıştır", "Open": "Aç", "That is not a league invite link.": "Bu bir lig davet bağlantısı değil.", "This invite link does not open the league.": "Bu davet bağlantısı ligi açmıyor.", "League data is unavailable right now. It comes back with the next update.": "Lig verisi şu an yok. Bir sonraki güncellemeyle geri gelir.", "Week {n}": "{n}. hafta", "Last game night": "Son maç gecesi", "No games yet this week.": "Bu hafta henüz maç yok.", "No matchup this week.": "Bu hafta eşleşme yok.", "Left@stat": "KALAN", "3PM@stat": "ÜÇLÜK", "T@tie": "B", "W-L-T@stat": "G-M-B", "All-play@stat": "HERKESE KARŞI", "Luck@stat": "ŞANS", "On {team}": "{team} kadrosunda", "Not on a team in your league": "Liginde hiçbir takımda değil", "Lineups": "Beşliler", "On court": "Sahadayken", "Off court": "Kenardayken", "On − off": "Fark", "ORtg@stat": "HÜC", "DRtg@stat": "SAV", "Net@stat": "NET", "With@stat": "BİRLİKTE", "Lineup@stat": "BEŞLİ"};
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 let LANG = 'en';
@@ -459,12 +470,13 @@ const EN = s => `<span lang="en">${esc(s)}</span>`;
 
 // ---- numbers. Every average and percentage on the site goes through rdiv: num/den to d decimals, half up, in exact
 // integer arithmetic (rounding.avg in Python is the same formula), so a number reads the same on every page.
-const rdiv = (num, den, d = 1) => {
-  if (!den) return null;
-  const p = 10 ** d, q = Math.floor((2 * num * p + den) / (2 * den));
+// rq is the rounded value as a whole number of 10^-d units, fq writes such a number out
+const rq = (num, den, d = 1) => Math.floor((2 * num * 10 ** d + den) / (2 * den));
+const fq = (q, d = 1) => {
   const s = String(Math.abs(q)).padStart(d + 1, '0'), out = d ? `${s.slice(0, -d)}.${s.slice(-d)}` : s;
   return q < 0 ? `-${out}` : out;
 };
+const rdiv = (num, den, d = 1) => den ? fq(rq(num, den, d), d) : null;
 // Turkish takes a decimal comma
 const N = s => s == null ? '–' : LANG === 'tr' ? s.replace('.', ',') : s;
 const avg = (total, gp) => N(rdiv(total, gp));
@@ -564,6 +576,54 @@ let SC = {code: '', shots: [], club: {}};
 const drawShots = () => { const g = $('#sc-game').value; $('#sc-court').innerHTML = court(g ? SC.club[g] : SC.code, g ? SC.shots.filter(s => s[0] === g) : SC.shots); };
 $('#sc-game').addEventListener('change', drawShots);
 
+// ---- Lineups (lineups.py): each club's fives, one row of integer totals per five per game. A rating is points per 100
+// possessions (FGA − OREB + TOV + 0.44 FTA, so 100 × possessions is an integer), rounded once to tenths by rq; net and
+// on − off are differences of those shown tenths, so they add up on the page
+const LU = ['pts', 'opp', 'fga', 'oreb', 'tov', 'fta', 'ofga', 'ooreb', 'otov', 'ofta'];
+const luZero = () => Object.fromEntries(['ds', ...LU].map(k => [k, 0]));
+const luAdd = (a, r) => { a.ds += r[2]; LU.forEach((k, i) => { a[k] += r[3 + i]; }); return a; };
+const rtg = (pts, fga, oreb, tov, fta) => { const p = 100 * (fga - oreb + tov) + 44 * fta; return p >= 100 ? rq(10000 * pts, p) : null; };
+const rates = u => { const o = rtg(u.pts, u.fga, u.oreb, u.tov, u.fta), d = rtg(u.opp, u.ofga, u.ooreb, u.otov, u.ofta); return [o, d, o != null && d != null ? o - d : null]; };
+const tenths = (q, sign) => q == null ? '–' : N(sign ? signed(fq(q)) : fq(q));
+const surname = n => n.split(/\s+/).slice(1).join(' ') || n;
+// a five as its faces and surnames (the player whose page it is left out)
+const fiveCell = (code, pids, name) => `<td class="l five"><span class="faces" style="${colours(code)}">${pids.map(p => face(p, name(p))).join('')}</span><span class="nm">${pids.map(p => EN(surname(name(p)))).join(' · ')}</span></td>`;
+async function drawLineups(p, code, clubs, my) {
+  const files = await Promise.all(clubs.map(c => Promise.all([get(`lineups/${c}.json`), get(`${c}.json`)]).catch(() => null)));
+  if (stale(my)) return;
+  const on = luZero(), tot = luZero(), units = [], names = {};
+  for (const [i, pair] of files.entries()) {
+    if (!pair) continue;
+    const [f, club] = pair;
+    for (const x of club.players) names[x.pid] = x.name;
+    const mine = new Map(f.fives.map((five, k) => [k, five]).filter(([, five]) => five.includes(p.pid)));
+    const by = {};
+    for (const r of f.rows) {
+      luAdd(tot, r);
+      if (!mine.has(r[1])) continue;
+      luAdd(on, r);
+      if (!by[r[1]]) units.push(by[r[1]] = {code: clubs[i], pids: mine.get(r[1]).filter(x => x !== p.pid), u: luZero()});
+      luAdd(by[r[1]].u, r);
+    }
+  }
+  $('#lu').hidden = !on.ds;
+  if (!on.ds) return;
+  const off = Object.fromEntries(Object.keys(tot).map(k => [k, tot[k] - on[k]]));
+  const ro = rates(on), rf = rates(off), dif = ro.map((x, k) => x != null && rf[k] != null ? x - rf[k] : null);
+  const name = pid => names[pid] || pid;
+  $('#onoff').setAttribute('style', tc(code));
+  $('#onoff').innerHTML = `<thead><tr><th class="l"></th><th>${t('+/-@stat')}</th><th>${t('ORtg@stat')}</th><th>${t('DRtg@stat')}</th><th>${t('Net@stat')}</th></tr></thead><tbody>`
+    + `<tr data-k="on"><td class="l">${t('On court')}</td><td>${N(signed(String(on.pts - on.opp)))}</td><td>${tenths(ro[0])}</td><td>${tenths(ro[1])}</td><td class="k">${tenths(ro[2], 1)}</td></tr>`
+    + `<tr data-k="off"><td class="l">${t('Off court')}</td><td>${off.ds ? N(signed(String(off.pts - off.opp))) : '–'}</td><td>${tenths(rf[0])}</td><td>${tenths(rf[1])}</td><td class="k">${tenths(rf[2], 1)}</td></tr>`
+    + `<tr class="tot" data-k="diff"><td class="l">${t('On − off')}</td><td></td><td>${tenths(dif[0], 1)}</td><td>${tenths(dif[1], 1)}</td><td class="k">${tenths(dif[2], 1)}</td></tr></tbody>`;
+  const top = units.sort((a, b) => b.u.ds - a.u.ds).slice(0, 5);
+  $('#fives').setAttribute('style', tc(code));
+  $('#fives').innerHTML = `<thead><tr><th class="l">${t('With@stat')}</th><th>${t('MIN@stat')}</th><th>${t('+/-@stat')}</th><th class="x">${t('ORtg@stat')}</th><th class="x">${t('DRtg@stat')}</th><th>${t('Net@stat')}</th></tr></thead><tbody>${top.map(({code: c, pids, u}) => {
+    const [o, d, n] = rates(u);
+    return `<tr data-five="${esc(pids.join(','))}">${fiveCell(c, pids, name)}<td>${N(rdiv(u.ds, 600, 0))}</td><td>${N(signed(String(u.pts - u.opp)))}</td><td class="x">${tenths(o)}</td><td class="x">${tenths(d)}</td><td class="k">${tenths(n, 1)}</td></tr>`;
+  }).join('')}</tbody>`;
+}
+
 // ---- Player
 async function renderPlayer(code, pid, my) {
   const data = await get(`${code}.json`);
@@ -583,6 +643,7 @@ async function renderPlayer(code, pid, my) {
     hero.innerHTML = `<div class="badge">${logo(code, 'crest')}</div><div class="who"><div class="tag">${logo(code, 'mark')}${EN(tname(code))}</div><h1>${EN(T.name)}</h1></div>`;
     $('#tiles').innerHTML = '';
     $('#sc').hidden = true;
+    $('#lu').hidden = true;
     $('#log').innerHTML = `<tbody><tr><td class="empty">${t('No players yet.')}</td></tr></tbody>`;
     remember(code);
     return;
@@ -602,7 +663,7 @@ async function renderPlayer(code, pid, my) {
     return `<tr data-gid="${esc(x.gid)}"><td>${fmtDate(x.date)}</td><td class="l">${x.home ? t('vs') : '@'} ${esc(x.opp)}</td><td class="l"><a href="#game/${esc(x.gid)}" class="${won ? 'w' : 'lo'}">${won ? t('W') : t('L')} ${x.ts}-${x.os}</a></td>${x.sec > 0 ? `<td>${x.start ? '<i class="st"></i>' : ''}${clock(x.sec)}</td><td class="k">${x.pts}</td><td>${x.reb}</td><td>${x.ast}</td><td>${x.stl}</td><td>${x.blk}</td><td>${x.tov}</td><td>${x.fgm}-${x.fga}</td><td>${x.fg3m}-${x.fg3a}</td><td>${x.ftm}-${x.fta}</td><td>${N(signed(String(x.pm)))}</td>` : `<td class="dim l" colspan="11">${t('Did not play')}</td>`}</tr>`;
   }).join('') : `<tr><td class="empty l" colspan="${head.length}">${t('No games played yet.')}</td></tr>`}</tbody>`;
   const played = log.filter(x => x.sec > 0), clubs = [...new Set([code, ...played.map(x => x.team)])];
-  const files = await Promise.all(clubs.map(c => get(`shots/${c}.json`).catch(() => null)));
+  const [files] = await Promise.all([Promise.all(clubs.map(c => get(`shots/${c}.json`).catch(() => null))), drawLineups(p, code, clubs, my)]);
   if (stale(my)) return;
   SC = {code, shots: files.flatMap(f => f && f.players[p.pid] ? f.players[p.pid].map(s => [f.games[s[0]], s[1], s[2], s[3]]) : []), club: Object.fromEntries(played.map(x => [x.gid, x.team]))};
   $('#sc-game').innerHTML = `<option value="" data-c="${esc(code)}" selected>${t('Season')}</option>${played.map(x => `<option value="${esc(x.gid)}" data-c="${esc(x.opp)}">${fmtDate(x.date)} ${x.home ? t('vs') : '@'} ${esc(x.opp)}</option>`).join('')}`;
@@ -735,6 +796,17 @@ async function renderGame(gid, my) {
     const f = files[i], k = f ? f.games.indexOf(gid) : -1;
     return `<div data-team="${esc(c)}"><div class="court-h">${logo(c)}${EN(tname(c))}</div>${court(c, k < 0 ? [] : Object.values(f.players).flatMap(s => s.filter(x => x[0] === k)))}</div>`;
   }).join('');
+  // each club's five units with the most minutes in this game; their points for and against tie to the box score's +/-
+  const lus = await Promise.all([g.away, g.home].map(c => get(`lineups/${c}.json`).catch(() => null)));
+  if (stale(my)) return;
+  const names = Object.fromEntries(Object.values(g.box).flat().map(x => [x.pid, x.name])), name = pid => names[pid] || pid;
+  const sides = [g.away, g.home].map((c, i) => {
+    const f = lus[i], k = f ? f.games.indexOf(gid) : -1;
+    return {c, f, rows: k < 0 ? [] : f.rows.filter(r => r[0] === k).sort((a, b) => b[2] - a[2]).slice(0, 5)};
+  });
+  $('#gm-lu').hidden = !sides.some(s => s.rows.length);
+  $('#gm-fives').innerHTML = sides.map(({c, f, rows}) => `<div data-team="${esc(c)}"><div class="court-h">${logo(c)}${EN(tname(c))}</div><div class="scroll"><table class="tbl" style="${tc(c)}"><thead><tr><th class="l">${t('Lineup@stat')}</th><th>${t('MIN@stat')}</th><th>${t('PTS@stat')}</th><th>${t('+/-@stat')}</th></tr></thead><tbody>${rows.map(r =>
+    `<tr data-five="${esc(f.fives[r[1]].join(','))}">${fiveCell(c, f.fives[r[1]], name)}<td>${clock(rq(r[2], 10, 0))}</td><td>${r[3]}-${r[4]}</td><td class="k">${N(signed(String(r[3] - r[4])))}</td></tr>`).join('')}</tbody></table></div></div>`).join('');
   document.title = `${g.away} ${g.as} · ${g.home} ${g.hs} · NBA Player Lab`;
 }
 
