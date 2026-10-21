@@ -15,6 +15,7 @@ import pandas as pd
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 import lineups  # noqa: E402
+from site_data import write_lineups  # noqa: E402
 
 checks, rows = {}, []
 for path in sorted(glob.glob(os.path.join(ROOT, "tests", "fixtures", "events_*.json.gz"))):
@@ -49,8 +50,11 @@ box, games = [], []
 for g, d in ev.groupby("game"):
     acts = d.to_dict("records")
     starters = lineups.infer_starters(acts)
-    for (team, player), sec in lineups.seconds_on(lineups.stints(acts, starters)[0]).items():
-        box.append({"game": g, "team": team, "player": player, "starter": player in starters[team], "seconds": sec + 20})   # a scorer's 20 s
+    sts = lineups.stints(acts, starters)[0]
+    for (team, player), sec in lineups.seconds_on(sts).items():
+        pm = sum(s["pts"] - s["opp_pts"] for s in sts if s["team"] == team and player in s["players"])
+        box.append({"game": g, "team": team, "player": player, "starter": player in starters[team], "seconds": sec + 20,   # a scorer's 20 s
+                    "plus_minus": pm})
     last = lineups.ordered(acts)[-1]
     games.append({"game": g, "home_score": last["score_home"], "away_score": last["score_away"], "final": True})
 ev.to_parquet(os.path.join(w, "events.parquet"))
@@ -60,6 +64,8 @@ checks["the warehouse run passes its own checks"] = lineups.main("test", w) == [
 checks["it writes stints, lineups and onoff"] = all(os.path.exists(os.path.join(w, f"{t}.parquet")) for t in ("stints", "lineups", "onoff"))
 pd.DataFrame(box).assign(seconds=lambda b: b.seconds + 100).to_parquet(os.path.join(w, "box.parquet"))
 checks["seconds off the box score by over a minute fail the run"] = any("box" in p for p in lineups.main("test", w))
+pd.DataFrame(box).assign(plus_minus=lambda b: b.plus_minus + 1).to_parquet(os.path.join(w, "box.parquet"))
+checks["a plus-minus off the box score fails the run"] = any("+/-" in p for p in lineups.main("test", w))
 
 # hand-written: a substitution of a player already on the bench is reported, not absorbed
 H, A = "HOM", "AWY"
@@ -73,6 +79,26 @@ def ev(k, t, sub, team, player, clock):
 acts = [ev(1, "period", "start", None, None, 720.0), ev(2, "substitution", "out", H, 19, 600.0), ev(3, "substitution", "in", H, 18, 600.0)]
 _, problems = lineups.stints(acts, {H: set(range(10, 15)), A: set(range(20, 25))})
 checks["a bad substitution is reported"] = any("subbed out while on the bench" in p for p in problems)
+
+# hand-written: a substitution between two free throws waits for the second, so both count for the five fouled
+acts = [ev(1, "period", "start", None, None, 720.0), ev(2, "foul", "personal", A, 20, 600.0), ev(3, "freethrow", "1 of 2", H, 10, 600.0),
+        ev(4, "substitution", "out", H, 14, 600.0), ev(5, "substitution", "in", H, 15, 600.0), ev(6, "freethrow", "2 of 2", H, 10, 600.0)]
+acts[2]["score_home"] = acts[3]["score_home"] = acts[4]["score_home"] = 1
+acts[5]["score_home"] = 2
+sts, problems = lineups.stints(acts, {H: set(range(10, 15)), A: set(range(20, 25))})
+first = next(s for s in sts if s["team"] == H)
+checks["free throws after a mid-trip substitution count for the five fouled"] = problems == [] and 14 in first["players"] and first["pts"] == 2 and first["fta"] == 2
+
+# the site's JSON: one row per five per game, integers, adding up to the stints
+w2 = tempfile.mkdtemp()
+teams = [{"code": c} for c in st.team.unique()]
+write_lineups(w2, teams, [{**r, "gid": r["game"], "time": r["game"]} for r in st.to_dict("records")])
+for c in st.team.unique():
+    f = json.load(open(os.path.join(w2, "lineups", f"{c}.json")))
+    mine = st[st.team == c]
+    checks[f"{c}: lineup JSON points add up"] = sum(r[3] for r in f["rows"]) == mine.pts.sum() and sum(r[4] for r in f["rows"]) == mine.opp_pts.sum()
+    checks[f"{c}: lineup JSON tenths of a second add up"] = abs(sum(r[2] for r in f["rows"]) - 10 * mine.sec.sum()) < len(mine)
+    checks[f"{c}: one row per five per game"] = len(f["rows"]) == len({(r[0], r[1]) for r in f["rows"]}) and all(len(x) == 5 for x in f["fives"])
 
 for k, v in checks.items():
     print("ok  " if v else "FAIL", k)

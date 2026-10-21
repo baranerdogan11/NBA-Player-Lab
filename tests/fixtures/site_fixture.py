@@ -10,7 +10,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, ROOT)
 from shots import write_shots  # noqa: E402
-from site_data import STATS, load_teams, write_site  # noqa: E402
+from site_data import STATS, load_teams, write_lineups, write_site  # noqa: E402
 
 SEASON, LABEL, BUILT = "2026-27", "2026-27", "2026-10-26T06:00:00Z"
 FIRST = ["Jalen", "Marcus", "Tyrese", "Luka", "Devin", "Andre", "Cole", "Isaiah", "Malik", "Darius", "Evan", "Kobe"]
@@ -98,6 +98,33 @@ def spots(rng, games, lines):
     return out
 
 
+UNITS = [[0, 1, 2, 3, 4], [0, 5, 6, 7, 8], [0, 1, 2, 3, 4], [0, 1, 2, 3, 5]]   # the five of each quarter, by place in the box
+
+
+def stints(games, lines):
+    """One stint a quarter: each side's five of UNITS, the quarter's score, and the side's counts spread over the
+    quarters. Sets every box line's plus-minus to the margin while he was on the floor, as the feed's box score does."""
+    box = {}
+    for x in lines:
+        box.setdefault((x["gid"], x["team"]), []).append(x)
+    out = []
+    for g in games:
+        if not g["final"]:
+            continue
+        for x in box[(g["gid"], g["home"])] + box[(g["gid"], g["away"])]:
+            x["pm"] = 0
+        for q, score in enumerate(g["periods"]):
+            for c, o, i in ((g["home"], g["away"], 0), (g["away"], g["home"], 1)):
+                side, opp = box[(g["gid"], c)], box[(g["gid"], o)]
+                share = lambda rows, k: sum(x[k] for x in rows) * (q + 1) // 4 - sum(x[k] for x in rows) * q // 4  # noqa: E731
+                for j in UNITS[q]:
+                    side[j]["pm"] += score[i] - score[1 - i]
+                out.append({"gid": g["gid"], "time": g["time"], "team": c, "players": [side[j]["pid"] for j in UNITS[q]], "sec": 720,
+                            "pts": score[i], "opp_pts": score[1 - i], **{k: share(side, k) for k in ("fga", "oreb", "tov", "fta")},
+                            **{f"opp_{k}": share(opp, k) for k in ("fga", "oreb", "tov", "fta")}})
+    return out
+
+
 def hits(rng, n, p):
     return sum(rng.random() < p for _ in range(n))
 
@@ -110,6 +137,8 @@ def quarters(rng, total):
 if __name__ == "__main__":
     out = os.path.join(sys.argv[1] if len(sys.argv) > 1 else "_site", "teams", SEASON)
     teams, players, games, lines = make(random.Random(7))
+    units = stints(games, lines)
     write_site(out, SEASON, LABEL, BUILT, teams, players, games, lines)
     write_shots(out, teams, spots(random.Random(13), games, lines))
+    write_lineups(out, teams, units)
     print(f"fixture league written to {out}")

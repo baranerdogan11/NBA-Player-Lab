@@ -139,5 +139,13 @@
  "All-play@stat": "HERKESE KARŞI",
  "Luck@stat": "ŞANS",
  "On {team}": "{team} kadrosunda",
- "Not on a team in your league": "Liginde hiçbir takımda değil"
+ "Not on a team in your league": "Liginde hiçbir takımda değil",
+ "Lineups": "Beşliler",
+ "On court": "Sahadayken",
+ "Off court": "Kenardayken",
+ "On − off": "Fark",
+ "ORtg@stat": "HÜC",
+ "DRtg@stat": "SAV",
+ "Net@stat": "NET",
+ "With@stat": "BİRLİKTE"
 }
