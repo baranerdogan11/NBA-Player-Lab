@@ -6,7 +6,7 @@ import sys
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from due import decide, final_games  # noqa: E402
+from due import decide, final_games, open_games  # noqa: E402
 
 
 def t(h, m=0):
@@ -32,4 +32,13 @@ assert not decide(2, before_nightly, t(9, 30))[0], "before 10:00 UTC the nightly
 assert decide(2, before_nightly, t(10, 5))[0], "after 10:00 UTC the nightly is due"
 assert not decide(2, after_nightly, t(14))[0], "the nightly runs once a day"
 assert decide(0, {}, t(3))[0], "nothing published yet: run"
+night = {"leagueSchedule": {"seasonYear": "2026-27", "gameDates": [{"games": [
+    {"gameId": "0022600001", "gameStatus": 3, "gameDateTimeUTC": "2026-10-20T23:00:00Z"},
+    {"gameId": "0022600002", "gameStatus": 2, "gameDateTimeUTC": "2026-10-21T01:30:00Z"},
+    {"gameId": "0022600003", "gameStatus": 1, "gameDateTimeUTC": "2026-10-21T02:00:00Z"},
+    {"gameId": "0022600004", "gameStatus": 1, "gameDateTimeUTC": "2026-10-22T23:00:00Z"},
+    {"gameId": "0012600005", "gameStatus": 1, "gameDateTimeUTC": "2026-10-21T00:00:00Z"}]}]}}
+assert open_games(night, "2026-27", t(23)) == {"0022600002", "0022600003"}, "tonight's built games not final yet"
+assert open_games(night, "2026-27", datetime(2026, 10, 21, 16, tzinfo=timezone.utc)) == set(), \
+    "a game 14 hours past its tip-off no longer keeps the watcher up"
 print("test_publish: ok")

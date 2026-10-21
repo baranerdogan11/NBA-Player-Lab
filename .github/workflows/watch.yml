@@ -1,0 +1,50 @@
+name: Game-night watch
+
+# GitHub drops most of update.yml's 5-minute cron slots (on 2026-10-20 they fired about every 3 hours, so a game that
+# went final at 04:22 UTC waited for a run by hand). One watcher per evening checks the schedule itself every 5 minutes
+# and starts update.yml when a game has gone final, then stops once the night's games are all final and built. There
+# are several start slots in case GitHub drops some: a later watcher queues behind a running one, or finds nothing to
+# wait for and stops at once.
+
+on:
+  schedule:
+    - cron: "40 16 * * *"
+    - cron: "10 19 * * *"
+    - cron: "10 22 * * *"
+    - cron: "10 1 * * *"
+    - cron: "10 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write             # to start update.yml
+
+concurrency:
+  group: watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version-file: .python-version
+
+      - name: Start update.yml whenever a game goes final, until the night is built
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in $(seq 1 66); do   # 66 checks 5 minutes apart, inside the job's 350 minutes
+            git pull -q --ff-only origin main   # status.json from the last published build
+            line=$(python due.py --watch | tee /dev/stderr | tail -1)
+            busy=$(gh run list -w update.yml -L 5 --json status -q '[.[] | select(.status != "completed")] | length')
+            case "$line" in
+              *run=true*) if [ "$busy" = 0 ]; then gh workflow run update.yml; echo "started update.yml"; fi ;;
+              *open=0) if [ "$busy" = 0 ]; then echo "the night is built"; exit 0; fi ;;
+            esac
+            sleep 300
+          done
