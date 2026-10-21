@@ -3,7 +3,8 @@ Reads the NBA schedule (from the CDN's S3 origin) and the committed warehouse/<s
 and final=<games> to $GITHUB_OUTPUT. warehouse_tests.py writes that file on every passing build;
 until it exists, --record=<games> stores the count and the time after a build, so the next check compares against what
 was published.
-usage: python due.py [2026-27]
+With --watch it also prints how many of the night's games are still to go final, for watch.yml.
+usage: python due.py [--watch] [2026-27]
        python due.py --record=<games> [2026-27]
 """
 import json
@@ -28,6 +29,14 @@ def final_games(schedule, season):
         raise SystemExit(f"the CDN schedule is for {ls.get('seasonYear')}, not {season}: update config.json")
     return {g["gameId"] for d in ls["gameDates"] for g in d["games"]
             if g.get("gameStatus") == 3 and g["gameId"][:3] in BUILT_TYPES}
+
+
+def open_games(schedule, season, now, hours=12):
+    """Ids of the season's built games that tip off within `hours` of now and are not final yet: the night the
+    watcher waits for. A postponed game drops out once its tip-off is more than `hours` past."""
+    return {g["gameId"] for d in schedule["leagueSchedule"]["gameDates"] for g in d["games"]
+            if g.get("gameStatus") != 3 and g["gameId"][:3] in BUILT_TYPES and g.get("gameDateTimeUTC")
+            and abs((parse_time(g["gameDateTimeUTC"]) - now).total_seconds()) <= hours * 3600}
 
 
 def parse_time(s):
@@ -58,8 +67,11 @@ def main():
         return
     now = datetime.now(timezone.utc)
     req = urllib.request.Request(SCHEDULE)
+    pending = -1
     try:
-        final = len(final_games(json.load(urllib.request.urlopen(req, timeout=60)), season()))
+        schedule = json.load(urllib.request.urlopen(req, timeout=60))
+        final = len(final_games(schedule, season()))
+        pending = len(open_games(schedule, season(), now))
     except OSError as e:
         # an unreachable schedule fails the run once a day (when the nightly is due), not on every 5-minute check
         if decide(-1, status, now)[0]:
@@ -68,6 +80,8 @@ def main():
         final, now = -1, None
     run, reason = decide(final, status, now) if now else (False, "schedule unreadable: no run")
     print(reason)
+    if "--watch" in sys.argv:
+        print(f"watch: run={'true' if run else 'false'} open={pending}")
     if os.environ.get("GITHUB_OUTPUT"):
         open(os.environ["GITHUB_OUTPUT"], "a").write(f"run={'true' if run else 'false'}\nfinal={final}\n")
 
