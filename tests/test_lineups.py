@@ -15,6 +15,7 @@ import pandas as pd
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 import lineups  # noqa: E402
+from site_data import write_lineups  # noqa: E402
 
 checks, rows = {}, []
 for path in sorted(glob.glob(os.path.join(ROOT, "tests", "fixtures", "events_*.json.gz"))):
@@ -91,7 +92,7 @@ checks["free throws after a mid-trip substitution count for the five fouled"] = 
 # the site's JSON: one row per five per game, integers, adding up to the stints
 w2 = tempfile.mkdtemp()
 teams = [{"code": c} for c in st.team.unique()]
-lineups.write_lineups(w2, teams, [{**r, "gid": r["game"], "time": r["game"]} for r in st.to_dict("records")])
+write_lineups(w2, teams, [{**r, "gid": r["game"], "time": r["game"]} for r in st.to_dict("records")])
 for c in st.team.unique():
     f = json.load(open(os.path.join(w2, "lineups", f"{c}.json")))
     mine = st[st.team == c]
