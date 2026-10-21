@@ -10,6 +10,10 @@ Files under <out>/ (out is teams/<season>/):
   games.json        every game of the schedule: date, tip time, clubs, and the score once final
   <CODE>.json       the club's players, each with a log of his box-score lines (any club, newest last)
   games/<gid>.json  one final: score by period and both box scores
+  lineups/<CODE>.json  the club's fives (lineups.py): {"code", "games": [gid, ...], "fives": [[pid x 5], ...], "rows":
+                    [[g, f, ds, pts, opp_pts, fga, oreb, tov, fta, opp_fga, opp_oreb, opp_tov, opp_fta], ...]}, one row
+                    per five per game: g indexes games (tip-off order), f fives, ds is tenths of a second; the page sums
+                    the rows and derives every rating with rdiv
   leaders.json      every player's season totals, under his current club, his clubs' totals over the same games
                     (tm_fga, tm_fta, tm_tov, tm_sec, for usage) and his RAPM, O-RAPM and D-RAPM (null without one)
 
@@ -102,6 +106,32 @@ def write_site(out, season, label, built, teams, players, games, lines):
     for t in teams:
         _dump(os.path.join(out, f"{t['code']}.json"), {"code": t["code"], "players": roster.get(t["code"], [])})
     _dump(os.path.join(out, "leaders.json"), {"players": leaders})
+
+
+LU_COUNTS = ("fga", "oreb", "tov", "fta")
+
+
+def write_lineups(out, teams, rows):
+    """teams: site_data.load_teams() rows. rows: stints with gid, time (tip-off, for game order), team, players, sec,
+    pts, opp_pts and the LU_COUNTS of both sides."""
+    keys = ["pts", "opp_pts", *LU_COUNTS, *(f"opp_{k}" for k in LU_COUNTS)]
+    by_team = {t["code"]: [] for t in teams}
+    for r in rows:
+        by_team[r["team"]].append(r)
+    os.makedirs(os.path.join(out, "lineups"), exist_ok=True)
+    for code, rs in by_team.items():
+        rs.sort(key=lambda r: (r["time"], r["gid"]))
+        games = list(dict.fromkeys(r["gid"] for r in rs))
+        fives, units = {}, {}
+        for r in rs:
+            five = tuple(sorted(str(p) for p in r["players"]))
+            u = units.setdefault((r["gid"], fives.setdefault(five, len(fives))), {"ds": 0, **{k: 0 for k in keys}})
+            u["ds"] += int(round(10 * r["sec"]))
+            for k in keys:
+                u[k] += int(r[k])
+        with open(os.path.join(out, "lineups", f"{code}.json"), "w") as f:
+            json.dump({"code": code, "games": games, "fives": [list(x) for x in fives],
+                       "rows": [[games.index(g), i, u["ds"], *(u[k] for k in keys)] for (g, i), u in units.items()]}, f, separators=(",", ":"))
 
 
 def from_warehouse(wh):

@@ -9,9 +9,8 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, ROOT)
-from lineups import write_lineups  # noqa: E402
 from shots import write_shots  # noqa: E402
-from site_data import STATS, load_teams, write_site  # noqa: E402
+from site_data import STATS, load_teams, write_lineups, write_site  # noqa: E402
 
 SEASON, LABEL, BUILT = "2026-27", "2026-27", "2026-10-26T06:00:00Z"
 FIRST = ["Jalen", "Marcus", "Tyrese", "Luka", "Devin", "Andre", "Cole", "Isaiah", "Malik", "Darius", "Evan", "Kobe"]

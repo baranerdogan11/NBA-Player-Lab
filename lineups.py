@@ -16,10 +16,7 @@ Writes three Parquet tables to warehouse/<season>/:
   onoff     one row per player: the same totals and ratings with him on the floor and off it, and the difference
 Ratings are unrounded here; the page rounds them once, with the site's one rule.
 
-And the site's JSON, teams/<season>/lineups/<CODE>.json, from the regular-season finals (write_lineups):
-  {"code", "games": [gid, ...], "fives": [[pid x 5], ...], "rows": [[g, f, ds, pts, opp_pts, fga, oreb, tov, fta,
-  opp_fga, opp_oreb, opp_tov, opp_fta], ...]}, one row per five per game: g indexes games (tip-off order), f indexes
-  fives, ds is tenths of a second. Integers only; the page sums the rows and derives every rating with rdiv.
+And, from the regular-season finals' stints, the site's teams/<season>/lineups/<CODE>.json (site_data.write_lineups).
 
 Checks, every run: five per club at every action, stint points equal the final score, stint seconds equal the game
 length, each player's seconds on the floor agree with the box score within a minute, and his points for and against on the
@@ -27,7 +24,6 @@ floor add up to his box-score plus-minus.
 
 usage: python lineups.py [season]
 """
-import json
 import os
 import sys
 import duckdb
@@ -211,29 +207,6 @@ def season_tables(st):
     return lu.drop(columns="five"), oo
 
 
-def write_lineups(out, teams, rows):
-    """teams: site_data.load_teams() rows. rows: stints with gid, time (tip-off, for game order), team, players, sec,
-    pts, opp_pts and the COUNTS of both sides."""
-    keys = ["pts", "opp_pts", *COUNTS, *(f"opp_{k}" for k in COUNTS)]
-    by_team = {t["code"]: [] for t in teams}
-    for r in rows:
-        by_team[r["team"]].append(r)
-    os.makedirs(os.path.join(out, "lineups"), exist_ok=True)
-    for code, rs in by_team.items():
-        rs.sort(key=lambda r: (r["time"], r["gid"]))
-        games = list(dict.fromkeys(r["gid"] for r in rs))
-        fives, units = {}, {}
-        for r in rs:
-            five = tuple(sorted(str(p) for p in r["players"]))
-            u = units.setdefault((r["gid"], fives.setdefault(five, len(fives))), {"ds": 0, **{k: 0 for k in keys}})
-            u["ds"] += int(round(10 * r["sec"]))
-            for k in keys:
-                u[k] += int(r[k])
-        with open(os.path.join(out, "lineups", f"{code}.json"), "w") as f:
-            json.dump({"code": code, "games": games, "fives": [list(x) for x in fives],
-                       "rows": [[games.index(g), i, u["ds"], *(u[k] for k in keys)] for (g, i), u in units.items()]}, f, separators=(",", ":"))
-
-
 def main(season, w=None, out=None):
     w = w or os.path.join(os.path.dirname(os.path.abspath(__file__)), "warehouse", season)
     con = duckdb.connect()
@@ -272,7 +245,7 @@ def main(season, w=None, out=None):
     lu.to_parquet(os.path.join(w, "lineups.parquet"), index=False)
     oo.to_parquet(os.path.join(w, "onoff.parquet"), index=False)
     if out:
-        from site_data import load_teams
+        from site_data import load_teams, write_lineups
         reg = con.execute(f"select game, strftime(tipoff_utc, '%Y-%m-%dT%H:%M:%SZ') as time from read_parquet('{w}/games.parquet') "
                           "where game_type = 'regular' and final").fetchall()
         when = dict(reg)
