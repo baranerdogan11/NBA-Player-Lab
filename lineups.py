@@ -16,11 +16,18 @@ Writes three Parquet tables to warehouse/<season>/:
   onoff     one row per player: the same totals and ratings with him on the floor and off it, and the difference
 Ratings are unrounded here; the page rounds them once, with the site's one rule.
 
+And the site's JSON, teams/<season>/lineups/<CODE>.json, from the regular-season finals (write_lineups):
+  {"code", "games": [gid, ...], "fives": [[pid x 5], ...], "rows": [[g, f, ds, pts, opp_pts, fga, oreb, tov, fta,
+  opp_fga, opp_oreb, opp_tov, opp_fta], ...]}, one row per five per game: g indexes games (tip-off order), f indexes
+  fives, ds is tenths of a second. Integers only; the page sums the rows and derives every rating with rdiv.
+
 Checks, every run: five per club at every action, stint points equal the final score, stint seconds equal the game
-length, and each player's seconds on the floor agree with the box score within a minute.
+length, each player's seconds on the floor agree with the box score within a minute, and his points for and against on the
+floor add up to his box-score plus-minus.
 
 usage: python lineups.py [season]
 """
+import json
 import os
 import sys
 import duckdb
@@ -38,6 +45,31 @@ def _v(x):
 
 def ordered(actions):
     return sorted(actions, key=lambda a: int(a["order_no"]))
+
+
+def play_order(actions):
+    """The actions in feed order, except that a substitution made while free throws are still to come at the same clock
+    moves to after the last of them: free-throw points belong to the five who were on the floor for the foul, the
+    convention of the box score's plus-minus."""
+    acts = ordered(actions)
+
+    def ft_ahead(i):
+        for b in acts[i + 1:]:
+            if b["period"] != acts[i]["period"] or b["clock"] != acts[i]["clock"]:
+                return False
+            if b["action_type"] == "freethrow":
+                return True
+        return False
+    out, held = [], []
+    for i, a in enumerate(acts):
+        if a["action_type"] == "substitution" and ft_ahead(i):
+            held.append(a)
+            continue
+        out.append(a)
+        if held and not ft_ahead(i):
+            out += held
+            held = []
+    return out + held
 
 
 def infer_starters(actions):
@@ -84,7 +116,7 @@ def stints(actions, starters):
         idx += 1
         sec, cur = 0.0, zero()
 
-    for a in ordered(actions):
+    for a in play_order(actions):
         t, sub, team = a["action_type"], a.get("sub_type"), _v(a.get("team"))
         p, a_per, c = _v(a.get("player")), int(a["period"]), _v(a.get("clock"))
         if a_per != per:                          # whatever the clock said, the old period ran out
@@ -179,13 +211,36 @@ def season_tables(st):
     return lu.drop(columns="five"), oo
 
 
-def main(season, w=None):
+def write_lineups(out, teams, rows):
+    """teams: site_data.load_teams() rows. rows: stints with gid, time (tip-off, for game order), team, players, sec,
+    pts, opp_pts and the COUNTS of both sides."""
+    keys = ["pts", "opp_pts", *COUNTS, *(f"opp_{k}" for k in COUNTS)]
+    by_team = {t["code"]: [] for t in teams}
+    for r in rows:
+        by_team[r["team"]].append(r)
+    os.makedirs(os.path.join(out, "lineups"), exist_ok=True)
+    for code, rs in by_team.items():
+        rs.sort(key=lambda r: (r["time"], r["gid"]))
+        games = list(dict.fromkeys(r["gid"] for r in rs))
+        fives, units = {}, {}
+        for r in rs:
+            five = tuple(sorted(str(p) for p in r["players"]))
+            u = units.setdefault((r["gid"], fives.setdefault(five, len(fives))), {"ds": 0, **{k: 0 for k in keys}})
+            u["ds"] += int(round(10 * r["sec"]))
+            for k in keys:
+                u[k] += int(r[k])
+        with open(os.path.join(out, "lineups", f"{code}.json"), "w") as f:
+            json.dump({"code": code, "games": games, "fives": [list(x) for x in fives],
+                       "rows": [[games.index(g), i, u["ds"], *(u[k] for k in keys)] for (g, i), u in units.items()]}, f, separators=(",", ":"))
+
+
+def main(season, w=None, out=None):
     w = w or os.path.join(os.path.dirname(os.path.abspath(__file__)), "warehouse", season)
     con = duckdb.connect()
     ev = con.execute(f"select game, action, order_no, period, clock, team, player, action_type, sub_type, score_home, score_away "
                      f"from read_parquet('{w}/events.parquet')").df()
     ev["player"] = ev.player.astype("Int64")                  # DuckDB hands a nullable INTEGER over as float
-    box = con.execute(f"select game, team, player, starter, seconds from read_parquet('{w}/box.parquet')").df()
+    box = con.execute(f"select game, team, player, starter, seconds, plus_minus from read_parquet('{w}/box.parquet')").df()
     box["player"] = box.player.astype(int)
     starters = {g: {t: set(d.player) for t, d in gd[gd.starter].groupby("team")} for g, gd in box.groupby("game")}
     final = {r.game: sorted([r.home_score, r.away_score]) for r in con.execute(f"select * from read_parquet('{w}/games.parquet') where final").df().itertuples()}
@@ -200,10 +255,15 @@ def main(season, w=None):
         pts = sorted(sum(s["pts"] for s in sts if s["team"] == c) for c in {s["team"] for s in sts})
         if g in final and pts != final[g]:
             problems.append(f"game {g}: stint points {pts}, final {final[g]}")
-        on = seconds_on(sts)
+        on, pm = seconds_on(sts), {}
+        for s in sts:
+            for p in s["players"]:
+                pm[(s["team"], p)] = pm.get((s["team"], p), 0) + s["pts"] - s["opp_pts"]
         for b in box[box.game == g].itertuples():
             if abs(on.get((b.team, b.player), 0) - (b.seconds or 0)) > 60:
                 problems.append(f"game {g}: {b.player} on the floor {on.get((b.team, b.player), 0):.0f} s, box {b.seconds:.0f} s")
+            if g in final and _v(b.plus_minus) is not None and pm.get((b.team, b.player), 0) != b.plus_minus:
+                problems.append(f"game {g}: {b.player} +/- on the floor {pm.get((b.team, b.player), 0)}, box {b.plus_minus}")
         rows += [{"game": g, **s} for s in sts]
     cols = ["game", "team", "stint", "players", "opp_players", "sec", "pts", "opp_pts", *COUNTS, *(f"opp_{k}" for k in COUNTS)]
     st = pd.DataFrame(rows, columns=cols)       # before opening night there are no games: the tables are written empty
@@ -211,6 +271,12 @@ def main(season, w=None):
     st.to_parquet(os.path.join(w, "stints.parquet"), index=False)
     lu.to_parquet(os.path.join(w, "lineups.parquet"), index=False)
     oo.to_parquet(os.path.join(w, "onoff.parquet"), index=False)
+    if out:
+        from site_data import load_teams
+        reg = con.execute(f"select game, strftime(tipoff_utc, '%Y-%m-%dT%H:%M:%SZ') as time from read_parquet('{w}/games.parquet') "
+                          "where game_type = 'regular' and final").fetchall()
+        when = dict(reg)
+        write_lineups(out, load_teams(), [{**r, "gid": r["game"], "time": when[r["game"]]} for r in rows if r["game"] in when])
     for p in problems[:20]:
         print("FAIL", p)
     print(f"{season}: {st.game.nunique()} games, {len(st)} stint rows, {len(lu)} fives, {len(oo)} players; {len(problems)} problems")
@@ -219,5 +285,5 @@ def main(season, w=None):
 
 if __name__ == "__main__":
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from season import season
-    sys.exit(1 if main(season()) else 0)
+    from season import ROOT, season
+    sys.exit(1 if main(season(), out=os.path.join(ROOT, "teams", season())) else 0)

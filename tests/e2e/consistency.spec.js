@@ -111,3 +111,29 @@ test('shot charts match the box score and the game log', async ({page}) => {
   expect(await page.$eval('#sc-court', marks), 'game chart vs game log').toEqual(fg([await page.$eval(`#log tr[data-gid="${gid}"]`, tr => tr.cells[10].textContent)]));
   expect(problems, 'the page reported errors').toEqual([]);
 });
+
+// Lineups hold the box score's plus-minus: a player's points for and against on the floor add up to his game log's +/-,
+// on − off is the difference of the two shown rows, and each net is its ORtg minus its DRtg as shown
+const num = s => s === '–' ? null : Number(s.replace('−', '-'));
+test('lineups and on/off agree with the game log', async ({page}) => {
+  const problems = await prepare(page);
+  await page.goto('./#games/2026-10-21');
+  await settled(page);
+  const gid = await page.evaluate(() => document.querySelector('#gm-list a.card').dataset.gid);
+  await go(page, `#game/${gid}`, () => document.querySelectorAll('#gm-box table').length === 2);
+  for (const pid of await page.$$eval('#gm-box tr[data-pid]', trs => trs.filter(tr => tr.cells.length > 2).slice(0, 12).map(tr => tr.dataset.pid))) {
+    const code = await page.$eval(`#gm-box tr[data-pid="${pid}"]`, tr => tr.closest('table').dataset.team);
+    await go(page, `#${code}/${pid}`, p => document.querySelector('#player').value === p && !document.querySelector('#lu').hidden, pid);
+    const pm = await page.$$eval('#log tr[data-gid]', trs => trs.filter(tr => tr.cells.length > 4).reduce((a, tr) => a + Number(tr.cells[13].textContent.replace('−', '-')), 0));
+    const oo = await page.$$eval('#onoff tbody tr', trs => trs.map(tr => [...tr.cells].slice(1).map(td => td.textContent)));
+    expect(num(oo[0][0]), `${pid}: on-court +/- vs game log`).toBe(pm);
+    for (const k of [1, 2, 3]) if (num(oo[0][k]) != null && num(oo[1][k]) != null) expect(num(oo[2][k]), `${pid}: on − off`).toBeCloseTo(num(oo[0][k]) - num(oo[1][k]), 6);
+    const fives = await page.$$eval('#fives tbody tr', trs => trs.map(tr => ({n: tr.dataset.five.split(',').length, c: [...tr.cells].slice(1).map(td => td.textContent)})));
+    expect(fives.length).toBeGreaterThan(0);
+    for (const f of fives) {
+      expect(f.n, 'four teammates').toBe(4);
+      if (num(f.c[2]) != null && num(f.c[3]) != null) expect(num(f.c[4]), `${pid}: net`).toBeCloseTo(num(f.c[2]) - num(f.c[3]), 6);
+    }
+  }
+  expect(problems, 'the page reported errors').toEqual([]);
+});

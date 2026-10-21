@@ -114,6 +114,13 @@ a,button,select,.card{-webkit-tap-highlight-color:transparent}
 .face.on>span{visibility:hidden}
 .face img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 12%}
 .tbl .face{margin-right:9px;width:26px;height:26px;font-size:10px}
+.tbl td.five{white-space:normal;min-width:170px}
+.five .faces{display:flex;margin-bottom:4px}
+.five .faces .face{margin:0 0 0 -4px;box-shadow:0 0 0 2px var(--panel),inset 0 0 0 1.5px var(--c2,transparent)}
+.five .faces .face:first-child{margin-left:0}
+.five .nm{display:block;font-size:12.5px;color:var(--muted);line-height:1.35}
+#lu .scroll+.scroll{margin-top:12px}
+@media (max-width:760px){.tbl .x{display:none}}
 /* a club's logo from NBA's CDN; until it loads (or if it never does) the club's two colours, or its code on a crest */
 .chip,.crest,.mark{position:relative;display:inline-grid;place-items:center;flex:none;vertical-align:middle}
 .chip{width:18px;height:18px;margin-right:8px;border-radius:50%;background:linear-gradient(135deg,var(--c1) 55%,var(--c2) 55%);box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
@@ -388,6 +395,7 @@ html.swap,html.swap *{transition:background-color .35s,color .35s}
     <div class="pick"><select id="team" data-kind="team" aria-label="Team" data-ta="Team"></select><select id="player" data-kind="player" aria-label="Player" data-ta="Player"></select><a class="arr" id="prev" aria-label="Previous player" data-ta="Previous player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="arr" id="next" aria-label="Next player" data-ta="Next player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 5.5 6.5 6.5-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
     <div class="tiles" id="tiles"></div>
     <section class="panel" id="sc"><h2 data-t="Shot chart">Shot chart</h2><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div></section>
+    <section class="panel" id="lu" hidden><h2 data-t="Lineups">Lineups</h2><div class="scroll"><table class="tbl" id="onoff"></table></div><div class="scroll"><table class="tbl" id="fives"></table></div></section>
     <details class="panel" id="log-sec" open><summary><h2 data-t="Game log">Game log</h2></summary><div class="scroll"><table class="tbl" id="log"></table></div></details>
   </section>
   <section class="pg" id="pg-compare" hidden>
@@ -459,12 +467,13 @@ const EN = s => `<span lang="en">${esc(s)}</span>`;
 
 // ---- numbers. Every average and percentage on the site goes through rdiv: num/den to d decimals, half up, in exact
 // integer arithmetic (rounding.avg in Python is the same formula), so a number reads the same on every page.
-const rdiv = (num, den, d = 1) => {
-  if (!den) return null;
-  const p = 10 ** d, q = Math.floor((2 * num * p + den) / (2 * den));
+// rq is the rounded value as a whole number of 10^-d units, fq writes such a number out
+const rq = (num, den, d = 1) => Math.floor((2 * num * 10 ** d + den) / (2 * den));
+const fq = (q, d = 1) => {
   const s = String(Math.abs(q)).padStart(d + 1, '0'), out = d ? `${s.slice(0, -d)}.${s.slice(-d)}` : s;
   return q < 0 ? `-${out}` : out;
 };
+const rdiv = (num, den, d = 1) => den ? fq(rq(num, den, d), d) : null;
 // Turkish takes a decimal comma
 const N = s => s == null ? '–' : LANG === 'tr' ? s.replace('.', ',') : s;
 const avg = (total, gp) => N(rdiv(total, gp));
@@ -564,6 +573,54 @@ let SC = {code: '', shots: [], club: {}};
 const drawShots = () => { const g = $('#sc-game').value; $('#sc-court').innerHTML = court(g ? SC.club[g] : SC.code, g ? SC.shots.filter(s => s[0] === g) : SC.shots); };
 $('#sc-game').addEventListener('change', drawShots);
 
+// ---- Lineups (lineups.py): each club's fives, one row of integer totals per five per game. A rating is points per 100
+// possessions (FGA − OREB + TOV + 0.44 FTA, so 100 × possessions is an integer), rounded once to tenths by rq; net and
+// on − off are differences of those shown tenths, so they add up on the page
+const LU = ['pts', 'opp', 'fga', 'oreb', 'tov', 'fta', 'ofga', 'ooreb', 'otov', 'ofta'];
+const luZero = () => Object.fromEntries(['ds', ...LU].map(k => [k, 0]));
+const luAdd = (a, r) => { a.ds += r[2]; LU.forEach((k, i) => { a[k] += r[3 + i]; }); return a; };
+const rtg = (pts, fga, oreb, tov, fta) => { const p = 100 * (fga - oreb + tov) + 44 * fta; return p >= 100 ? rq(10000 * pts, p) : null; };
+const rates = u => { const o = rtg(u.pts, u.fga, u.oreb, u.tov, u.fta), d = rtg(u.opp, u.ofga, u.ooreb, u.otov, u.ofta); return [o, d, o != null && d != null ? o - d : null]; };
+const tenths = (q, sign) => q == null ? '–' : N(sign ? signed(fq(q)) : fq(q));
+const surname = n => n.split(/\s+/).slice(1).join(' ') || n;
+// a five as its faces and surnames (the player whose page it is left out)
+const fiveCell = (code, pids, name) => `<td class="l five"><span class="faces" style="${colours(code)}">${pids.map(p => face(p, name(p))).join('')}</span><span class="nm">${pids.map(p => EN(surname(name(p)))).join(' · ')}</span></td>`;
+async function drawLineups(p, code, clubs, my) {
+  const files = await Promise.all(clubs.map(c => Promise.all([get(`lineups/${c}.json`), get(`${c}.json`)]).catch(() => null)));
+  if (stale(my)) return;
+  const on = luZero(), tot = luZero(), units = [], names = {};
+  for (const [i, pair] of files.entries()) {
+    if (!pair) continue;
+    const [f, club] = pair;
+    for (const x of club.players) names[x.pid] = x.name;
+    const mine = new Map(f.fives.map((five, k) => [k, five]).filter(([, five]) => five.includes(p.pid)));
+    const by = {};
+    for (const r of f.rows) {
+      luAdd(tot, r);
+      if (!mine.has(r[1])) continue;
+      luAdd(on, r);
+      if (!by[r[1]]) units.push(by[r[1]] = {code: clubs[i], pids: mine.get(r[1]).filter(x => x !== p.pid), u: luZero()});
+      luAdd(by[r[1]].u, r);
+    }
+  }
+  $('#lu').hidden = !on.ds;
+  if (!on.ds) return;
+  const off = Object.fromEntries(Object.keys(tot).map(k => [k, tot[k] - on[k]]));
+  const ro = rates(on), rf = rates(off), dif = ro.map((x, k) => x != null && rf[k] != null ? x - rf[k] : null);
+  const name = pid => names[pid] || pid;
+  $('#onoff').setAttribute('style', tc(code));
+  $('#onoff').innerHTML = `<thead><tr><th class="l"></th><th>${t('+/-@stat')}</th><th>${t('ORtg@stat')}</th><th>${t('DRtg@stat')}</th><th>${t('Net@stat')}</th></tr></thead><tbody>`
+    + `<tr data-k="on"><td class="l">${t('On court')}</td><td>${N(signed(String(on.pts - on.opp)))}</td><td>${tenths(ro[0])}</td><td>${tenths(ro[1])}</td><td class="k">${tenths(ro[2], 1)}</td></tr>`
+    + `<tr data-k="off"><td class="l">${t('Off court')}</td><td>${off.ds ? N(signed(String(off.pts - off.opp))) : '–'}</td><td>${tenths(rf[0])}</td><td>${tenths(rf[1])}</td><td class="k">${tenths(rf[2], 1)}</td></tr>`
+    + `<tr class="tot" data-k="diff"><td class="l">${t('On − off')}</td><td></td><td>${tenths(dif[0], 1)}</td><td>${tenths(dif[1], 1)}</td><td class="k">${tenths(dif[2], 1)}</td></tr></tbody>`;
+  const top = units.sort((a, b) => b.u.ds - a.u.ds).slice(0, 5);
+  $('#fives').setAttribute('style', tc(code));
+  $('#fives').innerHTML = `<thead><tr><th class="l">${t('With@stat')}</th><th>${t('MIN@stat')}</th><th>${t('+/-@stat')}</th><th class="x">${t('ORtg@stat')}</th><th class="x">${t('DRtg@stat')}</th><th>${t('Net@stat')}</th></tr></thead><tbody>${top.map(({code: c, pids, u}) => {
+    const [o, d, n] = rates(u);
+    return `<tr data-five="${esc(pids.join(','))}">${fiveCell(c, pids, name)}<td>${N(rdiv(u.ds, 600, 0))}</td><td>${N(signed(String(u.pts - u.opp)))}</td><td class="x">${tenths(o)}</td><td class="x">${tenths(d)}</td><td class="k">${tenths(n, 1)}</td></tr>`;
+  }).join('')}</tbody>`;
+}
+
 // ---- Player
 async function renderPlayer(code, pid, my) {
   const data = await get(`${code}.json`);
@@ -583,6 +640,7 @@ async function renderPlayer(code, pid, my) {
     hero.innerHTML = `<div class="badge">${logo(code, 'crest')}</div><div class="who"><div class="tag">${logo(code, 'mark')}${EN(tname(code))}</div><h1>${EN(T.name)}</h1></div>`;
     $('#tiles').innerHTML = '';
     $('#sc').hidden = true;
+    $('#lu').hidden = true;
     $('#log').innerHTML = `<tbody><tr><td class="empty">${t('No players yet.')}</td></tr></tbody>`;
     remember(code);
     return;
@@ -602,7 +660,7 @@ async function renderPlayer(code, pid, my) {
     return `<tr data-gid="${esc(x.gid)}"><td>${fmtDate(x.date)}</td><td class="l">${x.home ? t('vs') : '@'} ${esc(x.opp)}</td><td class="l"><a href="#game/${esc(x.gid)}" class="${won ? 'w' : 'lo'}">${won ? t('W') : t('L')} ${x.ts}-${x.os}</a></td>${x.sec > 0 ? `<td>${x.start ? '<i class="st"></i>' : ''}${clock(x.sec)}</td><td class="k">${x.pts}</td><td>${x.reb}</td><td>${x.ast}</td><td>${x.stl}</td><td>${x.blk}</td><td>${x.tov}</td><td>${x.fgm}-${x.fga}</td><td>${x.fg3m}-${x.fg3a}</td><td>${x.ftm}-${x.fta}</td><td>${N(signed(String(x.pm)))}</td>` : `<td class="dim l" colspan="11">${t('Did not play')}</td>`}</tr>`;
   }).join('') : `<tr><td class="empty l" colspan="${head.length}">${t('No games played yet.')}</td></tr>`}</tbody>`;
   const played = log.filter(x => x.sec > 0), clubs = [...new Set([code, ...played.map(x => x.team)])];
-  const files = await Promise.all(clubs.map(c => get(`shots/${c}.json`).catch(() => null)));
+  const [files] = await Promise.all([Promise.all(clubs.map(c => get(`shots/${c}.json`).catch(() => null))), drawLineups(p, code, clubs, my)]);
   if (stale(my)) return;
   SC = {code, shots: files.flatMap(f => f && f.players[p.pid] ? f.players[p.pid].map(s => [f.games[s[0]], s[1], s[2], s[3]]) : []), club: Object.fromEntries(played.map(x => [x.gid, x.team]))};
   $('#sc-game').innerHTML = `<option value="" data-c="${esc(code)}" selected>${t('Season')}</option>${played.map(x => `<option value="${esc(x.gid)}" data-c="${esc(x.opp)}">${fmtDate(x.date)} ${x.home ? t('vs') : '@'} ${esc(x.opp)}</option>`).join('')}`;
