@@ -148,5 +148,9 @@
  "DRtg@stat": "SAV",
  "Net@stat": "NET",
  "With@stat": "BİRLİKTE",
- "Lineup@stat": "BEŞLİ"
+ "Lineup@stat": "BEŞLİ",
+ "Game flow": "Maç akışı",
+ "Lead changes": "Liderlik değişimi",
+ "Times tied": "Eşitlik",
+ "Biggest lead": "En büyük fark"
 }
