@@ -176,3 +176,53 @@ test.describe('game log', () => {
     expect(problems, 'the page reported errors').toEqual([]);
   });
 });
+
+test.describe('game box scores', () => {
+  test.use(DESKTOP);
+  test('each club\'s heading folds its box score, and the choice is kept across games and visits', async ({page}) => {
+    const problems = await prepare(page);
+    await page.goto('./#game/0022600001');
+    await settled(page);
+    const open = () => page.$$eval('#gm-box details', ds => ds.map(d => d.open));
+    expect(await open()).toEqual([true, true]);
+    await page.click('#gm-box details[data-side="home"] summary');
+    expect(await open()).toEqual([true, false]);
+    expect(await page.locator('#gm-box details[data-side="home"] table').isVisible()).toBe(false);
+    await page.waitForFunction(() => localStorage.getItem('pl-box-home') === 'closed');   // the toggle event is queued
+    await page.reload();
+    await settled(page);
+    expect(await open()).toEqual([true, false]);
+    await page.focus('#gm-box details[data-side="home"] summary');
+    await page.keyboard.press('Enter');
+    expect(await open()).toEqual([true, true]);
+    expect(problems, 'the page reported errors').toEqual([]);
+  });
+
+  test('a stat heading orders that club\'s players by it, most first; again restores the box score order', async ({page}) => {
+    const problems = await prepare(page);
+    await page.goto('./#game/0022600001');
+    await settled(page);
+    const tb = '#gm-box table >> nth=0';
+    const order = () => page.locator(tb).evaluate(t => [...t.querySelectorAll('tbody tr[data-pid]')].map(r => r.dataset.pid));
+    const col = i => page.locator(tb).evaluate((t, i) => [...t.querySelectorAll('tbody tr[data-pid]')].filter(r => r.cells.length > 2).map(r => r.cells[i].textContent), i);
+    const first = await order(), other = await page.locator('#gm-box table >> nth=1').evaluate(t => [...t.querySelectorAll('tbody tr[data-pid]')].map(r => r.dataset.pid));
+    const num = s => Number(s.replace('−', '-').split('-')[0] || s);
+    for (const [h, i] of [['REB', 3], ['AST', 6], ['FG', 11], ['+/-', 14]]) {
+      await page.locator(tb).locator(`th[data-sort="${h}"] button`).click();
+      const vals = (await col(i)).map(h === '+/-' ? s => Number(s.replace('−', '-').replace('+', '')) : num);
+      expect(vals, h).toEqual([...vals].sort((a, b) => b - a));
+      expect(await page.locator(tb).locator('th[aria-sort="descending"]').getAttribute('data-sort')).toBe(h);
+      expect(await page.locator(tb).evaluate(t => t.tBodies[0].lastElementChild.classList.contains('tot'))).toBe(true);
+      const dnp = await page.locator(tb).evaluate(t => [...t.querySelectorAll('tbody tr[data-pid]')].map(r => r.cells.length > 2));
+      expect(dnp, 'who did not play stays below').toEqual([...dnp].sort((a, b) => +b - +a));
+    }
+    expect(await page.locator('#gm-box table >> nth=1').evaluate(t => [...t.querySelectorAll('tbody tr[data-pid]')].map(r => r.dataset.pid))).toEqual(other);
+    await page.locator(tb).locator('th[data-sort="+/-"] button').click();
+    expect(await order()).toEqual(first);
+    expect(await page.locator(tb).locator('th[aria-sort]').count()).toBe(0);
+    await page.locator(tb).locator('th[data-sort="PTS"] button').click();
+    await page.locator(tb).locator('th[data-sort="Player"] button').click();
+    expect(await order()).toEqual(first);
+    expect(problems, 'the page reported errors').toEqual([]);
+  });
+});

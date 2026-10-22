@@ -99,6 +99,9 @@ a,button,select,.card{-webkit-tap-highlight-color:transparent}
 .tbl th:last-child,.tbl td:last-child{padding-right:16px}
 .tbl th:first-child,.tbl td:first-child,.tbl .l{text-align:left}
 .tbl th.l{text-align:left}
+.tbl th>.sort{all:unset;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tbl th>.sort:focus-visible{outline:2px solid #fff;outline-offset:3px;border-radius:2px}
+.tbl th[aria-sort]>.sort{box-shadow:inset 0 -2.5px 0 var(--orange);padding-bottom:3px}
 .tbl tbody tr{transition:background .15s}
 .tbl tbody tr:hover{background:var(--panel2)}
 .tbl tr.tot td{font-weight:700;background:var(--panel2)}
@@ -880,6 +883,27 @@ $('#gm-flow').addEventListener('keydown', e => {
   flowAt(go === -Infinity ? 0 : go === Infinity ? FL.pts.length - 1 : FL.i == null ? (go > 0 ? 0 : FL.pts.length - 1) : FL.i + go);
 });
 
+// each club's box score folds like the game log, the choice kept per side (away, home) across games and visits
+const boxOpen = side => { try { return localStorage.getItem(`pl-box-${side}`) !== 'closed'; } catch (e) { return true; } };
+$('#gm-box').addEventListener('toggle', e => {
+  const d = e.target;
+  if (d.dataset.side) try { localStorage.setItem(`pl-box-${d.dataset.side}`, d.open ? 'open' : 'closed'); } catch (e) {}
+}, true);
+// a stat's heading puts that club's players in its order, most first (ties keep the box score's order); the same heading
+// again, or Player, brings the box score's own order back. Who did not play stays below, the totals last
+let BOX = {};
+const SORT_BY = {MIN: 'sec', PTS: 'pts', REB: 'reb', OREB: 'oreb', DREB: 'dreb', AST: 'ast', STL: 'stl', BLK: 'blk', TOV: 'tov', PF: 'pf', FG: 'fgm', '3P': 'fg3m', FT: 'ftm', '+/-': 'pm'};
+$('#gm-box').addEventListener('click', e => {
+  const th = e.target.closest('th[data-sort]');
+  if (!th) return;
+  const tb = th.closest('table'), k = th.getAttribute('aria-sort') ? null : SORT_BY[th.dataset.sort];
+  tb.querySelectorAll('th[aria-sort]').forEach(x => x.removeAttribute('aria-sort'));
+  if (k) th.setAttribute('aria-sort', 'descending');
+  const body = tb.tBodies[0], rows = [...body.querySelectorAll('tr[data-pid]')], x = r => BOX[r.dataset.pid];
+  rows.sort((a, b) => (+(x(b).sec > 0) - +(x(a).sec > 0)) || (k ? x(b)[k] - x(a)[k] : 0) || (a.dataset.i - b.dataset.i));
+  body.prepend(...rows);
+});
+
 const gameCard = g => {
   const row = (code, score, win) => `<div class="row${win ? ' win' : ''}">${logo(code)}<span class="nm">${EN(tname(code))}</span>${score != null ? `<span class="sc">${score}</span>` : ''}</div>`;
   const fin = g.hs != null, inner = `${row(g.away, g.as, fin && g.as > g.hs)}${row(g.home, g.hs, fin && g.hs > g.as)}<div class="ft">${fin ? t('Final') : fmtTime(g.time)}</div>`;
@@ -907,9 +931,10 @@ async function renderGame(gid, my) {
   const box = code => {
     const rows = g.box[code] || [], s = sum(rows);
     for (const k of STATS) s[k] = rows.reduce((a, x) => a + x[k], 0);
-    return `<section class="panel"><h2>${EN(tname(code))}</h2><div class="scroll"><table class="tbl" data-team="${esc(code)}" style="${tc(code)}"><thead><tr>${head.map(h => `<th>${t(h + '@stat')}</th>`).join('')}</tr></thead><tbody>${rows.map(x => `<tr data-pid="${esc(x.pid)}"><td class="l"><a href="#${esc(code)}/${esc(x.pid)}">${x.start ? '<i class="st"></i>' : ''}${face(x.pid, x.name)}${esc(x.name)}</a></td>${x.sec > 0 ? `<td>${clock(x.sec)}</td><td class="k">${x.pts}</td><td>${x.reb}</td><td>${x.oreb}</td><td>${x.dreb}</td><td>${x.ast}</td><td>${x.stl}</td><td>${x.blk}</td><td>${x.tov}</td><td>${x.pf}</td><td>${x.fgm}-${x.fga}</td><td>${x.fg3m}-${x.fg3a}</td><td>${x.ftm}-${x.fta}</td><td>${N(signed(String(x.pm)))}</td>` : `<td class="dim l" colspan="14">${t('Did not play')}</td>`}</tr>`).join('')}<tr class="tot"><td class="l">${t('Totals')}</td><td></td><td class="k" data-k="pts">${s.pts}</td><td>${s.reb}</td><td>${s.oreb}</td><td>${s.dreb}</td><td>${s.ast}</td><td>${s.stl}</td><td>${s.blk}</td><td>${s.tov}</td><td>${s.pf}</td><td>${s.fgm}-${s.fga}</td><td>${s.fg3m}-${s.fg3a}</td><td>${s.ftm}-${s.fta}</td><td></td></tr></tbody></table></div></section>`;
+    return `<details class="panel" data-side="${code === g.home ? 'home' : 'away'}"${boxOpen(code === g.home ? 'home' : 'away') ? ' open' : ''}><summary><h2>${EN(tname(code))}</h2></summary><div class="scroll"><table class="tbl" data-team="${esc(code)}" style="${tc(code)}"><thead><tr>${head.map(h => `<th data-sort="${h}"><button type="button" class="sort">${t(h + '@stat')}</button></th>`).join('')}</tr></thead><tbody>${rows.map((x, i) => `<tr data-pid="${esc(x.pid)}" data-i="${i}"><td class="l"><a href="#${esc(code)}/${esc(x.pid)}">${x.start ? '<i class="st"></i>' : ''}${face(x.pid, x.name)}${esc(x.name)}</a></td>${x.sec > 0 ? `<td>${clock(x.sec)}</td><td class="k">${x.pts}</td><td>${x.reb}</td><td>${x.oreb}</td><td>${x.dreb}</td><td>${x.ast}</td><td>${x.stl}</td><td>${x.blk}</td><td>${x.tov}</td><td>${x.pf}</td><td>${x.fgm}-${x.fga}</td><td>${x.fg3m}-${x.fg3a}</td><td>${x.ftm}-${x.fta}</td><td>${N(signed(String(x.pm)))}</td>` : `<td class="dim l" colspan="14">${t('Did not play')}</td>`}</tr>`).join('')}<tr class="tot"><td class="l">${t('Totals')}</td><td></td><td class="k" data-k="pts">${s.pts}</td><td>${s.reb}</td><td>${s.oreb}</td><td>${s.dreb}</td><td>${s.ast}</td><td>${s.stl}</td><td>${s.blk}</td><td>${s.tov}</td><td>${s.pf}</td><td>${s.fgm}-${s.fga}</td><td>${s.fg3m}-${s.fg3a}</td><td>${s.ftm}-${s.fta}</td><td></td></tr></tbody></table></div></details>`;
   };
   $('#gm-box').innerHTML = box(g.away) + box(g.home);
+  BOX = Object.fromEntries(Object.values(g.box).flat().map(x => [x.pid, x]));
   const files = await Promise.all([g.away, g.home].map(c => get(`shots/${c}.json`).catch(() => null)));
   if (stale(my)) return;
   courts = [g.away, g.home].map((c, i) => {
