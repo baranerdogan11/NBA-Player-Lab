@@ -164,3 +164,31 @@ test('a game\'s lineups add up to its score', async ({page}) => {
   });
   expect(problems, 'the page reported errors').toEqual([]);
 });
+
+// A game's flow ends on the scoreboard's final and passes each period's score at the period's end; its last scoring
+// play reads the final, and the lead changes, ties and biggest leads are the ones its margins give
+test('a game\'s flow ends on the final', async ({page}) => {
+  const problems = await prepare(page);
+  await page.goto('./#games/2026-10-21');
+  await settled(page);
+  const gid = await page.evaluate(() => document.querySelector('#gm-list a.card').dataset.gid);
+  await go(page, `#game/${gid}`, () => !document.querySelector('#gm-flow-sec').hidden);
+  const [as, hs] = await page.$$eval('#gm-board .score span', s => s.map(x => +x.textContent));
+  const g = await page.evaluate(id => fetch(`${META.base}games/${id}.json`).then(r => r.json()), gid);
+  expect(g.flow.at(-1).slice(1), 'flow ends on the final').toEqual([hs, as]);
+  let h = 0, a = 0;
+  g.periods.forEach(([qh, qa], i) => {
+    h += qh; a += qa;
+    const end = i < 4 ? 7200 * (i + 1) : 28800 + 3000 * (i - 3);
+    expect(g.flow.filter(p => p[0] <= end).at(-1).slice(1), `score after period ${i + 1}`).toEqual([h, a]);
+  });
+  await page.focus('#gm-flow');
+  await page.keyboard.press('End');
+  expect(await page.textContent('#gm-flow .fl-tip')).toContain(`${g.away} ${as} – ${hs} ${g.home}`);
+  const m = [0, ...g.flow.map(p => p[1] - p[2])];
+  let lc = 0, lead = 0, tied = 0;
+  m.forEach((x, i) => { const s = Math.sign(x); if (s && lead && s !== lead) lc++; if (s) lead = s; if (i && !x && m[i - 1]) tied++; });
+  const tiles = await page.$$eval('#gm-flow-sum .tile b', bs => bs.map(b => +b.textContent));
+  expect(tiles).toEqual([lc, tied, Math.max(0, ...m.map(x => -x)), Math.max(0, ...m)]);
+  expect(problems, 'the page reported errors').toEqual([]);
+});

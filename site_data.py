@@ -9,7 +9,9 @@ Files under <out>/ (out is teams/<season>/):
   index.json        season, label, build time, the 30 clubs with colours and games played
   games.json        every game of the schedule: date, tip time, clubs, and the score once final
   <CODE>.json       the club's players, each with a log of his box-score lines (any club, newest last)
-  games/<gid>.json  one final: score by period and both box scores
+  games/<gid>.json  one final: score by period, both box scores and, from the play-by-play, its flow: [[ds, home, away],
+                    ...], the score after every change, ds the tenths of a second of game time played; it ends on the
+                    final and passes through every period's score
   lineups/<CODE>.json  the club's fives (lineups.py): {"code", "games": [gid, ...], "fives": [[pid x 5], ...], "rows":
                     [[g, f, ds, pts, opp_pts, fga, oreb, tov, fta, opp_fga, opp_oreb, opp_tov, opp_fta], ...]}, one row
                     per five per game: g indexes games (tip-off order), f fives, ds is tenths of a second; the page sums
@@ -47,10 +49,40 @@ def _line(r):
     return {"start": bool(r["start"]), "sec": int(r["sec"]), **{k: int(r[k]) for k in STATS}}
 
 
+def period_start(p):
+    """Tenths of a second of game time before period p: four 12-minute quarters, then 5-minute overtimes."""
+    return 7200 * (p - 1) if p <= 5 else 28800 + 3000 * (p - 5)
+
+
+def game_flow(events):
+    """events: (period, clock, score_home, score_away) in play-by-play order, clock in seconds left in the period.
+    The game's flow: [[ds, home, away], ...], one point per change of score."""
+    out, last = [], (0, 0)
+    for p, clock, h, a in events:
+        if h is None or a is None or clock is None or (h, a) == last:
+            continue
+        out.append([period_start(p + 1) - round(10 * clock), h, a])
+        last = (h, a)
+    return out
+
+
+def check_flow(g):
+    """Raises unless the game's flow ends on its final and holds each period's score at the period's end."""
+    f, h, a = g["flow"], 0, 0
+    for i, (qh, qa) in enumerate(g["periods"]):
+        h, a = h + qh, a + qa
+        at = [x[1:] for x in f if x[0] <= period_start(i + 2)]
+        if (at[-1] if at else [0, 0]) != [h, a]:
+            raise ValueError(f"game {g['gid']}: play-by-play score after period {i + 1} is {at[-1] if at else [0, 0]}, periods say {[h, a]}")
+    if (f[-1][1:] if f else [0, 0]) != [g["hs"], g["as"]]:
+        raise ValueError(f"game {g['gid']}: play-by-play ends at {f[-1][1:] if f else [0, 0]}, final is {[g['hs'], g['as']]}")
+
+
 def write_site(out, season, label, built, teams, players, games, lines):
     """teams: load_teams() rows. players: pid, team (current), name, jersey, pos, height, born, and optionally
     o_rapm, d_rapm (unrounded, from rapm.py).
-    games: gid, date, time (UTC ISO), home, away, final, hs, as, periods ([[home, away], ...]) for finals.
+    games: gid, date, time (UTC ISO), home, away, final, hs, as, periods ([[home, away], ...]) and optionally flow
+    (game_flow()) for finals.
     lines: one per player per final: gid, team, pid, name, start, sec and every key in STATS."""
     final = {g["gid"]: g for g in games if g["final"]}
     gp = {t["code"]: 0 for t in teams}
@@ -73,9 +105,11 @@ def write_site(out, season, label, built, teams, players, games, lines):
         for c, side in ((g["home"], "hs"), (g["away"], "as")):
             if sum(x["pts"] for x in box[c]) != g[side]:
                 raise ValueError(f"game {gid}: {c} box score adds up to {sum(x['pts'] for x in box[c])}, final says {g[side]}")
+        if "flow" in g:
+            check_flow(g)
         _dump(os.path.join(out, "games", f"{gid}.json"), {
             "gid": gid, "date": g["date"], "home": g["home"], "away": g["away"], "hs": g["hs"], "as": g["as"],
-            "periods": g["periods"], "box": box})
+            "periods": g["periods"], "box": box, **({"flow": g["flow"]} if "flow" in g else {})})
 
     logs = {}
     for r in sorted(lines, key=lambda r: (final[r["gid"]]["time"], r["gid"])):
@@ -155,7 +189,13 @@ def from_warehouse(wh):
     for r in rows("select q.game, q.period, sum(q.pts) filter (where q.team = g.home) as h, sum(q.pts) filter (where q.team = g.away) as a "
                   "from periods q join games g using (game) group by all order by q.game, q.period"):
         qtr.setdefault(r["game"], []).append([int(r["h"] or 0), int(r["a"] or 0)])
-    games = [{**g, "final": bool(g["final"]), **({"periods": qtr.get(g["gid"], [])} if g["final"] else {})}
+    flows = {}
+    if os.path.exists(os.path.join(wh, "events.parquet")):
+        for r in con.execute(f"select e.game, e.period, e.clock, e.score_home, e.score_away from read_parquet('{os.path.join(wh, 'events.parquet')}') e "
+                             "join games g using (game) where g.game_type = 'regular' and g.final order by e.game, e.order_no").fetchall():
+            flows.setdefault(r[0], []).append(r[1:])
+    games = [{**g, "final": bool(g["final"]), **({"periods": qtr.get(g["gid"], [])} if g["final"] else {}),
+              **({"flow": game_flow(flows[g["gid"]])} if g["gid"] in flows else {})}
              for g in rows("select game as gid, strftime(date, '%Y-%m-%d') as \"date\", strftime(tipoff_utc, '%Y-%m-%dT%H:%M:%SZ') as \"time\", "
                            "home, away, final, home_score as hs, away_score as \"as\" from games where game_type = 'regular'")]
     stat = ", ".join(f"coalesce(b.{'plus_minus' if k == 'pm' else k}, 0) as {k}" for k in STATS)

@@ -235,6 +235,24 @@ a.card:active{transform:scale(.98)}
 .board .mid{text-align:center}
 .board .mid small{display:inline-block;margin-top:8px;padding:5px 10px;border-radius:999px;background:rgba(0,0,0,.35);font:650 11px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:#ffb27f}
 @media (max-width:760px){.board{padding:18px 12px;gap:8px;border-radius:18px;background-size:auto,auto,auto}.board .side small,.board .full{display:none}.board .abbr{display:inline}.board .side b{font-size:22px}.board .side .crest{width:42px;height:42px;font-size:11px}.board .side .crest img{inset:6px;width:30px;height:30px}.board .score{font-size:36px;gap:20px}}
+/* game flow: the margin after every change of score, the home club's colour above the line and the away club's below */
+.flow{position:relative;height:160px;margin:4px 16px 0;touch-action:pan-y;cursor:crosshair;-webkit-user-select:none;user-select:none}
+.flow:focus-visible{outline:2px solid var(--orange);outline-offset:4px;border-radius:6px}
+.flow svg{display:block;width:100%;height:100%}
+.flow .zero{stroke:var(--ink2);stroke-opacity:.45;stroke-width:1.5}
+.flow .qt{stroke:var(--muted);stroke-opacity:.4;stroke-width:1;stroke-dasharray:3 4}
+.fl-t{position:absolute;left:4px;display:flex;align-items:center;gap:6px;font:700 11px/1 var(--sans);letter-spacing:.06em;color:var(--muted);pointer-events:none}
+.fl-t .chip{width:18px;height:18px;margin:0}
+.fl-t.h{top:2px}.fl-t.a{bottom:2px}
+.fl-cur{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--ink);opacity:.7;pointer-events:none}
+.fl-tip{position:absolute;top:2px;z-index:1;padding:6px 10px;border-radius:10px;background:var(--solid);box-shadow:var(--sh),0 0 0 1px var(--line);font:650 12.5px/1.2 var(--sans);white-space:nowrap;pointer-events:none}
+.fl-tip small{display:block;margin-bottom:2px;font:600 10.5px/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.fl-q{position:relative;height:16px;margin:6px 16px 0}
+.fl-q span{position:absolute;transform:translateX(-50%);font:600 11px/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.fl-sum{margin:10px 16px 16px;box-shadow:none}
+.fl-sum{grid-template-columns:repeat(4,minmax(0,1fr))}
+.fl-sum [data-team]{box-shadow:inset 3px 0 0 var(--tc)}
+@media (max-width:760px){.fl-sum{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 /* the opening page: centre court at tip-off, the house orange running into walnut, the centre circle painted over the grain;
    then the latest night's cards and three leader boards */
@@ -415,6 +433,7 @@ html.swap,html.swap *{transition:background-color .35s,color .35s}
   </section>
   <section class="pg" id="pg-game" hidden>
     <div class="board" id="gm-board"></div>
+    <section class="panel" id="gm-flow-sec" hidden><h2 data-t="Game flow">Game flow</h2><div class="flow" id="gm-flow" tabindex="0"></div><div class="fl-q" id="gm-flow-q"></div><div class="tiles fl-sum" id="gm-flow-sum"></div></section>
     <section class="panel"><h2 data-t="Score by period">Score by period</h2><div class="scroll"><table class="tbl" id="gm-periods"></table></div></section>
     <section class="panel"><h2 data-t="Shot charts">Shot charts</h2><div class="courts two" id="gm-shots"></div></section>
     <div id="gm-box"></div>
@@ -767,6 +786,80 @@ async function renderGames(date, my) {
   $('#gm-list').innerHTML = today.length ? today.map(gameCard).join('') : `<p class="empty">${t('No games on this day.')}</p>`;
 }
 // one game: away over home, a final opens its game page, a game to come shows its tip-off in the reader's time
+const perName = (i, n) => i < 4 ? `${t('Q')}${i + 1}` : n === 5 ? t('OT') : `${t('OT')}${i - 3}`;
+
+// ---- Game flow (site_data.game_flow): the margin after every change of score on a clock of game time, in tenths of a
+// second; the home club's colour above the line, the away club's below. Tap, drag or the arrow keys read a scoring play
+const PSTART = p => p <= 5 ? 7200 * (p - 1) : 28800 + 3000 * (p - 5);
+const near = (a, b) => [1, 3, 5].reduce((d, i) => d + Math.abs(parseInt(a.slice(i, i + 2), 16) - parseInt(b.slice(i, i + 2), 16)), 0) < 90;
+let FL = null;
+const flowStats = pts => {
+  let lc = 0, tied = 0, lead = 0, h = 0, a = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const m = pts[i][1] - pts[i][2], s = Math.sign(m);
+    if (s && lead && s !== lead) lc++;
+    if (s) lead = s;
+    if (!s && pts[i - 1][1] !== pts[i - 1][2]) tied++;
+    h = Math.max(h, m);
+    a = Math.max(a, -m);
+  }
+  return {lc, tied, h, a};
+};
+function drawFlow(g) {
+  const box = $('#gm-flow'), sec = $('#gm-flow-sec');
+  sec.hidden = !g.flow || !g.flow.length;
+  if (sec.hidden) { FL = null; return; }
+  const n = g.periods.length, end = PSTART(n + 1), pts = [[0, 0, 0], ...g.flow];
+  const top = Math.max(5, ...pts.map(p => Math.abs(p[1] - p[2]))), x = ds => 1000 * ds / end, y = m => 80 - 72 * m / top;
+  const ch = team(g.home) ? team(g.home).colors[0] : '#555555', ca0 = team(g.away) ? team(g.away).colors : ['#999999', '#999999'];
+  const ca = near(ch, ca0[0]) ? ca0[1] : ca0[0];
+  const step = 'M0 80' + pts.map(p => `H${x(p[0]).toFixed(1)}V${y(p[1] - p[2]).toFixed(1)}`).join('') + 'H1000V80Z';
+  const ticks = Array.from({length: n - 1}, (_, i) => `M${x(PSTART(i + 2)).toFixed(1)} 0V160`).join('');
+  FL = {g, pts, end, i: null};
+  box.setAttribute('aria-label', t('Game flow'));
+  box.innerHTML = `<svg viewBox="0 0 1000 160" preserveAspectRatio="none" aria-hidden="true"><defs><clipPath id="fl-up"><rect width="1000" height="80"/></clipPath><clipPath id="fl-dn"><rect y="80" width="1000" height="80"/></clipPath></defs>`
+    + `<path d="${ticks}" class="qt" vector-effect="non-scaling-stroke"/><path d="${step}" fill="${ch}" clip-path="url(#fl-up)" data-team="${esc(g.home)}"/><path d="${step}" fill="${ca}" clip-path="url(#fl-dn)" data-team="${esc(g.away)}"/>`
+    + `<path d="M0 80H1000" class="zero" vector-effect="non-scaling-stroke"/></svg>`
+    + `<span class="fl-t h">${logo(g.home)}${esc(g.home)}</span><span class="fl-t a">${logo(g.away)}${esc(g.away)}</span><i class="fl-cur" hidden></i><div class="fl-tip" hidden aria-live="polite"></div>`;
+  $('#gm-flow-q').innerHTML = g.periods.map((_, i) => `<span style="left:${(x((PSTART(i + 1) + PSTART(i + 2)) / 2) / 10).toFixed(2)}%">${perName(i, n)}</span>`).join('');
+  const s = flowStats(pts);
+  $('#gm-flow-sum').innerHTML = `<div class="tile" data-k="lc"><b>${s.lc}</b><span>${t('Lead changes')}</span></div><div class="tile" data-k="tied"><b>${s.tied}</b><span>${t('Times tied')}</span></div>`
+    + [[g.away, s.a], [g.home, s.h]].map(([c, v]) => `<div class="tile" data-k="lead" data-team="${esc(c)}" style="${tc(c)}"><b>${v}</b><span>${t('Biggest lead')} · ${esc(c)}</span></div>`).join('');
+}
+// the scoring play nearest a point of the chart: the score after it, its period and the time left on the clock
+function flowAt(i) {
+  if (!FL) return;
+  FL.i = Math.max(0, Math.min(FL.pts.length - 1, i));
+  const [ds, h, a] = FL.pts[FL.i], g = FL.g, box = $('#gm-flow');
+  let p = 1;
+  while (ds > PSTART(p + 1)) p++;
+  const left = PSTART(p + 1) - ds, at = 100 * ds / FL.end;
+  const cur = $('.fl-cur', box), tip = $('.fl-tip', box);
+  cur.hidden = tip.hidden = false;
+  cur.style.left = `${at}%`;
+  tip.innerHTML = `<small>${perName(p - 1, g.periods.length)} · ${left >= 600 ? clock(Math.ceil(left / 10)) : N((left / 10).toFixed(1))}</small>${esc(g.away)} ${a} – ${h} ${esc(g.home)}`;
+  tip.style.left = `clamp(0px, calc(${at}% - ${tip.offsetWidth / 2}px), calc(100% - ${tip.offsetWidth}px))`;
+}
+const flowPoint = e => {
+  if (!FL) return;
+  const r = $('#gm-flow').getBoundingClientRect(), ds = FL.end * Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+  let best = 0;
+  FL.pts.forEach((p, i) => { if (Math.abs(p[0] - ds) < Math.abs(FL.pts[best][0] - ds)) best = i; });
+  flowAt(best);
+};
+const flowHide = () => { $$('#gm-flow .fl-cur, #gm-flow .fl-tip').forEach(el => { el.hidden = true; }); };
+$('#gm-flow').addEventListener('pointerdown', flowPoint);
+$('#gm-flow').addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.buttons) flowPoint(e); });
+$('#gm-flow').addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') flowHide(); });
+$('#gm-flow').addEventListener('blur', flowHide);
+$('#gm-flow').addEventListener('keydown', e => {
+  if (!FL) return;
+  const go = {ArrowLeft: -1, ArrowRight: 1, Home: -Infinity, End: Infinity}[e.key];
+  if (go == null) return;
+  e.preventDefault();
+  flowAt(go === -Infinity ? 0 : go === Infinity ? FL.pts.length - 1 : FL.i == null ? (go > 0 ? 0 : FL.pts.length - 1) : FL.i + go);
+});
+
 const gameCard = g => {
   const row = (code, score, win) => `<div class="row${win ? ' win' : ''}">${logo(code)}<span class="nm">${EN(tname(code))}</span>${score != null ? `<span class="sc">${score}</span>` : ''}</div>`;
   const fin = g.hs != null, inner = `${row(g.away, g.as, fin && g.as > g.hs)}${row(g.home, g.hs, fin && g.hs > g.as)}<div class="ft">${fin ? t('Final') : fmtTime(g.time)}</div>`;
@@ -781,7 +874,8 @@ async function renderGame(gid, my) {
   const board = $('#gm-board');
   board.setAttribute('style', `--ch:${H ? H.colors[0] : '#333'};--ca:${A ? A.colors[0] : '#333'}`);
   board.innerHTML = `<div class="side a${g.as > g.hs ? ' won' : ''}">${logo(g.away, 'crest')}<small>${EN(A ? A.city : g.away)}</small><b><span class="full">${EN(A ? A.name : g.away)}</span><span class="abbr">${esc(g.away)}</span></b></div><div class="mid"><div class="score"><span class="${g.as < g.hs ? 'lose' : ''}">${g.as}</span><span class="${g.hs < g.as ? 'lose' : ''}">${g.hs}</span></div><small>${t('Final')}${g.periods.length > 4 ? ` · ${g.periods.length === 5 ? t('OT') : `${g.periods.length - 4}${t('OT')}`}` : ''} · ${fmtDate(g.date, true)}</small></div><div class="side h${g.hs > g.as ? ' won' : ''}">${logo(g.home, 'crest')}<small>${EN(H ? H.city : g.home)}</small><b><span class="full">${EN(H ? H.name : g.home)}</span><span class="abbr">${esc(g.home)}</span></b></div>`;
-  const per = g.periods.map((_, i) => i < 4 ? `${t('Q')}${i + 1}` : g.periods.length === 5 ? t('OT') : `${t('OT')}${i - 3}`);
+  drawFlow(g);
+  const per = g.periods.map((_, i) => perName(i, g.periods.length));
   $('#gm-periods').innerHTML = `<thead><tr><th>${t('Team')}</th>${per.map(p => `<th>${p}</th>`).join('')}<th>${t('T@total')}</th></tr></thead><tbody>${[[g.away, 1, g.as], [g.home, 0, g.hs]].map(([c, i, tot]) => `<tr><td class="l"><a href="#${c}">${logo(c)}${EN(tname(c))}</a></td>${g.periods.map(p => `<td>${p[i]}</td>`).join('')}<td class="k">${tot}</td></tr>`).join('')}</tbody>`;
   const head = ['Player', 'MIN', 'PTS', 'REB', 'OREB', 'DREB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'FG', '3P', 'FT', '+/-'];
   const box = code => {

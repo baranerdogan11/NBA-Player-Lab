@@ -10,7 +10,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, ROOT)
 from shots import write_shots  # noqa: E402
-from site_data import STATS, load_teams, write_lineups, write_site  # noqa: E402
+from site_data import STATS, load_teams, period_start, write_lineups, write_site  # noqa: E402
 
 SEASON, LABEL, BUILT = "2026-27", "2026-27", "2026-10-26T06:00:00Z"
 FIRST = ["Jalen", "Marcus", "Tyrese", "Luka", "Devin", "Andre", "Cole", "Isaiah", "Malik", "Darius", "Evan", "Kobe"]
@@ -56,7 +56,27 @@ def make(rng):
                         lines.append(x)
                 g.update(hs=score[home], **{"as": score[away]}, periods=[list(q) for q in zip(quarters(rng, score[home]), quarters(rng, score[away]))])
             games.append(g)
+    other = random.Random(5)   # the flows from their own generator too
+    for g in games:
+        if g["final"]:
+            g["flow"] = flow(other, g["periods"])
     return teams, players, games, lines
+
+
+def flow(rng, periods):
+    """A flow through the quarters' scores: each side's points in baskets of 1 to 3 at random moments of the quarter."""
+    out, h, a = [], 0, 0
+    for i, q in enumerate(periods):
+        baskets = []
+        for side, pts in enumerate(q):
+            while pts:
+                b = min(pts, rng.choice((1, 2, 2, 2, 3)))
+                baskets.append((rng.randint(period_start(i + 1) + 1, period_start(i + 2)), side, b))
+                pts -= b
+        for ds, side, b in sorted(baskets):
+            h, a = (h + b, a) if side == 0 else (h, a + b)
+            out.append([ds, h, a])
+    return out
 
 
 def side(rng, roster):

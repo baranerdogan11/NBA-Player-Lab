@@ -17,7 +17,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "tests", "fixtures"))
 import site_fixture  # noqa: E402
-from site_data import from_warehouse, write_site  # noqa: E402
+from site_data import from_warehouse, period_start, write_site  # noqa: E402
 
 ARGS = ("2026-27", "2026-27", "2026-10-26T06:00:00Z")
 teams, players, games, lines = site_fixture.make(random.Random(7))
@@ -43,6 +43,18 @@ t = {
     "periods": [{"game": g["gid"], "team": c, "period": i + 1, "pts": q[side]} for g in games if g["final"]
                 for i, q in enumerate(g["periods"]) for side, c in enumerate((g["home"], g["away"]))],
 }
+
+
+def event(g, n, ds, h, a):
+    """A play-by-play row at ds tenths of game time: its period and the seconds left on the clock."""
+    p = next(p for p in range(1, 20) if ds <= period_start(p + 1))
+    return {"game": g, "order_no": n, "period": p, "clock": (period_start(p + 1) - ds) / 10, "score_home": h, "score_away": a}
+
+
+# every scoring play, a rebound after each (the score unchanged) and the tip-off at 0-0, plus a preseason basket
+t["events"] = [e for g in games if g["final"] for i, (ds, h, a) in enumerate(g["flow"])
+               for e in ([event(g["gid"], 0, 0, 0, 0)] if i == 0 else []) + [event(g["gid"], 2 * i + 1, ds, h, a), event(g["gid"], 2 * i + 2, ds, h, a)]] \
+    + [event("0012600001", 1, 300, 2, 0)]
 con = duckdb.connect()
 for name, rows in t.items():
     path = os.path.join(wh, name)
