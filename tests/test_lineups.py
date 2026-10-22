@@ -89,6 +89,15 @@ sts, problems = lineups.stints(acts, {H: set(range(10, 15)), A: set(range(20, 25
 first = next(s for s in sts if s["team"] == H)
 checks["free throws after a mid-trip substitution count for the five fouled"] = problems == [] and 14 in first["players"] and first["pts"] == 2 and first["fta"] == 2
 
+# hand-written: a substitution logged before the foul (a technical after a timeout) stays put, so the free throw counts
+# for the five coming in, as the box score's plus-minus does
+acts = [ev(1, "period", "start", None, None, 720.0), ev(2, "substitution", "out", H, 14, 600.0), ev(3, "substitution", "in", H, 15, 600.0),
+        ev(4, "foul", "technical", A, 20, 600.0), ev(5, "freethrow", "1 of 1", H, 10, 600.0)]
+acts[4]["score_home"] = 1
+sts, problems = lineups.stints(acts, {H: set(range(10, 15)), A: set(range(20, 25))})
+last = [s for s in sts if s["team"] == H][-1]
+checks["free throws after a foul that follows the substitution count for the five coming in"] = problems == [] and 15 in last["players"] and last["pts"] == 1
+
 # the site's JSON: one row per five per game, integers, adding up to the stints
 w2 = tempfile.mkdtemp()
 teams = [{"code": c} for c in st.team.unique()]
