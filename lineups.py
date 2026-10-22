@@ -44,10 +44,19 @@ def ordered(actions):
 
 
 def play_order(actions):
-    """The actions in feed order, except that a substitution made while free throws are still to come at the same clock
-    moves to after the last of them: free-throw points belong to the five who were on the floor for the foul, the
-    convention of the box score's plus-minus."""
+    """The actions in feed order, except that a substitution made after a foul while its free throws are still to come
+    at the same clock moves to after the last of them: free-throw points belong to the five who were on the floor for the
+    foul, the convention of the box score's plus-minus. A substitution logged before the foul (a technical after a
+    timeout, an and-one after the change) stays where it is: the incoming five were on the floor for it."""
     acts = ordered(actions)
+
+    def fouled_before(i):
+        for b in reversed(acts[:i]):
+            if b["period"] != acts[i]["period"] or b["clock"] != acts[i]["clock"]:
+                return False
+            if b["action_type"] == "foul" and b.get("sub_type") != "technical":
+                return True
+        return False
 
     def ft_ahead(i):
         for b in acts[i + 1:]:
@@ -58,7 +67,7 @@ def play_order(actions):
         return False
     out, held = [], []
     for i, a in enumerate(acts):
-        if a["action_type"] == "substitution" and ft_ahead(i):
+        if a["action_type"] == "substitution" and (held or fouled_before(i)) and ft_ahead(i):
             held.append(a)
             continue
         out.append(a)
