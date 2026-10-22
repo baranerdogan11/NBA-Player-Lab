@@ -152,5 +152,9 @@
  "Game flow": "Maç akışı",
  "Lead changes": "Liderlik değişimi",
  "Times tied": "Eşitlik",
- "Biggest lead": "En büyük fark"
+ "Biggest lead": "En büyük fark",
+ "Share": "Paylaş",
+ "{season} season": "{season} sezonu",
+ "1 game": "1 maç",
+ "{n} games": "{n} maç"
 }
