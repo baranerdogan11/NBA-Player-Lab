@@ -193,6 +193,13 @@ a,button,select,.card{-webkit-tap-highlight-color:transparent}
 .hero h1{font-size:44px;line-height:1.02;letter-spacing:-.03em;margin:6px 0 10px;font-weight:800;overflow-wrap:anywhere;text-shadow:0 2px 12px rgba(0,0,0,.25)}
 .hero .facts{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;color:rgba(255,255,255,.75)}
 .hero .facts b{color:#fff;font-weight:700}
+.share{position:absolute;top:12px;right:12px;z-index:1;display:grid;place-items:center;width:40px;height:40px;padding:0;border:0;border-radius:999px;background:rgba(18,12,8,.42);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;cursor:pointer;transition:transform .1s ease-out,background .2s}
+.share svg{width:20px;height:20px}
+.board .share{position:static;margin:12px auto 0;width:36px;height:36px}
+.board .share svg{width:18px;height:18px}
+.share:hover{background:rgba(18,12,8,.6)}
+.share:active{transform:scale(.92)}
+.share[aria-busy="true"]{opacity:.6;cursor:progress}
 .hero .num{position:absolute;right:26px;bottom:-18px;z-index:-1;font:800 128px/1 var(--sans);letter-spacing:-.05em;color:rgba(255,255,255,.12);pointer-events:none}
 @media (max-width:760px){.hero{padding:18px 16px;gap:14px;border-radius:18px;background-position:right -90px center,0 0;background-size:auto 112%,auto}.hero .badge{width:64px;height:64px;font-size:24px}.hero h1{font-size:30px}.hero .num{font-size:88px;right:14px}}
 
@@ -584,16 +591,17 @@ function court(code, shots) {
   const made = shots.filter(s => s[3]).map(([, x, y]) => `<circle cx="${x}" cy="${-y}" r="6.5"/>`).join('');
   const miss = shots.filter(s => !s[3]).map(([, x, y]) => `M${x - 5} ${-y - 5}l10 10m0-10-10 10`).join('');
   return `<svg class="court" viewBox="-280 -417.5 560 500" role="img" aria-label="${esc(t('Shot chart'))}"><rect x="-280" y="-417.5" width="560" height="500" fill="${c1}"/><rect x="-250" y="-417.5" width="500" height="470" fill="${FLOOR}"/>`
-    + `<rect x="-80" y="-137.5" width="160" height="190" fill="${c2}" ${ln(lane)}/><path d="${[70, 110, 140, 170].map(d => `M-80 ${52.5 - d}h-9M80 ${52.5 - d}h9`).join('')}" ${ln(lane)}/>`
+    + `<rect x="-80" y="-137.5" width="160" height="190" fill="${c2}" stroke="${lane}" stroke-width="3"/><path d="${[70, 110, 140, 170].map(d => `M-80 ${52.5 - d}h-9M80 ${52.5 - d}h9`).join('')}" ${ln(lane)}/>`
     + `<path d="M-60 -137.5a60 60 0 0 1 120 0" ${ln(c1)}/><path d="M60 -137.5a60 60 0 0 1-120 0" ${ln(lane)} stroke-dasharray="10 9"/>`
     + `<path d="M-220 52.5V-89.5A237.5 237.5 0 0 1 220-89.5V52.5M-40 12.5V0a40 40 0 0 1 80 0v12.5M-60-417.5a60 60 0 0 0 120 0M-20-417.5a20 20 0 0 0 40 0" ${ln(c1)}/>`
     + `<path d="M-30 12.5h60" ${ln(c1, 5)}/><path d="M0 12.5v-5" ${ln(c1, 2.5)}/><circle r="7.5" ${ln(c1, 2.5)}/><rect x="-250" y="-417.5" width="500" height="470" ${ln(c1, 5)}/>`
     + `<path d="${miss}" ${ln('#fff', 5)} stroke-linecap="round"/><path class="miss" d="${miss}" ${ln(c1, 2.5)} stroke-linecap="round"/><g class="made" fill="${c1}" stroke="#fff" stroke-width="1.5">${made}</g></svg>`;
 }
 // the Player page's chart: his season, or one game picked from his log, on the court of the club he shot for
-let SC = {code: '', shots: [], club: {}};
-const drawShots = () => { const g = $('#sc-game').value; $('#sc-court').innerHTML = court(g ? SC.club[g] : SC.code, g ? SC.shots.filter(s => s[0] === g) : SC.shots); };
-$('#sc-game').addEventListener('change', drawShots);
+let SC = {pid: '', code: '', shots: [], club: {}};
+const shotsSvg = () => { const g = $('#sc-game').value; return court(g ? SC.club[g] : SC.code, g ? SC.shots.filter(s => s[0] === g) : SC.shots); };
+const drawShots = () => { $('#sc-court').innerHTML = shotsSvg(); };
+$('#sc-game').addEventListener('change', () => { drawShots(); prime('player'); });
 
 // ---- Lineups (lineups.py): each club's fives, one row of integer totals per five per game. A rating is points per 100
 // possessions (FGA − OREB + TOV + 0.44 FTA, so 100 × possessions is an integer), rounded once to tenths by rq; net and
@@ -658,6 +666,7 @@ async function renderPlayer(code, pid, my) {
   const T = team(code);
   const hero = $('#hero');
   hero.setAttribute('style', colours(code));
+  SHARE.player = null;
   if (!p) {
     hero.innerHTML = `<div class="badge">${logo(code, 'crest')}</div><div class="who"><div class="tag">${logo(code, 'mark')}${EN(tname(code))}</div><h1>${EN(T.name)}</h1></div>`;
     $('#tiles').innerHTML = '';
@@ -670,9 +679,19 @@ async function renderPlayer(code, pid, my) {
   remember(`${code}/${p.pid}`);
   leagueBadge(p.pid);
   const s = p.s, a = age(p.born);
-  hero.innerHTML = `<div class="badge">${face(p.pid, p.name, true)}</div><div class="who"><div class="tag">${logo(code, 'mark')}${EN(tname(code))}${p.pos ? ` · ${esc(p.pos)}` : ''}</div><h1>${EN(p.name)}</h1><div class="facts">${p.height ? `<span>${t('Height')} <b>${esc(p.height)}</b></span>` : ''}${a != null ? `<span>${t('Age')} <b>${a}</b></span>` : ''}<span>${t('Games')} <b>${s.gp}</b></span><span>${t('Minutes')} <b>${mpg(s.sec, s.gp)}</b></span></div></div>${p.jersey !== '' && p.jersey != null ? `<div class="num" aria-hidden="true">${esc(p.jersey)}</div>` : ''}`;
+  hero.innerHTML = `<div class="badge">${face(p.pid, p.name, true)}</div><div class="who"><div class="tag">${logo(code, 'mark')}${EN(tname(code))}${p.pos ? ` · ${esc(p.pos)}` : ''}</div><h1>${EN(p.name)}</h1><div class="facts">${p.height ? `<span>${t('Height')} <b>${esc(p.height)}</b></span>` : ''}${a != null ? `<span>${t('Age')} <b>${a}</b></span>` : ''}<span>${t('Games')} <b>${s.gp}</b></span><span>${t('Minutes')} <b>${mpg(s.sec, s.gp)}</b></span></div></div>${p.jersey !== '' && p.jersey != null ? `<div class="num" aria-hidden="true">${esc(p.jersey)}</div>` : ''}${SHARE_BTN('player')}`;
   const tiles = [['PTS', avg(s.pts, s.gp)], ['REB', avg(s.reb, s.gp)], ['AST', avg(s.ast, s.gp)], ['STL', avg(s.stl, s.gp)], ['BLK', avg(s.blk, s.gp)], ['TOV', avg(s.tov, s.gp)],
     ['FG%', pct(s.fgm, s.fga)], ['3P%', pct(s.fg3m, s.fg3a)], ['FT%', pct(s.ftm, s.fta)], ['TS%', ts(s.pts, s.fga, s.fta)], ['+/-', N(signed(rdiv(s.pm, s.gp)))], ['MIN', mpg(s.sec, s.gp)]];
+  // the picture: the game picked on the shot chart, as its log row shows it (and its fouls, from the box score), or the season's tiles
+  SHARE.player = () => {
+    const g = $('#sc-game').value, x = g ? p.log.find(y => y.gid === g) : null, club = x ? x.team : code;
+    const tl = x ? [['PTS', String(x.pts)], ['REB', String(x.reb)], ['AST', String(x.ast)], ['STL', String(x.stl)], ['BLK', String(x.blk)], ['TOV', String(x.tov)],
+      ['MIN', clock(x.sec)], ['FG', `${x.fgm}-${x.fga}`], ['3P', `${x.fg3m}-${x.fg3a}`], ['FT', `${x.ftm}-${x.fta}`], ['PF', String(x.pf)], ['+/-', N(signed(String(x.pm)))]] : tiles;
+    return {kind: 'player', code: club, ini: initials(p.name), name: p.name, num: p.jersey || '', tag: `${tname(club)}${p.pos ? ` · ${p.pos}` : ''}`.toLocaleUpperCase('en-US'),
+      line: x ? `${fmtDate(x.date, true)} · ${x.home ? t('vs') : '@'} ${tname(x.opp)} · ${x.ts > x.os ? t('W') : t('L')} ${x.ts}-${x.os}` : `${t('{season} season', {season: META.season})} · ${s.gp === 1 ? t('1 game') : t('{n} games', {n: s.gp})}`,
+      tiles: tl.map(([k, v]) => [t(k + '@stat'), v]), courts: SC.pid === p.pid ? [shotsSvg()] : [],
+      link: link(`${code}/${p.pid}`), title: `${p.name} · NBA Player Lab`, file: `${ascii(p.name)}-${x ? x.date : META.season}.png`};
+  };
   $('#tiles').innerHTML = tiles.map(([k, v], i) => `<div class="tile${i === 0 ? ' lead' : ''}" data-k="${k}"><b>${v}</b><span>${t(k + '@stat')}</span></div>`).join('');
   const log = [...p.log].reverse();
   const head = ['Date', 'Opp', 'Result', 'MIN', 'PTS', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'FG', '3P', 'FT', '+/-'];
@@ -684,10 +703,11 @@ async function renderPlayer(code, pid, my) {
   const played = log.filter(x => x.sec > 0), clubs = [...new Set([code, ...played.map(x => x.team)])];
   const [files] = await Promise.all([Promise.all(clubs.map(c => get(`shots/${c}.json`).catch(() => null))), drawLineups(p, code, clubs, my)]);
   if (stale(my)) return;
-  SC = {code, shots: files.flatMap(f => f && f.players[p.pid] ? f.players[p.pid].map(s => [f.games[s[0]], s[1], s[2], s[3]]) : []), club: Object.fromEntries(played.map(x => [x.gid, x.team]))};
+  SC = {pid: p.pid, code, shots: files.flatMap(f => f && f.players[p.pid] ? f.players[p.pid].map(s => [f.games[s[0]], s[1], s[2], s[3]]) : []), club: Object.fromEntries(played.map(x => [x.gid, x.team]))};
   $('#sc-game').innerHTML = `<option value="" data-c="${esc(code)}" selected>${t('Season')}</option>${played.map(x => `<option value="${esc(x.gid)}" data-c="${esc(x.opp)}">${fmtDate(x.date)} ${x.home ? t('vs') : '@'} ${esc(x.opp)}</option>`).join('')}`;
   $('#sc').hidden = false;
   drawShots();
+  setTimeout(() => prime('player'));
   document.title = `${p.name} · NBA Player Lab`;
 }
 $('#team').addEventListener('change', e => { location.hash = e.target.value; });
@@ -871,9 +891,15 @@ async function renderGame(gid, my) {
   const g = await get(`games/${gid}.json`);
   if (stale(my)) return;
   const H = team(g.home), A = team(g.away);
-  const board = $('#gm-board');
+  const board = $('#gm-board'), status = `${t('Final')}${g.periods.length > 4 ? ` · ${g.periods.length === 5 ? t('OT') : `${g.periods.length - 4}${t('OT')}`}` : ''} · ${fmtDate(g.date, true)}`;
+  // the picture: the score, each club's three top scorers as the box score has them, and both shot charts once they are in
+  let courts = [];
+  const top = code => (g.box[code] || []).filter(x => x.sec > 0).sort((a, b) => (b.pts - a.pts) || (b.reb - a.reb)).slice(0, 3)
+    .map(x => [x.name, `${x.pts} ${t('PTS@stat')} · ${x.reb} ${t('REB@stat')} · ${x.ast} ${t('AST@stat')}`]);
+  SHARE.game = () => ({kind: 'game', away: g.away, home: g.home, as: g.as, hs: g.hs, status: status.toLocaleUpperCase(loc()), tops: [top(g.away), top(g.home)], courts,
+    link: link(`game/${gid}`), title: `${g.away} ${g.as} · ${g.home} ${g.hs} · NBA Player Lab`, file: `${g.away}-${g.home}-${g.date}.png`});
   board.setAttribute('style', `--ch:${H ? H.colors[0] : '#333'};--ca:${A ? A.colors[0] : '#333'}`);
-  board.innerHTML = `<div class="side a${g.as > g.hs ? ' won' : ''}">${logo(g.away, 'crest')}<small>${EN(A ? A.city : g.away)}</small><b><span class="full">${EN(A ? A.name : g.away)}</span><span class="abbr">${esc(g.away)}</span></b></div><div class="mid"><div class="score"><span class="${g.as < g.hs ? 'lose' : ''}">${g.as}</span><span class="${g.hs < g.as ? 'lose' : ''}">${g.hs}</span></div><small>${t('Final')}${g.periods.length > 4 ? ` · ${g.periods.length === 5 ? t('OT') : `${g.periods.length - 4}${t('OT')}`}` : ''} · ${fmtDate(g.date, true)}</small></div><div class="side h${g.hs > g.as ? ' won' : ''}">${logo(g.home, 'crest')}<small>${EN(H ? H.city : g.home)}</small><b><span class="full">${EN(H ? H.name : g.home)}</span><span class="abbr">${esc(g.home)}</span></b></div>`;
+  board.innerHTML = `<div class="side a${g.as > g.hs ? ' won' : ''}">${logo(g.away, 'crest')}<small>${EN(A ? A.city : g.away)}</small><b><span class="full">${EN(A ? A.name : g.away)}</span><span class="abbr">${esc(g.away)}</span></b></div><div class="mid"><div class="score"><span class="${g.as < g.hs ? 'lose' : ''}">${g.as}</span><span class="${g.hs < g.as ? 'lose' : ''}">${g.hs}</span></div><small>${status}</small>${SHARE_BTN('game')}</div><div class="side h${g.hs > g.as ? ' won' : ''}">${logo(g.home, 'crest')}<small>${EN(H ? H.city : g.home)}</small><b><span class="full">${EN(H ? H.name : g.home)}</span><span class="abbr">${esc(g.home)}</span></b></div>`;
   drawFlow(g);
   const per = g.periods.map((_, i) => perName(i, g.periods.length));
   $('#gm-periods').innerHTML = `<thead><tr><th>${t('Team')}</th>${per.map(p => `<th>${p}</th>`).join('')}<th>${t('T@total')}</th></tr></thead><tbody>${[[g.away, 1, g.as], [g.home, 0, g.hs]].map(([c, i, tot]) => `<tr><td class="l"><a href="#${c}">${logo(c)}${EN(tname(c))}</a></td>${g.periods.map(p => `<td>${p[i]}</td>`).join('')}<td class="k">${tot}</td></tr>`).join('')}</tbody>`;
@@ -886,10 +912,12 @@ async function renderGame(gid, my) {
   $('#gm-box').innerHTML = box(g.away) + box(g.home);
   const files = await Promise.all([g.away, g.home].map(c => get(`shots/${c}.json`).catch(() => null)));
   if (stale(my)) return;
-  $('#gm-shots').innerHTML = [g.away, g.home].map((c, i) => {
+  courts = [g.away, g.home].map((c, i) => {
     const f = files[i], k = f ? f.games.indexOf(gid) : -1;
-    return `<div data-team="${esc(c)}"><div class="court-h">${logo(c)}${EN(tname(c))}</div>${court(c, k < 0 ? [] : Object.values(f.players).flatMap(s => s.filter(x => x[0] === k)))}</div>`;
-  }).join('');
+    return court(c, k < 0 ? [] : Object.values(f.players).flatMap(s => s.filter(x => x[0] === k)));
+  });
+  $('#gm-shots').innerHTML = [g.away, g.home].map((c, i) => `<div data-team="${esc(c)}"><div class="court-h">${logo(c)}${EN(tname(c))}</div>${courts[i]}</div>`).join('');
+  setTimeout(() => prime('game'));
   // each club's five units with the most minutes in this game; their points for and against tie to the box score's +/-
   const lus = await Promise.all([g.away, g.home].map(c => get(`lineups/${c}.json`).catch(() => null)));
   if (stale(my)) return;
@@ -903,6 +931,133 @@ async function renderGame(gid, my) {
     `<tr data-five="${esc(f.fives[r[1]].join(','))}">${fiveCell(c, f.fives[r[1]], name)}<td>${clock(rq(r[2], 10, 0))}</td><td>${r[3]}-${r[4]}</td><td class="k">${N(signed(String(r[3] - r[4])))}</td></tr>`).join('')}</tbody></table></div></div>`).join('');
   document.title = `${g.away} ${g.as} · ${g.home} ${g.hs} · NBA Player Lab`;
 }
+
+// ---- Share: the Player hero and the Game scoreboard carry a button that draws the night as a 1080 × 1350 picture in the
+// browser and hands it to the phone's share sheet, or downloads it where files can't be shared. The picture uses club
+// colours and initials only (NBA's pictures load from another origin and would taint the canvas), and every number on
+// it is the very string the page shows. Each page leaves SHARE[kind] a function that describes what to draw; the picture
+// is drawn ahead, when the page settles, because a phone may refuse the share sheet once the tap is more than a moment old.
+const SHARE = {}, READY = {};
+const SHARE_BTN = kind => `<button type="button" class="share" data-share="${kind}" aria-label="${esc(t('Share'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v11M7.5 8 12 3.5 16.5 8M8 11.5H6v9h12v-9h-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`;
+const SANS = 'system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif';
+const CW = 1080, CH = 1350, CP = 64;
+const ascii = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/ı/g, 'i').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const link = hash => `${location.origin}${location.pathname}#${hash}`;
+// a font of the given weight, as large as fits the width but no larger than size
+const fit = (x, text, w, size, weight = 800) => { let s = size; do x.font = `${weight} ${s}px ${SANS}`; while (x.measureText(text).width > w && --s > 12); };
+const svgImg = svg => { const im = new Image(); im.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" width="560" height="500" '))}`; return im.decode().then(() => im); };
+const COURT_LINES = new Path2D('M418.5 0v400M420 136H268v128h152M268 200m-48 0a48 48 0 1 0 96 0a48 48 0 1 0-96 0M420 24H308a190 190 0 0 0 0 352h112M346 170v60M378 200m-32 0a32 32 0 0 0 32 32M378 200m-32 0a32 32 0 0 1 32-32');
+
+function cardPlayer(x, c) {
+  const [c1, c2] = team(c.code) ? team(c.code).colors : ['#333333', '#999999'];
+  let g = x.createLinearGradient(0, 0, CW, 380);
+  g.addColorStop(0, c1); g.addColorStop(.35, c1); g.addColorStop(1, '#120c08');
+  x.fillStyle = g; x.fillRect(0, 0, CW, 380);
+  x.fillStyle = c2; x.fillRect(0, 380, CW, 10);
+  x.save(); x.beginPath(); x.rect(0, 0, CW, 380); x.clip();
+  x.save(); x.translate(CW - 420, -10); x.strokeStyle = 'rgba(255,255,255,.18)'; x.lineWidth = 3; x.stroke(COURT_LINES); x.restore();
+  if (c.num) { x.font = `800 300px ${SANS}`; x.textAlign = 'right'; x.fillStyle = 'rgba(255,255,255,.12)'; x.fillText(c.num, CW - 40, 440); }
+  x.restore();
+  x.textAlign = 'center';
+  x.beginPath(); x.arc(CP + 100, 190, 100, 0, 2 * Math.PI); x.fillStyle = 'rgba(18,12,8,.55)'; x.fill(); x.lineWidth = 8; x.strokeStyle = c2; x.stroke();
+  x.fillStyle = '#fff'; x.font = `800 80px ${SANS}`; x.textBaseline = 'middle'; x.fillText(c.ini, CP + 100, 194);
+  x.textAlign = 'left'; x.textBaseline = 'alphabetic';
+  const left = CP + 240, room = CW - CP - left;
+  x.fillStyle = 'rgba(255,255,255,.82)'; fit(x, c.tag.toUpperCase(), room, 28, 650); x.fillText(c.tag.toUpperCase(), left, 150);
+  x.fillStyle = '#fff'; fit(x, c.name, room, 84); x.fillText(c.name, left, 240);
+  x.fillStyle = '#f7f0e7'; fit(x, c.line, CW - 2 * CP, 36, 700); x.fillText(c.line, CP, 460);
+  // two rows of six tiles: the value, and the stat under it
+  const tw = (CW - 2 * CP - 5 * 16) / 6;
+  c.tiles.forEach(([k, v], i) => {
+    const tx = CP + (i % 6) * (tw + 16), ty = 500 + Math.floor(i / 6) * 132;
+    x.beginPath(); x.roundRect(tx, ty, tw, 116, 20); x.fillStyle = 'rgba(255,236,214,.08)'; x.fill();
+    x.textAlign = 'center'; x.fillStyle = i ? '#fff' : '#e8611a'; fit(x, v, tw - 16, 46); x.fillText(v, tx + tw / 2, ty + 62);
+    x.fillStyle = '#a69683'; x.font = `650 21px ${SANS}`; x.fillText(k, tx + tw / 2, ty + 96);
+  });
+  x.textAlign = 'left';
+  return [[(CW - 537) / 2, 784, 537, 480]];
+}
+
+function cardGame(x, c) {
+  const col = code => team(code) ? team(code).colors[0] : '#333333';
+  [[c.away, 0], [c.home, CW / 2]].forEach(([code, x0]) => {
+    const g = x.createLinearGradient(x0 ? CW : 0, 0, CW / 2, 0);
+    g.addColorStop(0, col(code)); g.addColorStop(1, '#120c08');
+    x.fillStyle = g; x.fillRect(x0, 0, CW / 2, 500);
+  });
+  x.strokeStyle = 'rgba(255,255,255,.3)'; x.lineWidth = 3;
+  x.beginPath(); x.moveTo(CW / 2, 0); x.lineTo(CW / 2, 500); x.stroke();
+  x.beginPath(); x.arc(CW / 2, 250, 120, 0, 2 * Math.PI); x.stroke();
+  x.fillStyle = '#e8611a'; x.fillRect(0, 500, CW, 10);
+  x.textAlign = 'center';
+  [[c.away, c.as, c.as < c.hs], [c.home, c.hs, c.hs < c.as]].forEach(([code, score, lost], i) => {
+    const cx = i ? CW * 3 / 4 : CW / 4;
+    x.beginPath(); x.arc(cx, 150, 70, 0, 2 * Math.PI); x.fillStyle = 'rgba(18,12,8,.55)'; x.fill(); x.lineWidth = 6; x.strokeStyle = 'rgba(255,255,255,.85)'; x.stroke();
+    x.fillStyle = '#fff'; x.font = `800 44px ${SANS}`; x.textBaseline = 'middle'; x.fillText(code, cx, 153); x.textBaseline = 'alphabetic';
+    x.fillStyle = 'rgba(255,255,255,.75)'; fit(x, (team(code) ? team(code).city : '').toUpperCase(), 420, 24, 650); x.fillText((team(code) ? team(code).city : '').toUpperCase(), cx, 268);
+    x.fillStyle = '#fff'; fit(x, team(code) ? team(code).name : code, 420, 46); x.fillText(team(code) ? team(code).name : code, cx, 320);
+    x.fillStyle = lost ? 'rgba(255,255,255,.55)' : '#fff'; x.font = `800 128px ${SANS}`; x.fillText(String(score), cx, 460);
+  });
+  x.font = `700 24px ${SANS}`;
+  const pw = x.measureText(c.status).width + 40;
+  x.beginPath(); x.roundRect((CW - pw) / 2, 26, pw, 44, 22); x.fillStyle = 'rgba(0,0,0,.45)'; x.fill();
+  x.fillStyle = '#ffb27f'; x.fillText(c.status, CW / 2, 57);
+  // each club's three top scorers, under its side
+  x.textAlign = 'left';
+  c.tops.forEach((rows, i) => rows.forEach(([name, line], k) => {
+    const lx = CP + i * (CW / 2), ly = 572 + k * 84, w = CW / 2 - CP - 20;
+    x.fillStyle = '#fff'; fit(x, name, w, 30, 750); x.fillText(name, lx, ly);
+    x.fillStyle = '#d9ccbd'; fit(x, line, w, 26, 600); x.fillText(line, lx, ly + 36);
+  }));
+  return [[CP - 8, 840, 476, 425], [CW / 2 + 8, 840, 476, 425]];
+}
+
+async function paint(c) {
+  const cv = document.createElement('canvas');
+  cv.width = CW; cv.height = CH;
+  const x = cv.getContext('2d');
+  x.fillStyle = '#15100c'; x.fillRect(0, 0, CW, CH);
+  const spots = (c.kind === 'game' ? cardGame : cardPlayer)(x, c);
+  const ims = await Promise.all(c.courts.map(svgImg));
+  ims.forEach((im, i) => { const [cx, cy, w, h] = spots[i]; x.save(); x.beginPath(); x.roundRect(cx, cy, w, h, 22); x.clip(); x.drawImage(im, cx, cy, w, h); x.restore(); });
+  // the foot: the site's ball and name, and the address of this very page
+  x.beginPath(); x.arc(CP + 15, 1306, 15, 0, 2 * Math.PI); x.fillStyle = '#e8611a'; x.fill();
+  x.fillStyle = '#fff'; x.font = `750 30px ${SANS}`; x.textAlign = 'left'; x.fillText('NBA Player Lab', CP + 44, 1317);
+  const url = c.link.replace(/^https?:\/\//, '');
+  x.fillStyle = '#a69683'; x.textAlign = 'right'; fit(x, url, CW - 2 * CP - 300, 24, 600); x.fillText(url, CW - CP, 1316);
+  x.fillStyle = '#e8611a'; x.fillRect(0, CH - 10, CW, 10);
+  const blob = await new Promise((ok, no) => cv.toBlob(b => b ? ok(b) : no(new Error('no image')), 'image/png'));
+  return new File([blob], c.file, {type: 'image/png'});
+}
+
+// draw the page's picture now, unless the one drawn last is still the same
+function prime(kind) {
+  const c = SHARE[kind] && SHARE[kind](), key = c && JSON.stringify(c);
+  if (!c || (READY[kind] && READY[kind].key === key)) return;
+  const r = READY[kind] = {key, file: null, job: null};
+  r.job = paint(c).then(f => { r.file = f; return f; });
+  r.job.catch(() => {});
+}
+const save = f => { const a = document.createElement('a'); a.href = URL.createObjectURL(f); a.download = f.name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); };
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-share]');
+  if (!b || b.getAttribute('aria-busy') === 'true') return;
+  const kind = b.dataset.share;
+  prime(kind);
+  const r = READY[kind];
+  if (!r) return;
+  b.setAttribute('aria-busy', 'true');
+  try {
+    const f = r.file || await r.job;
+    if (navigator.canShare && navigator.canShare({files: [f]})) {
+      try { await navigator.share({files: [f], title: SHARE[kind]().title}); } catch (err) { if (err.name !== 'AbortError') save(f); }
+    } else save(f);
+  } catch (err) {
+    console.error(err);
+  } finally {
+    b.setAttribute('aria-busy', 'false');
+  }
+});
 
 // ---- Leaders: per game, or a percentage with the league's own minimums prorated to the games played (FG 300 makes,
 // 3P 82, FT 125 over 82 games); per-game boards need 70% of the club's games, usage and RAPM also 15 minutes a game.
