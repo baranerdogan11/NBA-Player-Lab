@@ -192,3 +192,67 @@ test('a game\'s flow ends on the final', async ({page}) => {
   expect(tiles).toEqual([lc, tied, Math.max(0, ...m.map(x => -x)), Math.max(0, ...m)]);
   expect(problems, 'the page reported errors').toEqual([]);
 });
+
+// Team ratings and the Four Factors: every value is the club's box scores (summed here from the game pages' JSON), the
+// ratings are also what its lineup rows add up to, each rank is the value's place among the 30, and a heading sorts
+// the clubs best first
+test('team ratings and the Four Factors are the box scores\' and the lineups\'', async ({page}) => {
+  test.setTimeout(120_000);
+  const problems = await prepare(page);
+  await page.goto('./#standings/ratings');
+  await settled(page);
+  await page.waitForFunction(() => document.querySelectorAll('#st-ratings tbody tr').length === 30);
+  const read = id => page.$$eval(`#${id} tbody tr`, trs => Object.fromEntries(trs.map(tr => [tr.dataset.team,
+    Object.fromEntries([...tr.querySelectorAll('td[data-k]')].map(td => [td.dataset.k, [td.querySelector('.v').textContent, td.dataset.r ? +td.dataset.r : null]]))])));
+  const shown = await read('st-ratings');
+  await go(page, '#standings/factors', () => document.querySelectorAll('#st-factors tbody tr').length === 30);
+  Object.entries(await read('st-factors')).forEach(([c, v]) => Object.assign(shown[c], v));
+  const want = await page.evaluate(async () => {
+    const at = p => fetch(`${META.base}${p}`).then(r => r.json());
+    const finals = (await at('games.json')).games.filter(g => g.hs != null);
+    const K = ['pts', 'fgm', 'fga', 'fg3m', 'ftm', 'fta', 'oreb', 'dreb', 'tov'], zero = () => Object.fromEntries(K.map(k => [k, 0]));
+    const T = Object.fromEntries(IDX.teams.map(x => [x.code, {f: zero(), a: zero(), games: 0}]));
+    for (const g of finals) {
+      const b = await at(`games/${g.gid}.json`), tot = c => { const s = zero(); for (const x of b.box[c]) for (const k of K) s[k] += x[k]; return s; };
+      for (const [c, o] of [[g.home, g.away], [g.away, g.home]]) { const us = tot(c), them = tot(o); T[c].games++; for (const k of K) { T[c].f[k] += us[k]; T[c].a[k] += them[k]; } }
+    }
+    const lu = {};
+    for (const c of Object.keys(T)) {
+      const s = Array(10).fill(0);
+      for (const r of (await at(`lineups/${c}.json`)).rows) r.slice(3).forEach((v, i) => { s[i] += v; });
+      lu[c] = s;
+    }
+    return {T, lu};
+  });
+  const q = (n, d, dig = 1) => { const v = Math.floor((2 * n * 10 ** dig + d) / (2 * d)); return [v, dig]; };
+  const str = ([v, dig]) => { const s = String(Math.abs(v)).padStart(dig + 1, '0'); return (v < 0 ? '-' : '') + `${s.slice(0, -dig)}.${s.slice(-dig)}`; };
+  const P = x => 100 * (x.fga - x.oreb + x.tov) + 44 * x.fta;
+  const ffs = (x, o) => ({efg: q(100 * (2 * x.fgm + x.fg3m), 2 * x.fga), tov: q(10000 * x.tov, 100 * (x.fga + x.tov) + 44 * x.fta), orb: q(100 * x.oreb, x.oreb + o.dreb), ftr: q(x.ftm, x.fga, 3)});
+  const exp = {};
+  for (const [c, {f, a, games}] of Object.entries(want.T)) {
+    const ortg = q(10000 * f.pts, P(f)), drtg = q(10000 * a.pts, P(a)), net = [ortg[0] - drtg[0], 1];
+    const d = ffs(a, f);
+    exp[c] = {ortg, drtg, net, pace: q(72 * (P(f) + P(a)), 14400 * games), ...ffs(f, a), ...Object.fromEntries(Object.entries(d).map(([k, v]) => ['o' + k, v]))};
+    const l = want.lu[c], lf = {pts: l[0], fga: l[2], oreb: l[3], tov: l[4], fta: l[5]}, la = {pts: l[1], fga: l[6], oreb: l[7], tov: l[8], fta: l[9]};
+    expect([q(10000 * lf.pts, P(lf)), q(10000 * la.pts, P(la))], `${c}: lineups give the same ratings`).toEqual([ortg, drtg]);
+  }
+  const fmt = (k, v) => k === 'net' ? (v[0] > 0 ? '+' : '') + str(v).replace('-', '−') : /ftr$/.test(k) ? str(v).replace(/^0/, '') : str(v);
+  const better = {drtg: -1, tov: -1, oefg: -1, oorb: -1, oftr: -1, otov: 1};
+  for (const [c, cols] of Object.entries(shown)) {
+    for (const [k, [text, rank]] of Object.entries(cols)) {
+      expect(text, `${c} ${k}`).toBe(fmt(k, exp[c][k]));
+      const dir = better[k] || 1;
+      expect(rank, `${c} ${k} rank`).toBe(1 + Object.values(exp).filter(x => dir * (x[k][0] - exp[c][k][0]) > 0).length);
+    }
+  }
+  await go(page, '#standings/ratings', () => document.querySelectorAll('#st-ratings tbody tr').length === 30);
+  const order = () => page.$$eval('#st-ratings tbody tr', trs => trs.map(tr => tr.dataset.team));
+  const first = await order();
+  await page.click('#st-ratings th[data-sort="drtg"] button');
+  const by = await order();
+  expect(by.map(c => shown[c].drtg[1]), 'DRtg sorts best first').toEqual([...by.map(c => shown[c].drtg[1])].sort((x, y) => x - y));
+  await page.click('#st-ratings th[data-sort="drtg"] button');
+  expect(await order(), 'the same heading again restores the net rating order').toEqual(first);
+  expect(first.map(c => exp[c].net[0]), 'net rating order').toEqual(first.map(c => exp[c].net[0]).sort((x, y) => y - x));
+  expect(problems, 'the page reported errors').toEqual([]);
+});

@@ -1,7 +1,8 @@
 """The site JSON written from the warehouse tables is the site JSON written from the same lines directly.
 
 The fixture league is stored as warehouse Parquet (the columns warehouse.py writes, plus a preseason game, an inactive
-player and a coach's decision), read back with from_warehouse(), and both outputs are compared file by file.
+player and a coach's decision), read back with from_warehouse(), and both outputs are compared file by file; so are
+the ratings, from its team box scores with team_lines().
 usage: python tests/test_site_warehouse.py
 """
 import filecmp
@@ -17,7 +18,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "tests", "fixtures"))
 import site_fixture  # noqa: E402
-from site_data import from_warehouse, period_start, write_site  # noqa: E402
+from site_data import from_warehouse, period_start, team_lines, write_ratings, write_site  # noqa: E402
 
 ARGS = ("2026-27", "2026-27", "2026-10-26T06:00:00Z")
 teams, players, games, lines = site_fixture.make(random.Random(7))
@@ -42,6 +43,12 @@ t = {
     "rapm": [{"player": int(p["pid"]), "o": p["o_rapm"], "d": p["d_rapm"]} for p in players if "o_rapm" in p],
     "periods": [{"game": g["gid"], "team": c, "period": i + 1, "pts": q[side]} for g in games if g["final"]
                 for i, q in enumerate(g["periods"]) for side, c in enumerate((g["home"], g["away"]))],
+    # the club's totals, a team turnover apart from the players' (team_lines() adds them back), and a preseason game
+    "team_box": [{"game": r["gid"], "team": r["team"], "opponent": r["opp"], "home": True, "score": r["pts"], "seconds": 14400.0,
+                  **{k: r[k] for k in r if k not in ("gid", "team", "opp", "sec", "tov")}, "tov": r["tov"] - 1, "team_tov": 1}
+                 for r in site_fixture.team_lines(games, lines)]
+    + [{"game": "0012600001", "team": c, "opponent": o, "home": c == "BOS", "score": 2, "seconds": 14400.0, "pts": 2, "fgm": 1, "fga": 1, "fg3m": 0,
+        "ftm": 0, "fta": 0, "oreb": 0, "dreb": 0, "tov": 0, "team_tov": 0} for c, o in (("BOS", "NYK"), ("NYK", "BOS"))],
 }
 
 
@@ -68,6 +75,10 @@ write_site(read, *ARGS, teams, *from_warehouse(wh))
 cmp = filecmp.dircmp(direct, read)
 diff = [*cmp.left_only, *cmp.right_only, *cmp.diff_files, *(f"games/{f}" for f in cmp.subdirs["games"].diff_files + cmp.subdirs["games"].left_only)]
 checks = {"warehouse tables give the same site JSON" + (f" (differs: {diff[:5]})" if diff else ""): not diff and len(os.listdir(read)) == 34}
+rt_direct, rt_read = tempfile.mkdtemp(), tempfile.mkdtemp()
+write_ratings(rt_direct, teams, site_fixture.team_lines(games, lines))
+write_ratings(rt_read, teams, team_lines(wh))
+checks["team box scores give the same ratings, team turnovers counted"] = filecmp.cmp(*(os.path.join(d, "ratings.json") for d in (rt_direct, rt_read)), shallow=False)
 
 # with a roster: a signed player who has not played is listed under his club with an empty log, and a player who has
 # played moves to the club that rosters him now, keeping his game log and taking the roster's height

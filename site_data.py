@@ -16,6 +16,10 @@ Files under <out>/ (out is teams/<season>/):
                     [[g, f, ds, pts, opp_pts, fga, oreb, tov, fta, opp_fga, opp_oreb, opp_tov, opp_fta], ...]}, one row
                     per five per game: g indexes games (tip-off order), f fives, ds is tenths of a second; the page sums
                     the rows and derives every rating with rdiv
+  ratings.json      each club's season totals and its opponents' over its finals, from the official team box scores:
+                    {"teams": [{"code", "gp", "sec", "for": {RT keys}, "against": {RT keys}}, ...]}, sec the club's
+                    seconds (five players' worth, 14400 a regulation game), tov with the team turnovers; the page
+                    derives ratings, pace and the Four Factors with rdiv
   leaders.json      every player's season totals, under his current club, his clubs' totals over the same games
                     (tm_fga, tm_fta, tm_tov, tm_sec, for usage) and his RAPM, O-RAPM and D-RAPM (null without one)
 
@@ -143,6 +147,34 @@ def write_site(out, season, label, built, teams, players, games, lines):
 
 
 LU_COUNTS = ("fga", "oreb", "tov", "fta")
+RT = ("pts", "fgm", "fga", "fg3m", "ftm", "fta", "oreb", "dreb", "tov")
+
+
+def write_ratings(out, teams, rows):
+    """teams: load_teams() rows. rows: one per club per final (team_lines()): gid, team, opp, sec and every key in RT."""
+    tot = {t["code"]: {"code": t["code"], "gp": 0, "sec": 0, "for": dict.fromkeys(RT, 0), "against": dict.fromkeys(RT, 0)} for t in teams}
+    by = {(r["gid"], r["team"]): r for r in rows}
+    for r in rows:
+        c, o = tot[r["team"]], by[(r["gid"], r["opp"])]
+        c["gp"] += 1
+        c["sec"] += int(r["sec"])
+        for k in RT:
+            c["for"][k] += int(r[k])
+            c["against"][k] += int(o[k])
+    _dump(os.path.join(out, "ratings.json"), {"teams": list(tot.values())})
+
+
+def check_ratings(out):
+    """Raises unless every club's totals behind its ratings (points, FGA, OREB, TOV and FTA, its own and its
+    opponents') are the sums of its lineup rows, over the same games."""
+    for c in json.load(open(os.path.join(out, "ratings.json")))["teams"]:
+        path = os.path.join(out, "lineups", f"{c['code']}.json")
+        lu = json.load(open(path)) if os.path.exists(path) else {"games": [], "rows": []}
+        got = [sum(r[i] for r in lu["rows"]) for i in range(3, 13)]
+        box = [c["for"]["pts"], c["against"]["pts"], *(c["for"][k] for k in LU_COUNTS), *(c["against"][k] for k in LU_COUNTS)]
+        if len(lu["games"]) != c["gp"] or got != box:
+            raise ValueError(f"{c['code']}: lineups add up to {len(lu['games'])} games {got}, box scores {c['gp']} games {box} "
+                             f"(pts, opp_pts, {', '.join(LU_COUNTS)}, opp_...)")
 
 
 def write_lineups(out, teams, rows):
@@ -217,6 +249,18 @@ def from_warehouse(wh):
     return sorted(players.values(), key=lambda p: p["pid"]), games, lines
 
 
+def team_lines(wh):
+    """write_ratings() rows from the warehouse's team box scores, regular-season finals only. Turnovers count the
+    team's own (a shot-clock violation, say) as the play-by-play does; rebounds are the players', as in lineups.py."""
+    import duckdb
+    cur = duckdb.connect().execute(
+        f"select t.game as gid, t.team, t.opponent as opp, round(t.seconds)::int as sec, {', '.join(f't.{k}' for k in RT if k != 'tov')}, "
+        f"t.tov + coalesce(t.team_tov, 0) as tov from read_parquet('{os.path.join(wh, 'team_box.parquet')}') t "
+        f"join read_parquet('{os.path.join(wh, 'games.parquet')}') g using (game) where g.game_type = 'regular' and g.final")
+    cols = [c[0] for c in cur.description]
+    return [dict(zip(cols, r)) for r in cur.fetchall()]
+
+
 if __name__ == "__main__":
     import datetime
     from season import ROOT, season
@@ -227,4 +271,6 @@ if __name__ == "__main__":
         raise SystemExit(f"{SEASON}: no warehouse tables in {wh}; run warehouse.py first")
     teams = load_teams()
     write_site(out, SEASON, SEASON, built, teams, *from_warehouse(wh))
+    write_ratings(out, teams, team_lines(wh))
+    check_ratings(out)   # lineups.py has written teams/<season>/lineups/ by now
     print(f"{SEASON}: site JSON written to {out}")

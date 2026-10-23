@@ -10,7 +10,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, ROOT)
 from shots import write_shots  # noqa: E402
-from site_data import STATS, load_teams, period_start, write_lineups, write_site  # noqa: E402
+from site_data import RT, STATS, load_teams, period_start, write_lineups, write_ratings, write_site  # noqa: E402
 
 SEASON, LABEL, BUILT = "2026-27", "2026-27", "2026-10-26T06:00:00Z"
 FIRST = ["Jalen", "Marcus", "Tyrese", "Luka", "Devin", "Andre", "Cole", "Isaiah", "Malik", "Darius", "Evan", "Kobe"]
@@ -145,6 +145,17 @@ def stints(games, lines):
     return out
 
 
+def team_lines(games, lines):
+    """Each club's box score totals per final, as write_ratings() takes them: four regulation quarters, 14400 s."""
+    out = []
+    for g in games:
+        if g["final"]:
+            for c, o in ((g["home"], g["away"]), (g["away"], g["home"])):
+                xs = [x for x in lines if x["gid"] == g["gid"] and x["team"] == c]
+                out.append({"gid": g["gid"], "team": c, "opp": o, "sec": 14400, **{k: sum(x[k] for x in xs) for k in RT}})
+    return out
+
+
 def hits(rng, n, p):
     return sum(rng.random() < p for _ in range(n))
 
@@ -161,4 +172,5 @@ if __name__ == "__main__":
     write_site(out, SEASON, LABEL, BUILT, teams, players, games, lines)
     write_shots(out, teams, spots(random.Random(13), games, lines))
     write_lineups(out, teams, units)
+    write_ratings(out, teams, team_lines(games, lines))
     print(f"fixture league written to {out}")

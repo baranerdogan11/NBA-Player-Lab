@@ -108,6 +108,11 @@ a,button,select,.card{-webkit-tap-highlight-color:transparent}
 .tbl a{text-decoration:none}
 .tbl a:hover{text-decoration:underline;text-underline-offset:2px}
 .tbl .k{font-weight:700}
+.tbl.rt td .rk{display:inline-block;min-width:2.4ch;margin-left:4px;font:600 10.5px/1 var(--sans);color:var(--muted);text-align:left}
+.tbl.rt th.grp{text-align:center;padding-bottom:4px}
+.tbl.rt thead tr+tr th{padding-top:6px}
+.tbl.rt .abbr{display:none}
+@media (max-width:760px){.tbl.rt .full{display:none}.tbl.rt .abbr{display:inline}.tbl.rt td,.tbl.rt th{padding-left:7px;padding-right:7px}}
 .tbl .w{color:var(--good);font-weight:650}
 .tbl .lo{color:var(--bad);font-weight:650}
 .tbl .dim{color:var(--muted)}
@@ -764,7 +769,7 @@ $('#cmp-b').addEventListener('change', () => { location.hash = `compare/${$('#cm
 async function renderStandings(view, my) {
   const G = (await get('games.json')).games;
   if (stale(my)) return;
-  view = ['east', 'west', 'league'].includes(view) ? view : 'conf';
+  view = ['east', 'west', 'league', 'ratings', 'factors'].includes(view) ? view : 'conf';
   const R = Object.fromEntries(IDX.teams.map(T => [T.code, {code: T.code, conf: T.conf, w: 0, l: 0, pf: 0, pa: 0, hw: 0, hl: 0, aw: 0, al: 0, seq: []}]));
   for (const g of G) {
     if (g.hs == null) continue;
@@ -789,11 +794,65 @@ async function renderStandings(view, my) {
     }).join('')}</tbody></table></div></section>`;
   };
   const all = Object.values(R).sort(order);
-  const views = [['conf', 'Conferences'], ['east', 'East'], ['west', 'West'], ['league', 'League']];
+  const views = [['conf', 'Conferences'], ['east', 'East'], ['west', 'West'], ['league', 'League'], ['ratings', 'Ratings'], ['factors', 'Four Factors']];
   $('#st-tabs').innerHTML = views.map(([k, l]) => `<a href="#standings/${k}" aria-current="${k === view}">${t(l)}</a>`).join('');
+  if (view === 'ratings' || view === 'factors') {
+    const rt = await get('ratings.json');
+    if (stale(my)) return;
+    $('#st-body').innerHTML = teamRatings(view, rt.teams, all);
+    return;
+  }
   const east = all.filter(r => r.conf === 'E'), west = all.filter(r => r.conf === 'W');
   $('#st-body').innerHTML = view === 'league' ? table('', all) : view === 'east' ? table(t('Eastern Conference'), east) : view === 'west' ? table(t('Western Conference'), west) : table(t('Eastern Conference'), east) + table(t('Western Conference'), west);
 }
+
+// ---- Ratings and the Four Factors, from each club's box-score totals and its opponents' (ratings.json). Possessions
+// are FGA − OREB + TOV + 0.44 FTA, as in the lineups (so 100 × possessions is an integer); every value is rounded once
+// by rq, net is the difference of the shown tenths, and a rank (1 the best of 30) is the place of the shown value, ties
+// sharing it. The default order is net rating, then the standings
+const P100 = x => 100 * (x.fga - x.oreb + x.tov) + 44 * x.fta;
+const RT_COLS = {
+  ratings: [['ortg', 'ORtg', 1], ['drtg', 'DRtg', -1], ['net', 'Net', 1], ['pace', 'Pace', 1]],
+  factors: [['efg', 'eFG%', 1], ['tov', 'TOV%', -1], ['orb', 'ORB%', 1], ['ftr', 'FT/FGA', 1], ['oefg', 'eFG%', -1], ['otov', 'TOV%', 1], ['oorb', 'ORB%', -1], ['oftr', 'FT/FGA', -1]],
+};
+const ff = (x, o) => ({efg: x.fga ? rq(100 * (2 * x.fgm + x.fg3m), 2 * x.fga) : null, tov: x.fga + x.tov + x.fta ? rq(10000 * x.tov, 100 * (x.fga + x.tov) + 44 * x.fta) : null,
+  orb: x.oreb + o.dreb ? rq(100 * x.oreb, x.oreb + o.dreb) : null, ftr: x.fga ? rq(x.ftm, x.fga, 3) : null});
+const teamVals = c => {
+  const f = c.for, a = c.against, po = P100(f), pd = P100(a), ortg = po >= 100 ? rq(10000 * f.pts, po) : null, drtg = pd >= 100 ? rq(10000 * a.pts, pd) : null;
+  const o = ff(f, a), d = ff(a, f);
+  return {ortg, drtg, net: ortg != null && drtg != null ? ortg - drtg : null, pace: c.sec ? rq(72 * (po + pd), c.sec) : null,
+    ...o, ...Object.fromEntries(Object.entries(d).map(([k, v]) => ['o' + k, v]))};
+};
+function teamRatings(view, clubs, standing) {
+  const cols = RT_COLS[view], place = Object.fromEntries(standing.map((r, i) => [r.code, i]));
+  const rows = clubs.map(c => ({code: c.code, v: teamVals(c)}));
+  const rank = {};
+  for (const [k, , dir] of cols) {
+    const shown = rows.map(r => r.v[k]).filter(v => v != null);
+    rank[k] = v => v == null ? null : 1 + shown.filter(x => dir * (x - v) > 0).length;
+  }
+  rows.sort((x, y) => (+(x.v.net == null) - +(y.v.net == null)) || (y.v.net - x.v.net) || (place[x.code] - place[y.code]));
+  const show = (k, q) => q == null ? '–' : k === 'net' ? N(signed(fq(q))) : /ftr$/.test(k) ? N(fq(q, 3).replace(/^0/, '')) : N(fq(q));
+  const cell = (k, v) => { const r = rank[k](v); return `<td data-k="${k}"${r ? ` data-r="${r}"` : ''}${k === 'net' && v ? ` class="${v > 0 ? 'w' : 'lo'}"` : ''}><span class="v">${show(k, v)}</span><small class="rk">${r || ''}</small></td>`; };
+  const th = ([k, l]) => `<th data-sort="${k}"><button type="button" class="sort">${t(l + '@stat')}</button></th>`;
+  const team = `<th class="l" data-sort=""${view === 'factors' ? ' rowspan="2"' : ''}><button type="button" class="sort">${t('Team')}</button></th>`;
+  const head = view === 'factors'
+    ? `<tr>${team}<th class="grp" colspan="4">${t('Offense')}</th><th class="grp" colspan="4">${t('Defense')}</th></tr><tr>${cols.map(th).join('')}</tr>`
+    : `<tr>${team}${cols.map(th).join('')}</tr>`;
+  return `<section class="panel"><div class="scroll"><table class="tbl rt" id="st-${view}"><thead>${head}</thead><tbody>${rows.map((r, i) => `<tr data-team="${r.code}" data-i="${i}"><td class="l"><a href="#${r.code}">${logo(r.code)}<span class="full">${EN(tname(r.code))}</span><span class="abbr">${esc(r.code)}</span></a></td>${cols.map(([k]) => cell(k, r.v[k])).join('')}</tr>`).join('')}</tbody></table></div></section>`;
+}
+// a heading puts the clubs in its rank order, the best first (no value last); the same heading again, or Team, brings
+// the default order back
+$('#st-body').addEventListener('click', e => {
+  const th = e.target.closest('th[data-sort]');
+  if (!th) return;
+  const tb = th.closest('table'), k = th.getAttribute('aria-sort') ? '' : th.dataset.sort;
+  tb.querySelectorAll('th[aria-sort]').forEach(x => x.removeAttribute('aria-sort'));
+  if (k) th.setAttribute('aria-sort', 'ascending');
+  const body = tb.tBodies[0], rows = [...body.rows], r = tr => { const c = tr.querySelector(`td[data-k="${k}"]`); return c && c.dataset.r ? +c.dataset.r : Infinity; };
+  rows.sort((a, b) => (k ? r(a) - r(b) : 0) || (a.dataset.i - b.dataset.i));
+  body.append(...rows);
+});
 
 // ---- Games: one day at a time, the latest day with a final unless a date is asked for
 async function renderGames(date, my) {

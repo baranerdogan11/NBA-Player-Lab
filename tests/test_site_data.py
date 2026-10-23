@@ -1,7 +1,8 @@
 """The site's JSON.
 
 The files written from the fixture league agree with each other: every box score adds up to its final, every player's
-log is his box lines, and the leaders' totals are the sums of the logs.
+log is his box lines, the leaders' totals are the sums of the logs, and each club's ratings totals are its box scores'
+and the sums of its lineup rows.
 usage: python tests/test_site_data.py
 """
 import json
@@ -15,7 +16,7 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "tests", "fixtures"))
 import site_fixture  # noqa: E402
 from rounding import rnd  # noqa: E402
-from site_data import STATS, write_site  # noqa: E402
+from site_data import RT, STATS, check_ratings, write_lineups, write_ratings, write_site  # noqa: E402
 
 checks = {}
 out = tempfile.mkdtemp()
@@ -51,6 +52,32 @@ src = {p["pid"]: p for p in players}
 checks["RAPM is written once rounded, null without one"] = all(
     (p["rapm"], p["orapm"], p["drapm"]) == ((rnd(src[p["pid"]]["o_rapm"] + src[p["pid"]]["d_rapm"]), rnd(src[p["pid"]]["o_rapm"]), rnd(src[p["pid"]]["d_rapm"]))
                                             if "o_rapm" in src[p["pid"]] else (None, None, None)) for p in lead) and any(p["rapm"] is None for p in lead)
+
+units = site_fixture.stints(games, lines)
+write_lineups(out, teams, units)
+write_ratings(out, teams, site_fixture.team_lines(games, lines))
+rt = {c["code"]: c for c in load("ratings.json")["teams"]}
+side_tot = lambda gid, code: {k: sum(x[k] for x in boxes[gid]["box"][code]) for k in RT}  # noqa: E731
+checks["ratings totals are each club's box scores and its opponents'"] = len(rt) == 30 and all(
+    c["gp"] == t["gp"] and c["sec"] == 14400 * t["gp"]
+    and all(c["for"][k] == sum(side_tot(g, t["code"])[k] for g, b in boxes.items() if t["code"] in (b["home"], b["away"])) for k in RT)
+    and all(c["against"][k] == sum(side_tot(g, b["away"] if b["home"] == t["code"] else b["home"])[k] for g, b in boxes.items()
+                                   if t["code"] in (b["home"], b["away"])) for k in RT)
+    for t in idx["teams"] for c in [rt[t["code"]]])
+
+
+def gate():
+    try:
+        check_ratings(out)
+        return True
+    except ValueError:
+        return False
+
+
+checks["the ratings gate passes when the lineups add up to the box scores"] = gate()
+units[0]["tov"] += 1   # a turnover the box score does not have
+write_lineups(out, teams, units)
+checks["the ratings gate fails when a club's lineups do not"] = not gate()
 
 for name, passed in checks.items():
     print(("PASS " if passed else "FAIL ") + name)
