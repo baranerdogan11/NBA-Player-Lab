@@ -14,6 +14,7 @@ const ROUTES = [
   ['home', '#home', () => document.body.dataset.page === 'home' && document.querySelectorAll('#hm-leaders .panel').length === 3],
   ['privacy', '#privacy', () => document.body.dataset.page === 'privacy' && document.querySelectorAll('#pg-privacy .panel').length === 3],
   ['standings-ratings', '#standings/ratings', () => document.body.dataset.page === 'standings' && document.querySelectorAll('#st-ratings tbody tr').length === 30],
+  ['game-preview', '#game/0022600061', () => document.body.dataset.page === 'game' && !document.querySelector('#gm-pre').hidden && document.querySelectorAll('#pv-ff [data-k]').length === 8],
   ['standings-factors', '#standings/factors', () => document.body.dataset.page === 'standings' && document.querySelectorAll('#st-factors tbody tr').length === 30],
 ];
 
@@ -112,7 +113,7 @@ test.describe('opening page', () => {
     expect(problems, 'the page reported errors').toEqual([]);
   });
   for (const lang of ['en', 'tr']) {
-    test(`before the first final it shows the first night to come and empty boards (${lang})`, async ({page}) => {
+    test(`before the first final it shows the first night to come, each card opening its preview, and empty boards (${lang})`, async ({page}) => {
       const problems = await prepare(page, {lang});
       await page.route(/\/games\.json/, async r => {
         const d = await (await r.fetch()).json();
@@ -125,7 +126,7 @@ test.describe('opening page', () => {
         cards: document.querySelectorAll('#hm-games .card').length, links: document.querySelectorAll('#hm-games a.card').length,
         empty: document.querySelectorAll('#hm-leaders .empty').length,
       }));
-      expect(got).toEqual({cards: 15, links: 0, empty: 3});
+      expect(got).toEqual({cards: 15, links: 15, empty: 3});
       await noSidewaysScroll(page, `empty opening page (${lang})`);
       if (lang === 'tr') expect(await page.evaluate(() => [...MISSING])).toEqual([]);
       expect(problems, 'the page reported errors').toEqual([]);
