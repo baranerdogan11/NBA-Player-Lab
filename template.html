@@ -740,7 +740,7 @@ async function renderPlayer(code, pid, my) {
 }
 $('#team').addEventListener('change', e => { location.hash = e.target.value; });
 // each section of the profile opens and closes, and stays as the reader left it
-for (const [id, key] of [['sc', 'pl-shots'], ['lu', 'pl-lineups'], ['log-sec', 'pl-log']]) {
+for (const [id, key] of Object.entries({sc: 'pl-shots', lu: 'pl-lineups', 'log-sec': 'pl-log'})) {
   const d = $('#' + id);
   try { if (localStorage.getItem(key) === 'closed') d.open = false; } catch (e) {}
   d.addEventListener('toggle', () => { try { localStorage.setItem(key, d.open ? 'open' : 'closed'); } catch (e) {} });
