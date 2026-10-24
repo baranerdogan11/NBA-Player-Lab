@@ -156,5 +156,14 @@
  "Share": "Paylaş",
  "{season} season": "{season} sezonu",
  "1 game": "1 maç",
- "{n} games": "{n} maç"
+ "{n} games": "{n} maç",
+ "Ratings": "Reytingler",
+ "Four Factors": "Dört Faktör",
+ "Offense": "Hücum",
+ "Defense": "Savunma",
+ "Pace@stat": "TEMPO",
+ "eFG%@stat": "EFG%",
+ "TOV%@stat": "TK%",
+ "ORB%@stat": "HR%",
+ "FT/FGA@stat": "SA/FG"
 }

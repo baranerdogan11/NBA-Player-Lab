@@ -13,6 +13,8 @@ const ROUTES = [
   ['leaders-rapm', '#leaders/rapm', () => document.body.dataset.page === 'leaders' && document.querySelector('#ld-tabs [aria-current="true"]')?.getAttribute('href') === '#leaders/rapm' && document.querySelectorAll('#ld tbody tr').length > 0],
   ['home', '#home', () => document.body.dataset.page === 'home' && document.querySelectorAll('#hm-leaders .panel').length === 3],
   ['privacy', '#privacy', () => document.body.dataset.page === 'privacy' && document.querySelectorAll('#pg-privacy .panel').length === 3],
+  ['standings-ratings', '#standings/ratings', () => document.body.dataset.page === 'standings' && document.querySelectorAll('#st-ratings tbody tr').length === 30],
+  ['standings-factors', '#standings/factors', () => document.body.dataset.page === 'standings' && document.querySelectorAll('#st-factors tbody tr').length === 30],
 ];
 
 for (const [device, size] of [['phone', PHONE], ['desktop', DESKTOP]]) {
