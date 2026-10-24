@@ -98,6 +98,30 @@ sts, problems = lineups.stints(acts, {H: set(range(10, 15)), A: set(range(20, 25
 last = [s for s in sts if s["team"] == H][-1]
 checks["free throws after a foul that follows the substitution count for the five coming in"] = problems == [] and 15 in last["players"] and last["pts"] == 1
 
+# hand-written: a substitution logged after a technical, its free throw still to come, waits for it (NOP at UTA, 23 Oct)
+acts = [ev(1, "period", "start", None, None, 720.0), ev(2, "foul", "technical", A, 20, 600.0), ev(3, "substitution", "out", H, 14, 600.0),
+        ev(4, "substitution", "in", H, 15, 600.0), ev(5, "freethrow", "1 of 1", H, 10, 600.0)]
+acts[4]["score_home"] = 1
+sts, problems = lineups.stints(acts, {H: set(range(10, 15)), A: set(range(20, 25))})
+first = next(s for s in sts if s["team"] == H)
+checks["a free throw after a technical counts for the five on the floor for it"] = problems == [] and 14 in first["players"] and first["pts"] == 1
+
+# hand-written: free throws keyed in after the period's end go back to their foul (HOU at SAS, 23 Oct)
+acts = [ev(1, "period", "start", None, None, 720.0), ev(2, "foul", "personal", A, 20, 300.0), ev(3, "substitution", "out", H, 14, 200.0),
+        ev(4, "substitution", "in", H, 15, 200.0), ev(5, "period", "end", None, None, 0.0), ev(6, "freethrow", "1 of 1", H, 10, 300.0)]
+acts[5]["score_home"] = 1
+sts, problems = lineups.stints(acts, {H: set(range(10, 15)), A: set(range(20, 25))})
+first = next(s for s in sts if s["team"] == H)
+checks["free throws keyed in after the period's end count for the five fouled"] = problems == [] and 14 in first["players"] and first["pts"] == 1 and first["sec"] == 520
+
+# hand-written: a free throw logged after a substitution the clock puts later (sub at 2:04, free throw at 2:06) goes first
+acts = [ev(1, "period", "start", None, None, 720.0), ev(2, "foul", "personal", A, 20, 126.0), ev(3, "substitution", "out", H, 14, 124.0),
+        ev(4, "substitution", "in", H, 15, 124.0), ev(5, "freethrow", "1 of 1", H, 10, 126.0)]
+acts[4]["score_home"] = 1
+sts, problems = lineups.stints(acts, {H: set(range(10, 15)), A: set(range(20, 25))})
+first = next(s for s in sts if s["team"] == H)
+checks["a free throw the clock puts before the substitution counts for the five fouled"] = problems == [] and 14 in first["players"] and first["pts"] == 1
+
 # the site's JSON: one row per five per game, integers, adding up to the stints
 w2 = tempfile.mkdtemp()
 teams = [{"code": c} for c in st.team.unique()]
