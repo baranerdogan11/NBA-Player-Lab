@@ -40,7 +40,37 @@ def _v(x):
 
 
 def ordered(actions):
-    return sorted(actions, key=lambda a: int(a["order_no"]))
+    """The actions in feed order, each period's together, with two corrections for plays keyed in late. A play entered
+    after its period's end, or during the next period, goes back to its clock: after the last play of its period at that
+    time or earlier on the clock. And free throws logged after a substitution that the clock puts later (the change
+    made at 2:04, the free throw shot at 2:06) go before it."""
+    acts = sorted(actions, key=lambda a: int(a["order_no"]))
+    clock = lambda a: _v(a.get("clock"))  # noqa: E731
+    out = []
+    for per in sorted({int(a["period"]) for a in acts}):
+        rows, late, ended = [], [], False
+        for a in (a for a in acts if int(a["period"]) == per):
+            if ended and a["action_type"] != "period" and clock(a) is not None and clock(a) > 0:
+                late.append(a)
+                continue
+            rows.append(a)
+            ended = ended or (a["action_type"] == "period" and a.get("sub_type") == "end")
+        for a in late:
+            at = [k for k, b in enumerate(rows) if b["action_type"] != "period" and clock(b) is not None and clock(b) >= clock(a)]
+            rows.insert(at[-1] + 1 if at else 0, a)
+        k = 0
+        while k < len(rows):
+            n = k
+            while n < len(rows) and rows[n]["action_type"] == "substitution":
+                n += 1
+            f = n
+            while f < len(rows) and rows[f]["action_type"] == "freethrow" and clock(rows[k]) is not None and clock(rows[f]) is not None and clock(rows[f]) > clock(rows[k]):
+                f += 1
+            if n > k and f > n:
+                rows[k:f] = rows[n:f] + rows[k:n]
+            k = max(f, k + 1)
+        out += rows
+    return out
 
 
 def play_order(actions):
@@ -54,7 +84,7 @@ def play_order(actions):
         for b in reversed(acts[:i]):
             if b["period"] != acts[i]["period"] or b["clock"] != acts[i]["clock"]:
                 return False
-            if b["action_type"] == "foul" and b.get("sub_type") != "technical":
+            if b["action_type"] == "foul":
                 return True
         return False
 
