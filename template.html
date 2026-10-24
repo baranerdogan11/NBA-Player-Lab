@@ -437,8 +437,8 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <a class="lgb" id="lg-badge" href="#league" hidden></a>
     <div class="pick"><select id="team" data-kind="team" aria-label="Team" data-ta="Team"></select><select id="player" data-kind="player" aria-label="Player" data-ta="Player"></select><a class="arr" id="prev" aria-label="Previous player" data-ta="Previous player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="arr" id="next" aria-label="Next player" data-ta="Next player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 5.5 6.5 6.5-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
     <div class="tiles" id="tiles"></div>
-    <section class="panel" id="sc"><h2 data-t="Shot chart">Shot chart</h2><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div></section>
-    <section class="panel" id="lu" hidden><h2 data-t="Lineups">Lineups</h2><div class="scroll"><table class="tbl" id="onoff"></table></div><div class="scroll"><table class="tbl" id="fives"></table></div></section>
+    <details class="panel" id="sc" open><summary><h2 data-t="Shot chart">Shot chart</h2></summary><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div></details>
+    <details class="panel" id="lu" open hidden><summary><h2 data-t="Lineups">Lineups</h2></summary><div class="scroll"><table class="tbl" id="onoff"></table></div><div class="scroll"><table class="tbl" id="fives"></table></div></details>
     <details class="panel" id="log-sec" open><summary><h2 data-t="Game log">Game log</h2></summary><div class="scroll"><table class="tbl" id="log"></table></div></details>
   </section>
   <section class="pg" id="pg-compare" hidden>
@@ -739,9 +739,12 @@ async function renderPlayer(code, pid, my) {
   document.title = `${p.name} · NBA Player Lab`;
 }
 $('#team').addEventListener('change', e => { location.hash = e.target.value; });
-const LOG = $('#log-sec');
-try { if (localStorage.getItem('pl-log') === 'closed') LOG.open = false; } catch (e) {}
-LOG.addEventListener('toggle', () => { try { localStorage.setItem('pl-log', LOG.open ? 'open' : 'closed'); } catch (e) {} });
+// each section of the profile opens and closes, and stays as the reader left it
+for (const [id, key] of [['sc', 'pl-shots'], ['lu', 'pl-lineups'], ['log-sec', 'pl-log']]) {
+  const d = $('#' + id);
+  try { if (localStorage.getItem(key) === 'closed') d.open = false; } catch (e) {}
+  d.addEventListener('toggle', () => { try { localStorage.setItem(key, d.open ? 'open' : 'closed'); } catch (e) {} });
+}
 const stepPlayer = back => { const a = $(back ? '#prev' : '#next'); if (a.href) location.hash = a.hash; };
 document.addEventListener('keydown', e => {
   if (document.body.dataset.page !== 'player' || e.altKey || e.ctrlKey || e.metaKey || e.target.closest('input,#menu')) return;
