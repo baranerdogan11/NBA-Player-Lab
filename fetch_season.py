@@ -52,16 +52,19 @@ def get(url):
 # is recent: at most every REFRESH_EVERY seconds, for REFRESH_WINDOW seconds after tip-off. Older games stay cached.
 REFRESH_WINDOW = 72 * 3600
 REFRESH_EVERY = 6 * 3600
+# the first hours after a game are when the league reorders and rewrites its play-by-play, so then it is fetched more often
+NEW_WINDOW = 12 * 3600
+NEW_EVERY = 30 * 60
 FETCHED = os.path.join(CACHE, "fetched_at.json")   # file name -> unix time it was last fetched (mtimes do not survive the CI cache)
 fetched_at = json.load(open(FETCHED)) if os.path.exists(FETCHED) else {}
 
 
-def cached(name, fetch, refresh=False, force=False):
-    """Read name from the cache, or fetch and store it. With refresh, a copy older than REFRESH_EVERY is fetched again;
+def cached(name, fetch, refresh=False, force=False, every=REFRESH_EVERY):
+    """Read name from the cache, or fetch and store it. With refresh, a copy older than every seconds is fetched again;
     with force, it is fetched again now. If that fetch fails the cached copy is kept, so a feed outage never costs a
     game we already have."""
     path = os.path.join(CACHE, name)
-    if os.path.exists(path) and not force and not (refresh and time.time() - fetched_at.get(name, 0) >= REFRESH_EVERY):
+    if os.path.exists(path) and not force and not (refresh and time.time() - fetched_at.get(name, 0) >= every):
         return json.load(open(path))
     try:
         data = fetch()
@@ -78,15 +81,15 @@ def cached(name, fetch, refresh=False, force=False):
     return data
 
 
-def recent(tipoff):
-    """True while a game is inside the correction window, counted from its scheduled tip-off."""
+def recent(tipoff, window=REFRESH_WINDOW):
+    """True while a game is inside the correction window (or another window), counted from its scheduled tip-off."""
     try:
         t = datetime.fromisoformat(tipoff.replace("Z", "+00:00"))
     except (TypeError, ValueError, AttributeError):
         return False
     if t.tzinfo is None:
         t = t.replace(tzinfo=timezone.utc)
-    return 0 <= (datetime.now(timezone.utc) - t).total_seconds() <= REFRESH_WINDOW
+    return 0 <= (datetime.now(timezone.utc) - t).total_seconds() <= window
 
 
 def fetch_game(gid, tipoff):
@@ -97,7 +100,7 @@ def fetch_game(gid, tipoff):
         fetched_at.pop(f"box_{gid}.json", None)
         print(f"   {gid}: box score not final yet, skipped")
         return None
-    pbp = cached(f"pbp_{gid}.json", lambda: get(PBP.format(gid)), fresh)
+    pbp = cached(f"pbp_{gid}.json", lambda: get(PBP.format(gid)), fresh, every=NEW_EVERY if recent(tipoff, NEW_WINDOW) else REFRESH_EVERY)
     if fresh and not complete(pbp, box):
         # the play-by-play can trail the box score at the buzzer; a copy cached then would fail the warehouse tests
         # and hold every update until its refresh, so it is fetched again on each run until its last score is final
