@@ -156,27 +156,30 @@ test.describe('roster', () => {
   });
 });
 
-test.describe('game log', () => {
+test.describe('profile sections', () => {
   test.use(DESKTOP);
-  test('its heading closes and opens the log, and the choice is kept across visits', async ({page}) => {
-    const problems = await prepare(page);
-    await page.goto('./#BOS');
-    await settled(page);
-    const isOpen = () => page.evaluate(() => document.querySelector('#log-sec').open);
-    expect(await isOpen()).toBe(true);
-    await page.click('#log-sec summary');
-    expect(await isOpen()).toBe(false);
-    expect(await page.locator('#log').isVisible()).toBe(false);
-    await page.waitForFunction(() => localStorage.getItem('pl-log') === 'closed');   // the toggle event is queued, not synchronous
-    await page.reload();
-    await settled(page);
-    expect(await isOpen()).toBe(false);
-    await page.focus('#log-sec summary');
-    await page.keyboard.press('Enter');
-    expect(await isOpen()).toBe(true);
-    expect(await page.locator('#log').isVisible()).toBe(true);
-    expect(problems, 'the page reported errors').toEqual([]);
-  });
+  for (const [id, body, key] of [['sc', '#sc-court', 'pl-shots'], ['lu', '#onoff', 'pl-lineups'], ['log-sec', '#log', 'pl-log']]) {
+    test(`the ${id} heading closes and opens its section, and the choice is kept across visits`, async ({page}) => {
+      const problems = await prepare(page);
+      await page.goto('./#BOS');
+      await settled(page);
+      await page.waitForFunction(i => !document.getElementById(i).hidden, id);
+      const isOpen = () => page.evaluate(i => document.getElementById(i).open, id);
+      expect(await isOpen()).toBe(true);
+      await page.click(`#${id} summary`);
+      expect(await isOpen()).toBe(false);
+      expect(await page.locator(body).isVisible()).toBe(false);
+      await page.waitForFunction(k => localStorage.getItem(k) === 'closed', key);   // the toggle event is queued, not synchronous
+      await page.reload();
+      await settled(page);
+      expect(await isOpen()).toBe(false);
+      await page.focus(`#${id} summary`);
+      await page.keyboard.press('Enter');
+      expect(await isOpen()).toBe(true);
+      expect(await page.locator(body).isVisible()).toBe(true);
+      expect(problems, 'the page reported errors').toEqual([]);
+    });
+  }
 });
 
 test.describe('game box scores', () => {
