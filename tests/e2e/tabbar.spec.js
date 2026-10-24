@@ -42,7 +42,7 @@ test.describe('desktop', () => {
     await page.goto('./#standings');
     await settled(page);
     expect(await page.isVisible('#tabbar')).toBe(false);
-    expect(await page.evaluate(() => [...document.querySelectorAll('#rail a')].map(a => a.textContent.trim()))).toEqual(['Player', 'Compare', 'Standings', 'Games', 'Leaders']);
+    expect(await page.evaluate(() => [...document.querySelectorAll('#rail a')].map(a => a.textContent.trim()))).toEqual(['Players', 'Compare', 'Standings', 'Games', 'Leaders']);
     expect(await page.getAttribute('#rl-standings', 'aria-current')).toBe('page');
   });
 });
