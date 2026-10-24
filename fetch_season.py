@@ -94,13 +94,14 @@ def recent(tipoff, window=REFRESH_WINDOW):
 
 def fetch_game(gid, tipoff):
     fresh = recent(tipoff)
-    box = cached(f"box_{gid}.json", lambda: get(BOX.format(gid)), fresh)
+    every = NEW_EVERY if recent(tipoff, NEW_WINDOW) else REFRESH_EVERY   # the box score and play-by-play on one clock
+    box = cached(f"box_{gid}.json", lambda: get(BOX.format(gid)), fresh, every=every)
     if box["game"]["gameStatus"] != FINAL:          # the schedule can mark a game final a moment before its box score does
         os.remove(os.path.join(CACHE, f"box_{gid}.json"))
         fetched_at.pop(f"box_{gid}.json", None)
         print(f"   {gid}: box score not final yet, skipped")
         return None
-    pbp = cached(f"pbp_{gid}.json", lambda: get(PBP.format(gid)), fresh, every=NEW_EVERY if recent(tipoff, NEW_WINDOW) else REFRESH_EVERY)
+    pbp = cached(f"pbp_{gid}.json", lambda: get(PBP.format(gid)), fresh, every=every)
     if fresh and not complete(pbp, box):
         # the play-by-play can trail the box score at the buzzer; a copy cached then would fail the warehouse tests
         # and hold every update until its refresh, so it is fetched again on each run until its last score is final
