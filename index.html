@@ -5,386 +5,398 @@
 <script>try{var pt=localStorage.getItem("pl-theme");if(pt==="dark"||(!pt&&matchMedia("(prefers-color-scheme: dark)").matches))document.documentElement.dataset.theme="dark"}catch(e){}</script>
 <title>NBA Player Lab</title>
 <meta name="description" content="Every NBA player, team and game of the season from the official box scores, rebuilt within minutes of every final.">
-<meta name="theme-color" content="#ddb078" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#2a1c12" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f3efe4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1d1b18" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%230b0d10'/%3E%3Ccircle cx='32' cy='32' r='22' fill='%23f26f21'/%3E%3Cpath d='M10 32h44M32 10v44M17 17c8 8 8 22 0 30M47 17c-8 8-8 22 0 30' fill='none' stroke='%230b0d10' stroke-width='3'/%3E%3C/svg%3E">
 <style>
-/* hardwood: a maple court floor under frosted panels; the dark theme is the same floor with the arena lights down */
+/* game night program: a two-ink risograph print on paper (after NovusGFX 26-risograph, MIT). Each club prints in its own
+   two inks: --A is its first colour sunk until it reads as text on paper (lifted on the dark sheet), --B its second colour
+   for fills; pages without a club print in the house riso blue and fluoro pink */
 :root{
-  --wood:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='120'%3E%3Crect x='0' y='0' width='53' height='20' fill='%23d8a56c'/%3E%3Cpath d='M53.5 0v20' stroke='%238a5a2e' stroke-opacity='.35'/%3E%3Crect x='53' y='0' width='386' height='20' fill='%23e2b47c'/%3E%3Cpath d='M439.5 0v20' stroke='%238a5a2e' stroke-opacity='.35'/%3E%3Crect x='439' y='0' width='201' height='20' fill='%23e0b17a'/%3E%3Cpath d='M0 19.5H640' stroke='%238a5a2e' stroke-opacity='.28'/%3E%3Crect x='0' y='20' width='225' height='20' fill='%23e0b17a'/%3E%3Cpath d='M225.5 20v20' stroke='%238a5a2e' stroke-opacity='.35'/%3E%3Crect x='225' y='20' width='234' height='20' fill='%23e0b17a'/%3E%3Cpath d='M459.5 20v20' stroke='%238a5a2e' stroke-opacity='.35'/%3E%3Crect x='459' y='20' width='181' height='20' fill='%23e2b47c'/%3E%3Cpath d='M0 39.5H640' stroke='%238a5a2e' stroke-opacity='.28'/%3E%3Crect x='0' y='40' width='247' height='20' fill='%23d8a56c'/%3E%3Cpath d='M247.5 40v20' stroke='%238a5a2e' stroke-opacity='.35'/%3E%3Crect x='247' y='40' width='237' height='20' fill='%23dcab72'/%3E%3Cpath d='M484.5 40v20' stroke='%238a5a2e' stroke-opacity='.35'/%3E%3Crect x='484' y='40' width='156' height='20' fill='%23e0b17a'/%3E%3Cpath d='M0 59.5H640' stroke='%238a5a2e' stroke-opacity='.28'/%3E%3Crect x='0' y='60' width='-22' height='20' fill='%23e0b17a'/%3E%3Crect x='0' y='60' width='229' height='20' fill='%23dcab72'/%3E%3Cpath d='M229.5 60v20' stroke='%238a5a2e' stroke-opacity='.35'/%3E%3Crect x='229' y='60' width='381' height='20' fill='%23d3a068'/%3E%3Cpath d='M610.5 60v20' stroke='%238a5a2e' stroke-opacity='.35'/%3E%3Crect x='610' y='60' width='30' height='20' fill='%23e2b47c'/%3E%3Cpath d='M0 79.5H640' stroke='%238a5a2e' stroke-opacity='.28'/%3E%3Crect x='0' y='80' width='-11' height='20' fill='%23dcab72'/%3E%3Crect x='0' y='80' width='220' height='20' fill='%23e0b17a'/%3E%3Cpath d='M220.5 80v20' stroke='%238a5a2e' stroke-opacity='.35'/%3E%3Crect x='220' y='80' width='254' height='20' fill='%23e7bc86'/%3E%3Cpath d='M474.5 80v20' stroke='%238a5a2e' stroke-opacity='.35'/%3E%3Crect x='474' y='80' width='166' height='20' fill='%23dcab72'/%3E%3Cpath d='M0 99.5H640' stroke='%238a5a2e' stroke-opacity='.28'/%3E%3Crect x='0' y='100' width='266' height='20' fill='%23e7bc86'/%3E%3Cpath d='M266.5 100v20' stroke='%238a5a2e' stroke-opacity='.35'/%3E%3Crect x='266' y='100' width='363' height='20' fill='%23d3a068'/%3E%3Cpath d='M629.5 100v20' stroke='%238a5a2e' stroke-opacity='.35'/%3E%3Crect x='629' y='100' width='11' height='20' fill='%23e2b47c'/%3E%3Cpath d='M0 119.5H640' stroke='%238a5a2e' stroke-opacity='.28'/%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.004 .28' numOctaves='3' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .26 0 0 0 0 .1 0 0 0 1.1 -.45'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url%28%23g%29'/%3E%3C/svg%3E");--court:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 420 400' fill='none' stroke='%23fff' stroke-opacity='.4' stroke-width='3'%3E%3Cpath d='M418.5 0v400M420 136H268v128h152M268 200m-48 0a48 48 0 1 0 96 0a48 48 0 1 0-96 0M420 24H308a190 190 0 0 0 0 352h112M346 170v60M378 200m-32 0a32 32 0 0 0 32 32M378 200m-32 0a32 32 0 0 1 32-32'/%3E%3Ccircle cx='370' cy='200' r='9'/%3E%3C/svg%3E");
-  --floor:#ddb078;--floor-dim:rgba(0,0,0,0);--glow:rgba(255,255,255,0);
-  --panel:rgba(255,251,245,.9);--solid:#fffbf5;--panel2:#f5ece0;--line:rgba(92,58,26,.13);
-  --ink:#1e1711;--ink2:#4b3f34;--muted:#77685a;--on-floor:#4a3018;
-  --glass:rgba(255,249,240,.74);--glass-ink:#1e1711;--glass-ink2:#6c5b4b;--glass-line:rgba(92,58,26,.16);
-  --seg:rgba(92,58,26,.09);--seg-on:#fff;
-  --orange:#e8611a;--dark:#15100c;--hd:#2c241d;--good:#1d8a55;--bad:#c93c32;
-  --sh:0 1px 2px rgba(60,32,10,.08),0 8px 24px rgba(60,32,10,.10);--r:18px;--rs:12px;
-  --sans:system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  --paper:#f3efe4;--paper-dark:#e6dfcb;--fluoro-pink:#ff4fa5;--riso-blue:#0078b4;--riso-yellow:#f6d800;--ink:#1a1a1a;
+  --ink2:#3a3a3a;--muted:#6b665c;--line:rgba(26,26,26,.28);--rule:var(--ink);--grain:rgba(0,0,0,.05);--blend:multiply;
+  --A:var(--riso-blue);--B:var(--fluoro-pink);--onB:var(--ink);--orange:var(--A);
+  --good:#0a7d4f;--bad:#d6246e;--off:rgba(26,26,26,.3);
+  --sans:"Helvetica Neue","Akzidenz-Grotesk",Arial,sans-serif;--serif:"Times New Roman",Garamond,serif;
   --spring:cubic-bezier(.2,.9,.25,1);
+  color-scheme:light;
 }
 html[data-theme="dark"]{
-  --floor:#2a1c12;--floor-dim:rgba(16,11,8,.84);--glow:rgba(255,190,120,.10);
-  --panel:rgba(26,20,16,.86);--solid:#1d1712;--panel2:rgba(255,236,214,.05);--line:rgba(255,232,206,.10);
-  --ink:#f7f0e7;--ink2:#d9ccbd;--muted:#a69683;--on-floor:#b9a48d;
-  --glass:rgba(20,15,11,.72);--glass-ink:#f7f0e7;--glass-ink2:#a69683;--glass-line:rgba(255,232,206,.10);
-  --seg:rgba(255,236,214,.08);--seg-on:rgba(255,236,214,.18);
-  --hd:#3a2f26;--good:#3fbf7f;--bad:#f0675c;
-  --sh:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+  --paper:#1d1b18;--paper-dark:#2b2823;--ink:#efe9db;--ink2:#d4cdbd;--muted:#a49d8e;--line:rgba(239,233,219,.25);--grain:rgba(255,255,255,.035);--blend:normal;
+  --A:#4fb3e8;--riso-yellow:#c9b000;--good:#3fc48a;--bad:#ff6aa8;--off:rgba(239,233,219,.3);
+  color-scheme:dark;
 }
+[style*="--ap"]{--A:var(--ap);--B:var(--b);--onB:var(--on2)}
+html[data-theme="dark"] [style*="--ap"]{--A:var(--an)}
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%;background:var(--floor)}
+html{-webkit-text-size-adjust:100%;background:var(--paper)}
 body{margin:0;min-height:100vh;color:var(--ink);font:15px/1.45 var(--sans);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;
-  background:radial-gradient(120% 60% at 50% -10%,var(--glow),transparent 70%),linear-gradient(var(--floor-dim),var(--floor-dim)),var(--wood) var(--floor);background-attachment:scroll}
+  background:var(--paper) radial-gradient(circle,var(--grain) .6px,transparent 1.2px) 0 0/3px 3px}
 a{color:inherit}
 button,select{font:inherit;color:inherit}
-h1,h2,h3{font-weight:750;letter-spacing:-.015em;margin:0}
+h1,h2,h3{font-weight:900;letter-spacing:-.02em;margin:0}
 [hidden]{display:none!important}
 a,button,select,.card{-webkit-tap-highlight-color:transparent}
 
-/* header: a frosted layer the floor scrolls under; the five pages sit in a segmented control */
-.top{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:18px;padding:0 20px;min-height:58px;color:var(--glass-ink);background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(170%);backdrop-filter:blur(22px) saturate(170%);box-shadow:0 1px 0 var(--glass-line)}
-.id{display:flex;align-items:center;gap:9px;text-decoration:none;font:780 18px/1 var(--sans);letter-spacing:-.02em;white-space:nowrap}
-.id i{flex:none;width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff9a52,var(--orange) 55%,#b8470e);box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.18)}
-.id span{color:var(--glass-ink2);font-weight:600;font-size:14px;letter-spacing:0}
-.rail{display:flex;gap:2px;margin-left:8px;padding:3px;border-radius:999px;background:var(--seg)}
-.rail a{display:flex;align-items:center;height:32px;padding:0 15px;border-radius:999px;text-decoration:none;font:600 14px/1 var(--sans);color:var(--glass-ink2);transition:background .2s,color .2s,transform .1s ease-out}
-.rail a:hover{color:var(--glass-ink)}
-.rail a:active{transform:scale(.96)}
-.rail a[aria-current="page"]{color:var(--glass-ink);background:var(--seg-on);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+/* the masthead: a heavy rule, the title set in caps, the five pages as printed tabs with a hard offset shadow */
+.top{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:18px;padding:0 20px;min-height:60px;background:var(--paper);border-top:8px solid var(--ink);border-bottom:2px solid var(--ink)}
+.id{display:flex;align-items:center;gap:10px;text-decoration:none;font:900 17px/1 var(--sans);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.id i{flex:none;width:18px;height:18px;border-radius:50%;background:var(--fluoro-pink);box-shadow:3px 2px 0 var(--riso-blue);mix-blend-mode:var(--blend)}
+.id span{font:italic 400 15px/1 var(--serif);letter-spacing:0;text-transform:none;color:var(--ink2)}
+.rail{display:flex;gap:8px;margin-left:8px}
+.rail a{display:flex;align-items:center;height:34px;padding:0 14px;text-decoration:none;font:900 12px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;border:2px solid var(--ink);background:var(--paper);box-shadow:3px 3px 0 var(--ink);transition:transform .1s,box-shadow .1s}
+.rail a:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--ink)}
+.rail a:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.rail a[aria-current="page"]{background:var(--A);color:var(--paper);box-shadow:3px 3px 0 var(--B)}
 .tools{margin-left:auto;display:flex;align-items:center;gap:6px}
-.tools button{display:grid;place-items:center;background:var(--seg);border:0;border-radius:999px;color:var(--glass-ink2);min-width:38px;height:32px;padding:0 10px;cursor:pointer;font:650 12px/1 var(--sans);letter-spacing:.04em;transition:background .2s,color .2s,transform .1s ease-out}
-.tools button:active{transform:scale(.94)}
-.tools button[aria-pressed="true"]{background:var(--orange);color:#fff}
+.tools button{display:grid;place-items:center;background:var(--paper);border:2px solid var(--ink);color:var(--ink);min-width:36px;height:32px;padding:0 8px;cursor:pointer;font:900 11px/1 var(--sans);letter-spacing:.1em;transition:transform .1s}
+.tools button:active{transform:translate(1px,1px)}
+.tools button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
 
-/* the phone bar: the same five pages on a floating frosted capsule */
+/* the phone: the pages on a ticket stub torn along a perforation at the foot of the screen */
 .tabbar{display:none}
 @media (max-width:760px){
   .rail{display:none}
-  .top{padding:0 12px;gap:8px;min-height:52px}
-  .id{font-size:17px;min-width:0;overflow:hidden}
+  .top{padding:0 12px;gap:8px;min-height:52px;border-top-width:6px}
+  .id{font-size:15px;min-width:0;overflow:hidden}
   .id span{display:none}
-  .tools button{min-width:34px;padding:0 8px}
-  .tabbar{display:flex;position:fixed;left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:40;padding:5px;border-radius:30px;background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(170%);backdrop-filter:blur(22px) saturate(170%);box-shadow:0 0 0 1px var(--glass-line),0 10px 30px rgba(30,14,4,.22)}
-  .tabbar a{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:52px;border-radius:24px;color:var(--glass-ink2);text-decoration:none;font:600 10.5px/1 var(--sans);transition:background .2s,color .2s,transform .1s ease-out}
-  .tabbar a:active{transform:scale(.94)}
+  .tools button{min-width:32px;padding:0 6px}
+  .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;padding:0 0 env(safe-area-inset-bottom);background:var(--paper);border-top:2px dashed var(--ink);box-shadow:0 -6px 0 var(--paper)}
+  .tabbar a{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:58px;color:var(--ink);text-decoration:none;font:900 9.5px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase}
+  .tabbar a+a{border-left:1px dashed var(--ink)}
   .tabbar a span{max-width:100%;overflow:hidden;white-space:nowrap}
   .tabbar svg{width:22px;height:22px}
-  .tabbar a[aria-current="page"]{color:var(--orange);background:var(--seg)}
-  body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+  .tabbar a[aria-current="page"]{background:var(--A);color:var(--paper)}
+  body{padding-bottom:calc(66px + env(safe-area-inset-bottom))}
 }
 
-.wrap{max-width:1180px;margin:0 auto;padding:20px 20px 32px}
-@media (max-width:760px){.wrap{padding:12px 12px 24px}}
-.wipe{position:fixed;left:0;top:0;height:3px;width:0;border-radius:0 3px 3px 0;background:var(--orange);z-index:50;transition:width .3s var(--spring)}
+.wrap{max-width:1180px;margin:0 auto;padding:22px 20px 34px}
+@media (max-width:760px){.wrap{padding:14px 14px 24px}}
+.wipe{position:fixed;left:0;top:0;height:4px;width:0;background:var(--B);mix-blend-mode:var(--blend);z-index:50;transition:width .3s var(--spring)}
 .wipe.on{width:70%}
 
-/* panels: frosted cards on the floor; every heading opens with a centre-circle mark */
-.panel{background:var(--panel);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-radius:var(--r);box-shadow:var(--sh);margin-top:16px;overflow:hidden}
-.panel>h2,.sec-h,.panel>summary{display:flex;align-items:center;gap:10px;font-size:19px;padding:14px 16px 12px}
+/* panels: sections of the program, each under a heavy rule with its heading set in caps beside a misregistered dot */
+.panel{margin-top:28px;border-top:4px solid var(--ink);background:none}
+.panel>h2,.sec-h,.panel>summary{display:flex;align-items:center;gap:10px;font:900 20px/1.1 var(--sans);letter-spacing:-.01em;text-transform:uppercase;padding:12px 0 12px}
 .panel>summary{cursor:pointer;list-style:none;-webkit-user-select:none;user-select:none}
 .panel>summary::-webkit-details-marker{display:none}
-.panel>summary h2{display:contents;font-size:19px}
-.panel>summary::after{content:"";margin-left:auto;width:9px;height:9px;border-right:2.5px solid var(--orange);border-bottom:2.5px solid var(--orange);transform:translateY(2px) rotate(-135deg);transition:transform .25s var(--spring)}
+.panel>summary h2{display:contents;font:inherit}
+.panel>summary::after{content:"";margin-left:auto;width:10px;height:10px;border-right:3px solid var(--ink);border-bottom:3px solid var(--ink);transform:translateY(2px) rotate(-135deg);transition:transform .2s}
 .panel:not([open])>summary::after{transform:translateY(-3px) rotate(45deg)}
-.panel>summary:focus-visible{outline:2px solid var(--orange);outline-offset:-4px;border-radius:var(--r)}
-.panel>h2::before,.sec-h::before,.panel>summary h2::before{content:"";flex:none;width:9px;height:9px;border-radius:50%;border:2.5px solid var(--orange);box-shadow:0 0 0 2.5px var(--panel),0 0 0 4px rgba(232,97,26,.35)}
+.panel>summary:focus-visible{outline:3px solid var(--A);outline-offset:-3px}
+.panel>h2::before,.sec-h::before,.panel>summary h2::before{content:"";flex:none;width:12px;height:12px;border-radius:50%;background:var(--A);box-shadow:3px 2px 0 var(--B)}
 .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 
-/* tables: the header wears the club colour (--tc), league tables the stained-walnut house colour */
+/* tables: ink rules, the head under a thick rule in the club's first ink */
 .tbl{width:100%;border-collapse:collapse;font-size:14px;white-space:nowrap}
-.tbl th{background:var(--tc,var(--hd));color:#fff;font:650 11.5px/1 var(--sans);text-transform:uppercase;letter-spacing:.06em;padding:10px 9px;text-align:right;position:sticky;top:0}
-.tbl td{padding:9px;text-align:right;border-bottom:1px solid var(--line)}
+.tbl th{background:var(--paper);color:var(--ink);font:900 10.5px/1 var(--sans);text-transform:uppercase;letter-spacing:.14em;padding:10px 8px;text-align:right;border-bottom:3px solid var(--A);position:sticky;top:0}
+.tbl td{padding:8px;text-align:right;border-bottom:1px solid var(--line)}
 .tbl tbody tr:last-child td{border-bottom:0}
-.tbl th:first-child,.tbl td:first-child{padding-left:16px}
-.tbl th:last-child,.tbl td:last-child{padding-right:16px}
+.tbl th:first-child,.tbl td:first-child{padding-left:2px}
+.tbl th:last-child,.tbl td:last-child{padding-right:2px}
 .tbl th:first-child,.tbl td:first-child,.tbl .l{text-align:left}
 .tbl th.l{text-align:left}
 .tbl th>.sort{all:unset;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.tbl th>.sort:focus-visible{outline:2px solid #fff;outline-offset:3px;border-radius:2px}
-.tbl th[aria-sort]>.sort{box-shadow:inset 0 -2.5px 0 var(--orange);padding-bottom:3px}
-.tbl tbody tr{transition:background .15s}
-.tbl tbody tr:hover{background:var(--panel2)}
-.tbl tr.tot td{font-weight:700;background:var(--panel2)}
+.tbl th>.sort:focus-visible{outline:2px solid var(--A);outline-offset:3px}
+.tbl th[aria-sort]>.sort{box-shadow:inset 0 -3px 0 var(--B);padding-bottom:3px}
+.tbl tbody tr:hover{background:color-mix(in srgb,var(--riso-yellow) 30%,transparent)}
+.tbl tr.tot td{font-weight:900;border-top:2px solid var(--ink)}
 .tbl a{text-decoration:none}
-.tbl a:hover{text-decoration:underline;text-underline-offset:2px}
-.tbl .k{font-weight:700}
-.tbl .w{color:var(--good);font-weight:650}
-.tbl .lo{color:var(--bad);font-weight:650}
+.tbl a:hover{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
+.tbl .k{font-weight:900;color:var(--A)}
+.tbl.rt td .rk{display:inline-block;min-width:2.4ch;margin-left:4px;font:italic 400 12px/1 var(--serif);color:var(--muted);text-align:left}
+.tbl.rt th.grp{text-align:center;padding-bottom:4px;border-bottom-width:1px}
+.tbl.rt thead tr+tr th{padding-top:6px}
+.tbl.rt .abbr{display:none}
+@media (max-width:760px){.tbl.rt .full{display:none}.tbl.rt .abbr{display:inline}.tbl.rt td,.tbl.rt th{padding-left:6px;padding-right:6px}}
+.tbl .w{color:var(--good);font-weight:900}
+.tbl .lo{color:var(--bad);font-weight:900}
 .tbl .dim{color:var(--muted)}
-.tbl .st{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--orange);margin-right:7px;vertical-align:middle}
-/* a player's face: the NBA headshot on top of his initials, so a missing picture leaves the initials showing */
-.face{position:relative;display:inline-grid;place-items:center;flex:none;width:28px;height:28px;border-radius:50%;overflow:hidden;vertical-align:middle;background:color-mix(in srgb,var(--c1,var(--tc,var(--hd))) 80%,#000);color:#fff;font:700 11px/1 var(--sans);box-shadow:inset 0 0 0 1.5px var(--c2,transparent)}
+.tbl .st{display:inline-block;width:7px;height:7px;background:var(--B);margin-right:7px;vertical-align:middle;mix-blend-mode:var(--blend)}
+/* a player's face: the NBA headshot printed over a disc of the club's second ink, over his initials if there is no picture */
+.face{position:relative;display:inline-grid;place-items:center;flex:none;width:28px;height:28px;border-radius:50%;overflow:hidden;vertical-align:middle;background:color-mix(in srgb,var(--B) 55%,var(--paper));color:var(--ink);font:900 11px/1 var(--sans);box-shadow:inset 0 0 0 1.5px var(--ink)}
 .face.on>span{visibility:hidden}
-.face img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 12%}
+.face img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 12%;mix-blend-mode:var(--blend)}
 .tbl .face{margin-right:9px;width:26px;height:26px;font-size:10px}
 .tbl td.five{white-space:normal;min-width:170px}
 .five .faces{display:flex;margin-bottom:4px}
-.five .faces .face{margin:0 0 0 -4px;box-shadow:0 0 0 2px var(--panel),inset 0 0 0 1.5px var(--c2,transparent)}
+.five .faces .face{margin:0 0 0 -4px;box-shadow:0 0 0 2px var(--paper),inset 0 0 0 1.5px var(--ink)}
 .five .faces .face:first-child{margin-left:0}
-.five .nm{display:block;font-size:12.5px;color:var(--muted);line-height:1.35}
-#lu .scroll+.scroll{margin-top:12px}
-.fives{display:grid;gap:16px;padding-bottom:4px}
+.five .nm{display:block;font:italic 400 13px/1.35 var(--serif);color:var(--ink2)}
+#lu .scroll+.scroll{margin-top:16px}
+.fives{display:grid;gap:20px;padding-bottom:4px}
 @media (min-width:1100px){.fives{grid-template-columns:1fr 1fr}}
 @media (max-width:760px){.tbl .x{display:none}}
-/* a club's logo from NBA's CDN; until it loads (or if it never does) the club's two colours, or its code on a crest */
+/* a club's logo printed straight on the paper; until it loads (or if it never does) its two inks, or its code */
 .chip,.crest,.mark{position:relative;display:inline-grid;place-items:center;flex:none;vertical-align:middle}
-.chip{width:18px;height:18px;margin-right:8px;border-radius:50%;background:linear-gradient(135deg,var(--c1) 55%,var(--c2) 55%);box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
-.chip img,.crest img,.mark img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.chip{width:20px;height:20px;margin-right:8px;background:var(--c1);box-shadow:3px 0 0 var(--c2)}
+.chip img,.crest img,.mark img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;mix-blend-mode:var(--blend)}
 .chip b,.mark b{display:none}
 .chip.on{background:none;box-shadow:none}
-.crest{width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.94);box-shadow:inset 0 0 0 2px var(--c2,transparent),0 4px 14px rgba(0,0,0,.25);color:#1e1711;font:800 15px/1 var(--sans);letter-spacing:.02em}
-.crest img{inset:9px;width:calc(100% - 18px);height:calc(100% - 18px)}
+.crest{width:72px;height:72px;color:var(--ink);font:900 16px/1 var(--sans);letter-spacing:.04em;border:2px solid var(--ink);background:var(--paper)}
+.crest.on{border:0;background:none}
 .crest.on b{visibility:hidden}
-.mark{width:22px;height:22px;margin-right:7px;border-radius:50%;background:rgba(255,255,255,.94)}
-.mark img{inset:3px;width:16px;height:16px}
+.mark{width:22px;height:22px;margin-right:7px}
+/* on the dark sheet a logo sits on a paper disc, so black and navy marks still show */
+html[data-theme="dark"] :is(.chip.on,.mark,.crest.on){border-radius:50%;background:#f3efe4}
+html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;height:76%}
 
-/* pickers: each <select> keeps its options and value but is drawn as a rounded button that opens a frosted menu of its own */
-.sel{display:flex;align-items:center;gap:10px;flex:1 1 220px;min-width:0;max-width:100%;border:0;border-radius:var(--rs);box-shadow:var(--sh);padding:9px 36px 9px 12px;font-weight:600;text-align:left;cursor:pointer;color:var(--ink);transition:transform .1s ease-out,box-shadow .2s;
-  background:var(--solid) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5l4.5 4.5 4.5-4.5' fill='none' stroke='%23e8611a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center/12px 8px}
+/* pickers: each <select> keeps its options and value but is drawn as a printed box with an offset shadow in the second ink */
+.sel{display:flex;align-items:center;gap:10px;flex:1 1 220px;min-width:0;max-width:100%;border:2px solid var(--ink);border-radius:0;box-shadow:4px 4px 0 var(--B);padding:9px 36px 9px 12px;font-weight:700;text-align:left;cursor:pointer;color:var(--ink);transition:transform .1s;
+  background:var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5l4.5 4.5 4.5-4.5' fill='none' stroke='%23888' stroke-width='2.5'/%3E%3C/svg%3E") no-repeat right 14px center/12px 8px}
 .sel>span:last-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sel:active{transform:scale(.985)}
-.sel[aria-expanded="true"]{box-shadow:var(--sh),0 0 0 2px var(--orange)}
+.sel:active{transform:translate(2px,2px)}
+.sel[aria-expanded="true"]{box-shadow:4px 4px 0 var(--A)}
 .sel:disabled{opacity:.5;cursor:default}
 .sel .face,.menu .face{flex:none;width:26px;height:26px;font-size:10px}
-.sel:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(--orange);outline-offset:2px;border-radius:var(--rs)}
-.pick{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-/* shot charts: each court keeps its club's colours in both themes */
-.panel>.pick{margin:0 16px 12px}
-.prose{padding:0 16px 16px;max-width:68ch;line-height:1.55}
+.sel:focus-visible,a:focus-visible,button:focus-visible{outline:3px solid var(--A);outline-offset:3px}
+.pick{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+.panel>.pick{margin:0 0 14px}
+.prose{padding:0 0 16px;max-width:68ch;font:17px/1.55 var(--serif)}
+.prose p{margin:0}
 .prose p+p{margin-top:10px}
 .foot a{color:inherit}
 .panel>.pick .sel{flex:0 1 340px}
-.courts{display:grid;gap:16px;padding:0 16px 16px}
+.courts{display:grid;gap:20px;padding:0 0 16px}
 .courts.two{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
-.court{display:block;width:100%;max-width:560px;height:auto;margin:0 auto;border-radius:var(--rs)}
-.court-h{display:flex;align-items:center;justify-content:center;font-weight:650;margin-bottom:8px}
-.arr{flex:none;display:grid;place-items:center;width:44px;height:44px;border-radius:999px;background:var(--solid);box-shadow:var(--sh);color:var(--orange);transition:transform .1s ease-out,box-shadow .2s}
+.court{display:block;width:100%;max-width:560px;height:auto;margin:0 auto;border:2px solid var(--ink)}
+.court-h{display:flex;align-items:center;justify-content:center;font:900 13px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px}
+.arr{flex:none;display:grid;place-items:center;width:44px;height:44px;border:2px solid var(--ink);background:var(--paper);box-shadow:4px 4px 0 var(--ink);color:var(--ink);transition:transform .1s}
 .arr svg{width:22px;height:22px}
-.arr:hover{box-shadow:var(--sh),0 0 0 2px var(--orange)}
-.arr:active{transform:scale(.92)}
+.arr:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
 .arr:not([href]){opacity:.35;pointer-events:none}
-.j{flex:none;min-width:22px;padding:0 5px;border-radius:7px;background:var(--seg);text-align:center;font:700 11px/20px var(--sans);color:var(--muted)}
+.j{flex:none;min-width:24px;padding:0 4px;background:var(--A);color:var(--paper);text-align:center;font:900 11px/20px var(--sans)}
 .veil{position:fixed;inset:0;z-index:59}
-.menu{position:fixed;z-index:60;display:flex;flex-direction:column;max-height:min(420px,70vh);background:var(--panel);-webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);border-radius:var(--r);box-shadow:var(--sh),0 0 0 1px var(--line);overflow:hidden;animation:rise .25s var(--spring)}
-.menu input{margin:10px 10px 4px;padding:9px 14px;border:0;border-radius:999px;background:var(--seg);font:inherit;color:inherit;outline:0}
-.menu input:focus-visible{box-shadow:0 0 0 2px var(--orange)}
+.menu{position:fixed;z-index:60;display:flex;flex-direction:column;max-height:min(420px,70vh);background:var(--paper);border:2px solid var(--ink);box-shadow:6px 6px 0 var(--ink);overflow:hidden;animation:rise .2s var(--spring)}
+.menu input{margin:10px 10px 4px;padding:9px 12px;border:2px solid var(--ink);border-radius:0;background:var(--paper);font:inherit;color:inherit;outline:0}
+.menu input:focus-visible{box-shadow:3px 3px 0 var(--B)}
 .menu ul{list-style:none;margin:0;padding:6px;overflow-y:auto;overscroll-behavior:contain;outline:0}
-.menu li{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;cursor:pointer;font-weight:600}
+.menu li{display:flex;align-items:center;gap:10px;padding:7px 8px;cursor:pointer;font-weight:700;border-bottom:1px dotted var(--line)}
 .menu li>span:last-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.menu li.h{padding:12px 10px 4px;font:600 11px/1 var(--sans);text-transform:uppercase;letter-spacing:.07em;color:var(--muted);cursor:default}
-.menu li.on{background:var(--panel2)}
-.menu li[aria-selected="true"]{color:var(--orange)}
-.menu li[aria-selected="true"]::after{content:"\2713";font-weight:800}
+.menu li.h{padding:14px 8px 5px;font:900 10.5px/1 var(--sans);text-transform:uppercase;letter-spacing:.16em;color:var(--muted);cursor:default;border-bottom:2px solid var(--ink)}
+.menu li.on{background:color-mix(in srgb,var(--riso-yellow) 45%,transparent)}
+.menu li[aria-selected="true"]{color:var(--A)}
+.menu li[aria-selected="true"]::after{content:"\2713";font-weight:900}
 .menu .empty{padding:10px}
-@media (max-width:760px){.veil{background:rgba(0,0,0,.35)}.menu{left:10px!important;right:10px;width:auto!important;top:auto!important;bottom:calc(10px + env(safe-area-inset-bottom));max-height:60vh!important;border-radius:22px}}
-.tabs,.dates{display:flex;gap:2px;overflow-x:auto;padding:4px;border-radius:14px;background:var(--panel);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:var(--sh);scrollbar-width:none}
+@media (max-width:760px){.veil{background:rgba(0,0,0,.35)}.menu{left:10px!important;right:10px;width:auto!important;top:auto!important;bottom:calc(12px + env(safe-area-inset-bottom));max-height:60vh!important}}
+.tabs,.dates{display:flex;gap:10px;overflow-x:auto;padding:2px 6px 8px 2px;scrollbar-width:none}
 .tabs::-webkit-scrollbar,.dates::-webkit-scrollbar{display:none}
-.tabs button,.tabs a,.dates a{flex:none;border:0;background:none;padding:9px 14px;border-radius:10px;cursor:pointer;font:600 14px/1 var(--sans);color:var(--muted);text-decoration:none;transition:background .2s,color .2s,transform .1s ease-out}
-.tabs button:active,.tabs a:active,.dates a:active{transform:scale(.96)}
-.tabs button:hover,.tabs a:hover,.dates a:hover{color:var(--ink)}
-.tabs [aria-pressed="true"],.tabs [aria-current="true"],.dates a[aria-current="true"]{background:var(--orange);color:#fff;box-shadow:0 2px 8px rgba(232,97,26,.35)}
+.tabs button,.tabs a,.dates a{flex:none;border:2px solid var(--ink);background:var(--paper);padding:9px 14px;cursor:pointer;font:900 12px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--ink);text-decoration:none;box-shadow:3px 3px 0 var(--ink);transition:transform .1s}
+.tabs button:active,.tabs a:active,.dates a:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.tabs [aria-pressed="true"],.tabs [aria-current="true"],.dates a[aria-current="true"]{background:var(--A);color:var(--paper);box-shadow:3px 3px 0 var(--B)}
 
-/* the hero: the club's painted key, wood grain showing through the paint, court lines over it;
-   the player's NBA headshot over his initials (the initials stay when there is no picture), the club's logo beside its name */
-.hero{position:relative;isolation:isolate;display:flex;align-items:center;gap:22px;padding:24px 24px 22px;border-radius:22px;color:#fff;overflow:hidden;box-shadow:var(--sh);
-  background:var(--court) right -6px center/auto 118% no-repeat,linear-gradient(115deg,var(--c1) 0%,var(--c1) 30%,color-mix(in srgb,var(--c1) 35%,#120c08) 75%);border-bottom:5px solid var(--c2)}
-.hero::before,.board::before,.vs>div::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--wood);mix-blend-mode:overlay;opacity:.45;pointer-events:none}
-.hero .badge{flex:none;width:96px;height:96px;display:grid;place-items:center;border-radius:50%;overflow:hidden;background:rgba(18,12,8,.55);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:inset 0 0 0 3px var(--c2),0 6px 18px rgba(0,0,0,.25);font:800 36px/1 var(--sans);letter-spacing:-.03em}
-.hero .badge .face{width:100%;height:100%;font:inherit;background:none;box-shadow:none}
-.hero .who{min-width:0}
-.hero .tag{font:600 13px/1.2 var(--sans);text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.82)}
-.hero h1{font-size:44px;line-height:1.02;letter-spacing:-.03em;margin:6px 0 10px;font-weight:800;overflow-wrap:anywhere;text-shadow:0 2px 12px rgba(0,0,0,.25)}
-.hero .facts{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;color:rgba(255,255,255,.75)}
-.hero .facts b{color:#fff;font-weight:700}
-.share{position:absolute;top:12px;right:12px;z-index:1;display:grid;place-items:center;width:40px;height:40px;padding:0;border:0;border-radius:999px;background:rgba(18,12,8,.42);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;cursor:pointer;transition:transform .1s ease-out,background .2s}
+/* the club strip on the Player page: thirty logos printed grey, the chosen one in full ink on a darker sheet */
+.teams{display:grid;grid-template-columns:repeat(30,minmax(0,1fr));gap:2px;padding:0 0 12px;margin-bottom:6px;border-bottom:2px solid var(--ink)}
+.teams a{display:grid;place-items:center;aspect-ratio:1;padding:3px;border:2px solid transparent}
+.teams .mark{width:100%;height:100%;margin:0}
+.teams img{filter:grayscale(1) contrast(1.2);opacity:.55}
+.teams a:hover img,.teams a[aria-current="true"] img{filter:none;opacity:1}
+.teams a[aria-current="true"]{border-color:var(--ink);background:var(--paper-dark);box-shadow:3px 3px 0 var(--B)}
+@media (max-width:760px){.teams{display:none}}
+
+/* the poster: the club's second ink in halftone stripes with a disc of the first, the player's headshot printed over it,
+   his name on a label block of the first ink, his number huge and misregistered */
+.hero{position:relative;isolation:isolate;display:flex;align-items:flex-end;gap:26px;min-height:300px;margin-top:18px;padding:26px;overflow:hidden;color:var(--paper);
+  background:radial-gradient(circle at 14% 82%,var(--A) 0 120px,transparent 121px),repeating-linear-gradient(45deg,transparent 0 6px,rgba(26,26,26,.16) 6px 7px),var(--B)}
+.hero .badge{flex:none;position:relative;width:200px;height:200px;align-self:center;display:grid;place-items:center;font:900 64px/1 var(--sans);color:var(--paper)}
+.hero .badge .face{width:100%;height:100%;font:inherit;color:inherit;border-radius:0;background:none;box-shadow:none;overflow:visible}
+.hero .badge .face img{object-fit:contain;object-position:50% 100%;mix-blend-mode:normal;filter:drop-shadow(6px 6px 0 rgba(26,26,26,.3))}
+.hero .who{position:relative;min-width:0;background:var(--A);padding:16px 20px 18px;box-shadow:6px 6px 0 rgba(26,26,26,.3)}
+.hero .tag{display:flex;align-items:center;font:900 12px/1.2 var(--sans);text-transform:uppercase;letter-spacing:.16em}
+.hero .tag .mark{width:24px;height:24px;background:var(--paper);border-radius:50%;padding:2px}
+.hero .tag .mark img{inset:2px;width:20px;height:20px}
+.hero h1{font-size:clamp(38px,5.4vw,74px);line-height:.88;letter-spacing:-.04em;margin:10px 0 12px;text-transform:uppercase;overflow-wrap:anywhere;text-shadow:4px 4px 0 var(--B)}
+.hero .facts{display:flex;flex-wrap:wrap;gap:4px 18px;font:italic 400 17px/1.3 var(--serif)}
+.hero .facts b{font:900 15px/1 var(--sans);font-style:normal}
+.share{position:absolute;top:12px;right:12px;z-index:2;display:grid;place-items:center;width:40px;height:40px;padding:0;border:2px solid var(--ink);background:var(--paper);color:var(--ink);box-shadow:3px 3px 0 var(--ink);cursor:pointer;transition:transform .1s}
 .share svg{width:20px;height:20px}
-.board .share{position:static;margin:12px auto 0;width:36px;height:36px}
+.board .share{position:static;margin:14px auto 0;width:36px;height:36px}
 .board .share svg{width:18px;height:18px}
-.share:hover{background:rgba(18,12,8,.6)}
-.share:active{transform:scale(.92)}
+.share:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
 .share[aria-busy="true"]{opacity:.6;cursor:progress}
-.hero .num{position:absolute;right:26px;bottom:-18px;z-index:-1;font:800 128px/1 var(--sans);letter-spacing:-.05em;color:rgba(255,255,255,.12);pointer-events:none}
-@media (max-width:760px){.hero{padding:18px 16px;gap:14px;border-radius:18px;background-position:right -90px center,0 0;background-size:auto 112%,auto}.hero .badge{width:64px;height:64px;font-size:24px}.hero h1{font-size:30px}.hero .num{font-size:88px;right:14px}}
+.hero .num{position:absolute;right:24px;top:-6px;z-index:-1;font:900 220px/1 var(--sans);letter-spacing:-.06em;color:var(--A);mix-blend-mode:var(--blend);text-shadow:-8px 6px 0 rgba(26,26,26,.18);pointer-events:none}
+@media (max-width:760px){.hero{flex-direction:column;align-items:stretch;gap:0;min-height:0;padding:16px;background:radial-gradient(circle at 18% 30%,var(--A) 0 90px,transparent 91px),repeating-linear-gradient(45deg,transparent 0 6px,rgba(26,26,26,.16) 6px 7px),var(--B)}
+  .hero .badge{width:170px;height:150px;align-self:flex-start;font-size:48px}.hero .who{margin:0 -6px -6px;padding:12px 14px 14px}.hero h1{font-size:40px}.hero .facts{font-size:15px}.hero .num{font-size:140px;right:10px;top:4px}}
 
-/* season tiles: one grouped card of stats */
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(86px,1fr));gap:1px;margin-top:14px;border-radius:var(--r);overflow:hidden;background:var(--line);box-shadow:var(--sh)}
-.tile{background:var(--solid);padding:12px 14px}
-.tile b{display:block;font:750 25px/1 var(--sans);letter-spacing:-.025em}
-.tile span{display:block;margin-top:6px;font:600 11px/1 var(--sans);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
-.tile.lead b{color:var(--orange)}
-.empty{padding:18px 16px;color:var(--muted)}
-.cards>.empty{color:var(--on-floor)}
+/* the tale of the tape: the season's numbers in a strip of ink-ruled boxes */
+.tiles{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));margin-top:22px;border-top:4px solid var(--ink);border-bottom:2px solid var(--ink)}
+.tile{padding:12px 10px 10px;border-right:1px solid var(--ink);border-bottom:1px dashed var(--line)}
+.tile:nth-child(6n){border-right:0}
+.tile b{display:block;font:900 34px/1 var(--sans);letter-spacing:-.04em;color:var(--A)}
+.tile span{display:block;margin-top:6px;font:900 10.5px/1 var(--sans);text-transform:uppercase;letter-spacing:.14em}
+.tile.lead b{font-size:48px}
+@media (max-width:760px){.tiles{grid-template-columns:repeat(3,minmax(0,1fr))}.tile:nth-child(6n){border-right:1px solid var(--ink)}.tile:nth-child(3n){border-right:0}.tile b{font-size:26px}.tile.lead b{font-size:34px}}
+.empty{padding:18px 0;font:italic 400 17px/1.4 var(--serif);color:var(--muted)}
+.cards>.empty{grid-column:1/-1}
 
-/* games: a strip of dates, then one card per game */
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:14px}
-.card{display:block;background:var(--panel);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-radius:var(--r);box-shadow:var(--sh);text-decoration:none;overflow:hidden;transition:transform .12s ease-out,box-shadow .2s}
-.card .row{display:flex;align-items:center;gap:10px;padding:12px 14px}
-.card .row .chip{width:24px;height:24px;margin:0}
-.card .row+.row{border-top:1px solid var(--line)}
-.card .nm{flex:1;font:600 16px/1.1 var(--sans);letter-spacing:-.01em}
-.card .sc{font:750 22px/1 var(--sans);letter-spacing:-.02em;color:var(--muted)}
-.card .row.win .nm{font-weight:750}
+/* games: one ticket per game, the scores on the stub and FINAL on a yellow tear-off */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:22px;margin-top:18px}
+.card{display:grid;grid-template-columns:minmax(0,1fr) 46px;grid-template-rows:auto auto;background:var(--paper);border:2px solid var(--ink);box-shadow:5px 5px 0 var(--ink);text-decoration:none;transition:transform .1s,box-shadow .1s}
+.card .row{grid-column:1;display:flex;align-items:center;gap:10px;padding:10px 14px}
+.card .row .chip{width:30px;height:30px;margin:0}
+.card .row+.row{border-top:1px dotted var(--ink)}
+.card .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:900 14px/1.1 var(--sans);text-transform:uppercase;letter-spacing:.04em}
+.card .sc{font:900 28px/1 var(--sans);letter-spacing:-.03em;color:var(--muted)}
 .card .row.win .sc{color:var(--ink)}
-.card .ft{padding:8px 14px;background:var(--panel2);font:600 11px/1 var(--sans);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
-a.card:hover{box-shadow:var(--sh),0 0 0 2px var(--orange)}
-a.card:active{transform:scale(.98)}
+.card .row:not(.win) .nm{color:var(--ink2)}
+.card .ft{grid-column:2;grid-row:1/3;display:grid;place-items:center;writing-mode:vertical-rl;border-left:2px dashed var(--ink);background:var(--riso-yellow);color:#1a1a1a;mix-blend-mode:var(--blend);font:900 10.5px/1 var(--sans);text-transform:uppercase;letter-spacing:.18em}
+a.card:hover{transform:translate(-2px,-2px);box-shadow:7px 7px 0 var(--ink)}
+a.card:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
 
-/* game page: centre court, the away club's half and the home club's, the score on the centre circle */
-.board{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px;padding:26px 22px;border-radius:22px;overflow:hidden;color:#fff;box-shadow:var(--sh);
-  background:radial-gradient(circle at 50% 50%,transparent 0 62px,rgba(255,255,255,.35) 62px 64.5px,transparent 65px),linear-gradient(90deg,transparent calc(50% - 1.25px),rgba(255,255,255,.35) 0 calc(50% + 1.25px),transparent 0),
-  linear-gradient(90deg,var(--ca) 0%,color-mix(in srgb,var(--ca) 40%,#120c08) 50%,color-mix(in srgb,var(--ch) 40%,#120c08) 50%,var(--ch) 100%);border-bottom:5px solid var(--orange)}
-.board .side{display:flex;flex-direction:column;gap:5px;min-width:0}
-.board .side .crest{margin-bottom:6px}
-.hero .badge .crest{width:100%;height:100%;box-shadow:none;font-size:26px}
-.board .side.h{align-items:flex-end;text-align:right}
-.board .side small{font:600 12px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.75)}
-.board .side b{font:800 30px/1.05 var(--sans);letter-spacing:-.025em}
+/* game page: both crests and the score printed big, each number in its club's ink with the other ink a beat off register */
+.board{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:16px;margin-top:6px;padding:26px 0;border-top:8px solid var(--ink);border-bottom:2px solid var(--ink);
+  --sa:color-mix(in srgb,var(--ca) 75%,#000);--sh:color-mix(in srgb,var(--ch) 75%,#000)}
+html[data-theme="dark"] .board{--sa:color-mix(in srgb,var(--ca) 55%,#fff);--sh:color-mix(in srgb,var(--ch) 55%,#fff)}
+.board .side{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;text-align:center}
+.board .side .crest{width:96px;height:96px;margin-bottom:4px}
+.board .side small{font:italic 400 16px/1 var(--serif)}
+.board .side b{font:900 24px/1.05 var(--sans);letter-spacing:.02em;text-transform:uppercase}
 .board .abbr{display:none}
-.board .score{display:flex;gap:30px;align-items:baseline;font:800 56px/1 var(--sans);letter-spacing:-.04em;text-shadow:0 2px 14px rgba(0,0,0,.35)}
-.board .score .lose{color:rgba(255,255,255,.55)}
+.board .score{display:flex;gap:28px;align-items:baseline;font:900 clamp(64px,9vw,124px)/.85 var(--sans);letter-spacing:-.05em}
+.board .score span:first-child{color:var(--sa);text-shadow:5px 4px 0 color-mix(in srgb,var(--sh) 45%,transparent)}
+.board .score span:last-child{color:var(--sh);text-shadow:5px 4px 0 color-mix(in srgb,var(--sa) 45%,transparent)}
+.board .score .lose{opacity:.45}
+html[data-theme="dark"] .board .score span{color:var(--ink)}
 .board .mid{text-align:center}
-.board .mid small{display:inline-block;margin-top:8px;padding:5px 10px;border-radius:999px;background:rgba(0,0,0,.35);font:650 11px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:#ffb27f}
-@media (max-width:760px){.board{padding:18px 12px;gap:8px;border-radius:18px;background-size:auto,auto,auto}.board .side small,.board .full{display:none}.board .abbr{display:inline}.board .side b{font-size:22px}.board .side .crest{width:42px;height:42px;font-size:11px}.board .side .crest img{inset:6px;width:30px;height:30px}.board .score{font-size:36px;gap:20px}}
-/* game flow: the margin after every change of score, the home club's colour above the line and the away club's below */
-.flow{position:relative;height:160px;margin:4px 16px 0;touch-action:pan-y;cursor:crosshair;-webkit-user-select:none;user-select:none}
-.flow:focus-visible{outline:2px solid var(--orange);outline-offset:4px;border-radius:6px}
+.board .mid small{display:inline-block;margin-top:14px;padding:4px 9px;background:var(--ink);color:var(--paper);transform:skewX(-6deg);font:900 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase}
+@media (max-width:760px){.board{padding:18px 0;gap:8px}.board .side small,.board .full{display:none}.board .abbr{display:inline}.board .side b{font-size:16px}.board .side .crest{width:52px;height:52px;font-size:12px}.board .score{font-size:56px;gap:16px}}
+/* game flow: the margin after every change of score, the home club's ink above the line and the away club's below */
+.flow{position:relative;height:160px;margin:4px 0 0;touch-action:pan-y;cursor:crosshair;-webkit-user-select:none;user-select:none}
+.flow:focus-visible{outline:3px solid var(--A);outline-offset:4px}
 .flow svg{display:block;width:100%;height:100%}
-.flow .zero{stroke:var(--ink2);stroke-opacity:.45;stroke-width:1.5}
-.flow .qt{stroke:var(--muted);stroke-opacity:.4;stroke-width:1;stroke-dasharray:3 4}
-.fl-t{position:absolute;left:4px;display:flex;align-items:center;gap:6px;font:700 11px/1 var(--sans);letter-spacing:.06em;color:var(--muted);pointer-events:none}
+.flow svg path[data-team]{mix-blend-mode:var(--blend);opacity:.9}
+html[data-theme="dark"] .flow svg path[data-team]{filter:brightness(1.7) saturate(1.2)}
+.flow .zero{stroke:var(--ink);stroke-width:2}
+.flow .qt{stroke:var(--ink);stroke-opacity:.5;stroke-width:1;stroke-dasharray:3 4}
+.fl-t{position:absolute;left:4px;display:flex;align-items:center;gap:6px;font:900 11px/1 var(--sans);letter-spacing:.12em;pointer-events:none}
 .fl-t .chip{width:18px;height:18px;margin:0}
 .fl-t.h{top:2px}.fl-t.a{bottom:2px}
-.fl-cur{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--ink);opacity:.7;pointer-events:none}
-.fl-tip{position:absolute;top:2px;z-index:1;padding:6px 10px;border-radius:10px;background:var(--solid);box-shadow:var(--sh),0 0 0 1px var(--line);font:650 12.5px/1.2 var(--sans);white-space:nowrap;pointer-events:none}
-.fl-tip small{display:block;margin-bottom:2px;font:600 10.5px/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
-.fl-q{position:relative;height:16px;margin:6px 16px 0}
-.fl-q span{position:absolute;transform:translateX(-50%);font:600 11px/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
-.fl-sum{margin:10px 16px 16px;box-shadow:none}
+.fl-cur{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--ink);pointer-events:none}
+.fl-tip{position:absolute;top:2px;z-index:1;padding:6px 10px;background:var(--paper);border:2px solid var(--ink);box-shadow:3px 3px 0 var(--ink);font:900 12.5px/1.2 var(--sans);white-space:nowrap;pointer-events:none}
+.fl-tip small{display:block;margin-bottom:3px;font:italic 400 13px/1 var(--serif)}
+.fl-q{position:relative;height:16px;margin:6px 0 0}
+.fl-q span{position:absolute;transform:translateX(-50%);font:900 10.5px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase}
+.fl-sum{margin:14px 0 16px}
 .fl-sum{grid-template-columns:repeat(4,minmax(0,1fr))}
-.fl-sum [data-team]{box-shadow:inset 3px 0 0 var(--tc)}
-@media (max-width:760px){.fl-sum{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.fl-sum .tile:nth-child(4n){border-right:0}
+.fl-sum [data-team]{--A:color-mix(in srgb,var(--tc) 75%,#000)}
+html[data-theme="dark"] .fl-sum [data-team]{--A:color-mix(in srgb,var(--tc) 55%,#fff)}
+@media (max-width:760px){.fl-sum{grid-template-columns:repeat(2,minmax(0,1fr))}.fl-sum .tile:nth-child(2n){border-right:0}}
 
-/* the opening page: centre court at tip-off, the house orange running into walnut, the centre circle painted over the grain;
-   then the latest night's cards and three leader boards */
-.intro{--cx:82%;background:radial-gradient(circle at var(--cx) 50%,rgba(255,255,255,.3) 0 30px,transparent 30.5px),radial-gradient(circle at var(--cx) 50%,transparent 0 104px,rgba(255,255,255,.35) 104px 106.5px,transparent 107px),
-  linear-gradient(90deg,transparent calc(var(--cx) - 1.25px),rgba(255,255,255,.35) 0 calc(var(--cx) + 1.25px),transparent 0),linear-gradient(115deg,var(--orange) 0%,#b8470e 32%,#3a1d0c 74%,#15100c 100%);border-bottom-color:var(--orange)}
-@media (max-width:760px){.intro{--cx:100%}}
-.intro .badge{box-shadow:inset 0 0 0 3px rgba(255,255,255,.85),0 6px 18px rgba(0,0,0,.25)}
-.intro .badge i{width:62%;height:62%;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff9a52,var(--orange) 55%,#b8470e);box-shadow:inset 0 0 0 2px rgba(0,0,0,.2)}
-.sec-h.on-floor{padding:22px 4px 0}
-.sec-h.on-floor::before{box-shadow:0 0 0 2.5px var(--solid),0 0 0 4px rgba(232,97,26,.35)}
-.sec-h .more{margin-left:auto;font:650 14px/1 var(--sans);letter-spacing:0;color:var(--orange);text-decoration:none}
-.sec-h .more:hover{text-decoration:underline;text-underline-offset:2px}
-.trio{display:grid;gap:12px 16px;grid-template-columns:repeat(3,minmax(0,1fr))}
-.trio>.panel{margin-top:14px}
+/* the opening page: the house poster in yellow and blue, then the latest night's tickets and three leader lists */
+.intro{min-height:250px;--A:var(--riso-blue);--B:var(--riso-yellow)}
+html[data-theme="dark"] .intro{--A:#0078b4}
+.intro .badge{width:150px;height:150px}
+.intro .badge i{width:80%;height:80%;border-radius:50%;background:var(--fluoro-pink);mix-blend-mode:multiply;box-shadow:10px 8px 0 var(--riso-blue);background-image:linear-gradient(90deg,transparent 48.5%,rgba(26,26,26,.6) 48.5% 51.5%,transparent 51.5%),radial-gradient(circle at 50% -40%,transparent 62%,rgba(26,26,26,.6) 62% 64.5%,transparent 64.5%),radial-gradient(circle at 50% 140%,transparent 62%,rgba(26,26,26,.6) 62% 64.5%,transparent 64.5%)}
+@media (max-width:760px){.intro .badge{width:110px;height:110px}}
+.sec-h.on-floor{padding:30px 0 10px;border-bottom:4px solid var(--ink)}
+.sec-h .more{margin-left:auto;font:italic 400 16px/1 var(--serif);text-transform:none;letter-spacing:0;text-decoration:underline;text-underline-offset:3px}
+.trio{display:grid;gap:12px 32px;grid-template-columns:repeat(3,minmax(0,1fr))}
+.trio>.panel{margin-top:18px}
 @media (max-width:900px){.trio{grid-template-columns:minmax(0,1fr)}}
-.list a{display:flex;align-items:center;gap:10px;min-height:46px;padding:7px 16px;border-top:1px solid var(--line);text-decoration:none;transition:background .15s}
-.list a:hover{background:var(--panel2)}
-.list a:active{background:var(--panel2)}
-.list .rk{flex:none;width:18px;color:var(--muted);font-weight:650;font-size:13px}
-.list .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
-.list .nm small{display:block;margin-top:2px;font:600 11.5px/1.2 var(--sans);color:var(--muted);letter-spacing:.04em}
-.list .chip{margin-right:0;width:22px;height:22px}
-.list .face{width:32px;height:32px;font-size:12px}
-.list .v{font:750 17px/1 var(--sans);letter-spacing:-.02em}
-.list a:first-child .v{color:var(--orange)}
+.list a{display:flex;align-items:center;gap:10px;min-height:48px;padding:7px 0;border-top:1px solid var(--line);text-decoration:none}
+.list a:hover{background:color-mix(in srgb,var(--riso-yellow) 30%,transparent)}
+.list .rk{flex:none;width:22px;font:900 15px/1 var(--sans)}
+.list .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:900;text-transform:uppercase;font-size:13.5px;letter-spacing:.02em}
+.list .nm small{display:block;margin-top:3px;font:italic 400 13px/1.2 var(--serif);text-transform:none;letter-spacing:0;color:var(--ink2)}
+.list .chip{margin-right:0;width:24px;height:24px}
+.list .face{width:34px;height:34px;font-size:12px}
+.list .v{font:900 20px/1 var(--sans);letter-spacing:-.03em}
+.list a:first-child{background:color-mix(in srgb,var(--riso-yellow) 60%,transparent)}
+.list a:first-child .v{font-size:26px}
 
-/* My league: a fantasy league's own room. The matchup is a centre-court board in the two fantasy teams' colours, the
-   categories one grouped card, each with a stripe for won or lost; a team without a club gets a disc of its colour */
-.tools .lg{display:grid;place-items:center;min-width:38px;height:32px;padding:0 10px;border-radius:999px;background:var(--seg);color:var(--glass-ink2);transition:background .2s,color .2s,transform .1s ease-out}
+/* My league: the matchup printed as a game page, the categories as a tape strip with a won or lost stripe */
+.tools .lg{display:grid;place-items:center;min-width:36px;height:32px;padding:0 8px;border:2px solid var(--ink);background:var(--paper);color:var(--ink)}
 .tools .lg svg{width:16px;height:16px}
-.tools .lg:active{transform:scale(.94)}
-.tools .lg[aria-current="page"]{background:var(--orange);color:#fff}
-@media (max-width:760px){.tools .lg{min-width:34px;padding:0 8px}}
-.board.lg{margin-top:14px}
-.board.lg .side b{font-size:26px;overflow-wrap:break-word;hyphens:auto}
-.board.lg .side .crest{background:var(--c1);color:#fff}
-@media (max-width:760px){.board.lg .side b{font-size:14px;letter-spacing:-.01em}.board.lg .mid small{max-width:118px;line-height:1.35}.board.lg .score{font-size:44px;gap:18px}}
+.tools .lg[aria-current="page"]{background:var(--ink);color:var(--paper)}
+@media (max-width:760px){.tools .lg{min-width:32px;padding:0 6px}}
+.board.lg{margin-top:18px}
+.board.lg .side b{font-size:22px;overflow-wrap:break-word;hyphens:auto}
+.board.lg .side .crest{background:var(--c1);color:#fff;border:0}
+@media (max-width:760px){.board.lg .side b{font-size:13px;letter-spacing:0}.board.lg .mid small{max-width:118px;line-height:1.35}.board.lg .score{font-size:48px;gap:16px}}
 .lgf{background:var(--c1)}
-.cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:1px;margin-top:14px;border-radius:var(--r);overflow:hidden;background:var(--line);box-shadow:var(--sh)}
-.cat{background:var(--solid);padding:11px 13px 12px;box-shadow:inset 3px 0 0 var(--line)}
-.cat.w{box-shadow:inset 3px 0 0 var(--good)}
-.cat.lo{box-shadow:inset 3px 0 0 var(--bad)}
-.cat>span{display:flex;justify-content:space-between;font:650 11px/1 var(--sans);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));margin-top:18px;border-top:4px solid var(--ink);border-bottom:2px solid var(--ink)}
+.cat{padding:11px 12px 12px;border-right:1px solid var(--ink);border-bottom:1px dashed var(--line);box-shadow:inset 0 4px 0 var(--off)}
+.cat.w{box-shadow:inset 0 4px 0 var(--good)}
+.cat.lo{box-shadow:inset 0 4px 0 var(--bad)}
+.cat>span{display:flex;justify-content:space-between;font:900 10.5px/1 var(--sans);text-transform:uppercase;letter-spacing:.14em}
 .cat>span i{font-style:normal}
 .cat.w>span i{color:var(--good)}
 .cat.lo>span i{color:var(--bad)}
-.cat b{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:8px;font:750 21px/1 var(--sans);letter-spacing:-.02em}
-.cat b small{font:600 15px/1 var(--sans);color:var(--muted)}
-.slot{display:inline-block;min-width:38px;padding:3px 5px;margin-right:9px;border-radius:7px;background:var(--seg);text-align:center;font:700 11px/1.2 var(--sans);color:var(--muted)}
+.cat b{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:8px;font:900 23px/1 var(--sans);letter-spacing:-.03em}
+.cat b small{font:italic 400 16px/1 var(--serif);color:var(--muted)}
+.slot{display:inline-block;min-width:38px;padding:3px 5px;margin-right:9px;background:var(--ink);color:var(--paper);text-align:center;font:900 10.5px/1.2 var(--sans);letter-spacing:.06em}
 .tbl tr.bn td{color:var(--muted)}
-.tbl tr.bn .slot{background:none;box-shadow:inset 0 0 0 1px var(--line)}
-.inj{display:inline-block;margin-left:7px;padding:1px 5px;border-radius:5px;background:var(--bad);color:#fff;font:700 10px/14px var(--sans)}
+.tbl tr.bn .slot{background:none;color:var(--muted);box-shadow:inset 0 0 0 1.5px var(--muted)}
+.inj{display:inline-block;margin-left:7px;padding:1px 5px;background:var(--bad);color:#fff;font:900 10px/14px var(--sans)}
 .left{display:inline-flex;gap:3px;vertical-align:middle}
-.left i{width:9px;height:9px;border-radius:3px;background:var(--orange)}
-.gate p{padding:0 16px 12px;max-width:62ch;color:var(--ink2)}
-.gate form{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 16px}
-.gate input{flex:1 1 240px;min-width:0;padding:10px 14px;border:0;border-radius:999px;background:var(--seg);font:inherit;color:inherit;outline:0}
-.gate input:focus-visible{box-shadow:0 0 0 2px var(--orange)}
-.gate button{border:0;border-radius:999px;padding:10px 18px;background:var(--orange);color:#fff;font:650 14px/1 var(--sans);cursor:pointer}
-.tbl td.rk{text-align:center;font-weight:650}
-.tbl tr.me td{font-weight:700}
+.left i{width:9px;height:9px;background:var(--A)}
+.gate p{padding:0 0 12px;max-width:62ch;font:17px/1.5 var(--serif)}
+.gate form{display:flex;flex-wrap:wrap;gap:10px;padding:0 0 16px}
+.gate input{flex:1 1 240px;min-width:0;padding:10px 12px;border:2px solid var(--ink);border-radius:0;background:var(--paper);font:inherit;color:inherit;outline:0}
+.gate input:focus-visible{box-shadow:4px 4px 0 var(--B)}
+.gate button{border:2px solid var(--ink);padding:10px 18px;background:var(--A);color:var(--paper);box-shadow:4px 4px 0 var(--ink);font:900 12px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
+.tbl td.rk{text-align:center;font-weight:900}
+.tbl tr.me td{background:color-mix(in srgb,var(--riso-yellow) 55%,transparent);font-weight:900}
 .tbl .lgf{margin-right:9px;width:26px;height:26px;font-size:10px}
 .panel>h2 .lgf{width:28px;height:28px;font-size:11px}
-.lgb{display:flex;align-items:center;gap:10px;margin-top:12px;padding:9px 14px;border-radius:var(--rs);background:var(--panel);box-shadow:var(--sh);font-weight:600;text-decoration:none;color:var(--ink)}
-.lgb::after{content:"";margin-left:auto;width:8px;height:8px;border-right:2.5px solid var(--orange);border-bottom:2.5px solid var(--orange);transform:rotate(-45deg)}
+.lgb{display:flex;align-items:center;gap:10px;margin-top:16px;padding:9px 14px;border:2px solid var(--ink);background:var(--riso-yellow);color:#1a1a1a;box-shadow:4px 4px 0 var(--ink);font-weight:900;text-decoration:none}
+.lgb::after{content:"";margin-left:auto;width:8px;height:8px;border-right:3px solid currentColor;border-bottom:3px solid currentColor;transform:rotate(-45deg)}
 .lgb .lgf{width:26px;height:26px;font-size:10px}
-.credit{display:flex;flex-wrap:wrap;gap:6px 14px;margin:16px 4px 0;font-size:13px;color:var(--on-floor)}
+.credit{display:flex;flex-wrap:wrap;gap:6px 14px;margin:18px 0 0;font:italic 400 15px/1.3 var(--serif)}
 .credit a{color:inherit}
-.credit .more{margin-left:auto;color:var(--orange);font-weight:650;text-decoration:none}
-@media (max-width:760px){#hm-games{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:82%;overflow-x:auto;scroll-snap-type:x mandatory;margin:14px -12px 0;padding:0 12px 6px;scroll-padding:0 12px;scrollbar-width:none}#hm-games::-webkit-scrollbar{display:none}#hm-games>.card{scroll-snap-align:start}}
+.credit .more{margin-left:auto;font-weight:700;text-decoration:underline}
+@media (max-width:760px){#hm-games{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:86%;overflow-x:auto;scroll-snap-type:x mandatory;margin:18px -14px 0;padding:0 14px 10px;scroll-padding:0 14px;scrollbar-width:none}#hm-games::-webkit-scrollbar{display:none}#hm-games>.card{scroll-snap-align:start}}
 
-/* compare: the two players meet on a court in their clubs' colours */
-.vs{display:grid;grid-template-columns:1fr 1fr;gap:2px;color:#fff;margin-top:14px;border-radius:var(--r);overflow:hidden;box-shadow:var(--sh)}
-.vs>div{position:relative;isolation:isolate;display:flex;align-items:center;gap:14px;padding:18px;min-width:0;border-bottom:5px solid var(--c2)}
+/* compare: a bout card, each corner in its club's inks, under one heavy rule */
+.vs{display:grid;grid-template-columns:1fr 1fr;margin-top:20px;border-top:8px solid var(--ink);border-bottom:2px solid var(--ink)}
+.vs>div{position:relative;display:flex;align-items:center;gap:18px;padding:22px 20px 24px;min-width:0}
 .vs>div>div{min-width:0}
-.vs>div:last-child{flex-direction:row-reverse}
-.vs .face{width:64px;height:64px;font-size:22px;box-shadow:inset 0 0 0 2.5px var(--c2),0 4px 12px rgba(0,0,0,.25)}
-.vs>div:first-child{background:linear-gradient(90deg,var(--c1),color-mix(in srgb,var(--c1) 40%,#120c08))}
-.vs>div:last-child{background:linear-gradient(270deg,var(--c1),color-mix(in srgb,var(--c1) 40%,#120c08));text-align:right}
-.vs h2{font-size:28px;font-weight:800;letter-spacing:-.025em;margin-top:4px;overflow-wrap:anywhere}
-.vs small{font:600 12px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.78)}
-.cmp td{width:38%}
-.cmp td.m{width:24%;text-align:center;font:600 11.5px/1 var(--sans);text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.vs>div+div{border-left:2px solid var(--ink);flex-direction:row-reverse;text-align:right}
+.vs .face{width:104px;height:104px;font-size:30px;box-shadow:inset 0 0 0 2px var(--ink),5px 5px 0 var(--B)}
+.vs h2{font-size:clamp(28px,3.6vw,52px);line-height:.9;letter-spacing:-.04em;text-transform:uppercase;margin-top:8px;overflow-wrap:anywhere;color:var(--A);text-shadow:3px 3px 0 color-mix(in srgb,var(--B) 70%,transparent)}
+.vs small{display:flex;align-items:center;font:900 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase}
+.vs>div+div small{justify-content:flex-end}
+.vs+.panel{margin-top:0;border-top:0}
+.cmp td{width:38%;font-size:16px}
+.cmp td.m{width:24%;text-align:center;font:900 10.5px/1 var(--sans);text-transform:uppercase;letter-spacing:.16em}
 .cmp td:last-child{text-align:left}
-.cmp td.best{color:var(--orange);font-weight:800}
+.cmp td.best{font-weight:900;font-size:19px;background:color-mix(in srgb,var(--riso-yellow) 55%,transparent)}
 .cmp td:first-child{text-align:right}
-@media (max-width:760px){.vs h2{font-size:20px}.vs>div{flex-direction:column;align-items:flex-start;gap:10px;padding:14px}.vs>div:last-child{flex-direction:column;align-items:flex-end}.vs .face{width:48px;height:48px;font-size:17px}}
+@media (max-width:760px){.vs h2{font-size:22px}.vs>div{flex-direction:column;align-items:flex-start;gap:10px;padding:14px 10px}.vs>div+div{flex-direction:column;align-items:flex-end}.vs .face{width:64px;height:64px;font-size:20px}}
 
-.fail{margin-top:16px;padding:14px 16px;background:var(--solid);border-radius:var(--r);box-shadow:var(--sh),inset 4px 0 0 var(--bad);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.fail button{border:0;border-radius:999px;background:var(--orange);color:#fff;font-weight:600;padding:8px 16px;cursor:pointer;transition:transform .1s ease-out}
-.fail button:active{transform:scale(.95)}
-.foot{max-width:1180px;margin:0 auto;padding:4px 20px 28px;font-size:13px;color:var(--on-floor)}
+.fail{margin-top:18px;padding:14px 16px;border:2px solid var(--ink);box-shadow:5px 5px 0 var(--bad);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.fail button{border:2px solid var(--ink);background:var(--A);color:var(--paper);font-weight:900;padding:8px 16px;cursor:pointer}
+.foot{max-width:1180px;margin:0 auto;padding:10px 20px 30px;font:italic 400 15px/1.3 var(--serif);border-top:1px solid var(--ink)}
+@media (max-width:760px){.foot{margin:0 14px;padding:10px 0 24px}}
 
-/* polish: form dots on Standings, a bar behind each leader's value, W/L pills in the game log, the winner's crest ringed */
-.form{display:inline-flex;gap:2.5px;margin-left:8px;vertical-align:middle}
-.form b{width:5px;height:5px;border-radius:50%;background:var(--good)}
+/* details: form squares on Standings, a halftone bar behind each leader's value, W/L marks in the game log, the winner's crest */
+.form{display:inline-flex;gap:2px;margin-left:8px;vertical-align:middle}
+.form b{width:6px;height:6px;background:var(--good)}
 .form b.lo{background:var(--bad)}
 #ld td.k{position:relative;min-width:120px}
-#ld td.k .bar{position:absolute;right:12px;top:50%;height:24px;transform:translateY(-50%);border-radius:6px;background:color-mix(in srgb,var(--orange) 14%,transparent);transition:width .5s var(--spring)}
+#ld td.k .bar{position:absolute;right:4px;top:50%;height:22px;transform:translateY(-50%);background:radial-gradient(circle,var(--B) 2.6px,transparent 3.3px) 0 0/7px 7px;mix-blend-mode:var(--blend);opacity:.8;transition:width .5s var(--spring)}
 #ld td.k .bar+*{position:relative}
-#ld tbody tr:nth-child(-n+3) td:first-child{color:var(--orange);font-weight:800}
-.tbl a.w,.tbl a.lo{display:inline-block;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--good) 13%,transparent)}
-.tbl a.lo{background:color-mix(in srgb,var(--bad) 12%,transparent)}
-.board .side.won .crest{box-shadow:inset 0 0 0 2px var(--c2,transparent),0 0 0 3px var(--orange),0 4px 14px rgba(0,0,0,.25)}
-.top.down{box-shadow:0 1px 0 var(--glass-line),0 10px 30px rgba(60,32,10,.14)}
+#ld tbody tr:nth-child(-n+3) td:first-child{font-weight:900;font-size:17px}
+.tbl a.w,.tbl a.lo{display:inline-block;padding:1px 7px;border:1.5px solid currentColor}
+.board .side.won .crest{box-shadow:0 0 0 0 transparent}
+.board .side.won b{text-decoration:underline;text-decoration-thickness:4px;text-underline-offset:6px;text-decoration-color:var(--riso-yellow)}
 
-/* motion: each page rises onto the floor and its rows, tiles and cards follow a beat apart; a theme change fades */
-@keyframes rise{from{opacity:0;transform:translateY(10px)}}
-.pg.in{animation:rise .4s var(--spring) both}
-.pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a){animation:rise .45s var(--spring) both}
+/* motion: each page drops onto the press bed and its rows follow a beat apart */
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+.pg.in{animation:rise .35s var(--spring) both}
+.pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a){animation:rise .4s var(--spring) both}
 .pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a):nth-child(2){animation-delay:.04s}
 .pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a):nth-child(3){animation-delay:.08s}
 .pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a):nth-child(4){animation-delay:.12s}
 .pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a):nth-child(5){animation-delay:.16s}
 .pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a):nth-child(6){animation-delay:.2s}
 .pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a):nth-child(n+7){animation-delay:.24s}
-html.swap,html.swap *{transition:background-color .35s,color .35s}
+html.swap,html.swap *{transition:background-color .3s,color .3s}
 
-/* accessibility: gentler motion, solid surfaces, stronger edges */
+/* accessibility: gentler motion, stronger rules */
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}a:active,button:active,.card:active{transform:none!important}}
-@media (prefers-reduced-transparency:reduce){.top,.tabbar,.panel,.card,.tabs,.dates{background:var(--solid);-webkit-backdrop-filter:none;backdrop-filter:none}}
-@media (prefers-contrast:more){:root{--line:rgba(92,58,26,.4)}html[data-theme="dark"]{--line:rgba(255,232,206,.35)}.top,.tabbar,.panel,.card,.tabs,.dates,.tiles,.sel,.menu{background:var(--solid);box-shadow:0 0 0 1px var(--ink)}}
+@media (prefers-contrast:more){:root{--line:rgba(26,26,26,.6)}html[data-theme="dark"]{--line:rgba(239,233,219,.6)}}
 </style>
 <header class="top">
   <a class="id" href="#" title="NBA Player Lab"><i></i>NBA Player Lab <span id="tag-season"></span></a>
@@ -420,6 +432,7 @@ html.swap,html.swap *{transition:background-color .35s,color .35s}
     <div class="trio" id="hm-leaders"></div>
   </section>
   <section class="pg" id="pg-player" hidden>
+    <nav class="teams" id="teams" aria-label="Teams" data-ta="Teams"></nav>
     <div class="hero" id="hero"></div>
     <a class="lgb" id="lg-badge" href="#league" hidden></a>
     <div class="pick"><select id="team" data-kind="team" aria-label="Team" data-ta="Team"></select><select id="player" data-kind="player" aria-label="Player" data-ta="Player"></select><a class="arr" id="prev" aria-label="Previous player" data-ta="Previous player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="arr" id="next" aria-label="Next player" data-ta="Next player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 5.5 6.5 6.5-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
@@ -477,8 +490,8 @@ html.swap,html.swap *{transition:background-color .35s,color .35s}
 <div class="veil" id="veil" hidden></div>
 <div class="menu" id="menu" hidden><input type="search" autocomplete="off" aria-label="Search" data-ta="Search"><ul role="listbox" tabindex="-1"></ul></div>
 <script>
-const META = {"season": "2026-27", "base": "teams/2026-27/", "built": "2026-10-24T01:40:59Z"};
-const TR = {"Compare": "Karşılaştır", "Leaders": "Liderler", "Player": "Oyuncu", "Season": "Sezon", "Standings": "Puan durumu", "Games@page": "Maçlar", "Dark mode": "Koyu mod", "Data unavailable": "Veri yok", "Retry": "Tekrar dene", "This page could not be drawn ({err}).": "Bu sayfa çizilemedi ({err}).", "Data: NBA official box scores and play-by-play. Built {d}.": "Veri: NBA resmi maç istatistikleri ve oyun akışı. Güncelleme {d}.", "Team": "Takım", "First player": "Birinci oyuncu", "Second player": "İkinci oyuncu", "Table": "Tablo", "Game days": "Maç günleri", "Stat": "İstatistik", "Game log": "Maç maç", "Score by period": "Periyotlara göre skor", "No players yet.": "Henüz oyuncu yok.", "No games played yet.": "Henüz maç oynamadı.", "No games on this day.": "Bu gün maç yok.", "No player qualifies yet.": "Henüz barajı geçen oyuncu yok.", "Did not play": "Oynamadı", "Height": "Boy", "Age": "Yaş", "Games": "Maç", "Minutes": "Dakika", "vs": "vs", "W": "G", "L": "M", "Final": "Maç sonu", "OT": "UZ", "Q": "Ç", "Totals": "Toplamlar", "Home": "İç saha", "Away": "Deplasman", "Conferences": "Konferanslar", "East": "Doğu", "West": "Batı", "League": "Lig", "Eastern Conference": "Doğu Konferansı", "Western Conference": "Batı Konferansı", "Points": "Sayı", "Rebounds": "Ribaund", "Assists": "Asist", "Steals": "Top çalma", "Blocks": "Blok", "Turnovers": "Top kaybı", "3-pointers": "Üçlük", "FG%": "FG%", "3P%": "3S%", "FT%": "SA%", "TS%": "GŞ%", "USG%": "KUL%", "RAPM": "RAPM", "O-RAPM": "H-RAPM", "D-RAPM": "S-RAPM", "+/-": "+/-", "PTS@stat": "SAYI", "REB@stat": "RİB", "OREB@stat": "HR", "DREB@stat": "SR", "AST@stat": "AST", "STL@stat": "TÇ", "BLK@stat": "BLK", "TOV@stat": "TK", "PF@stat": "F", "MIN@stat": "DK", "FG@stat": "FG", "3P@stat": "3S", "FT@stat": "SA", "FG%@stat": "FG%", "3P%@stat": "3S%", "FT%@stat": "SA%", "TS%@stat": "GŞ%", "+/-@stat": "+/-", "Date@stat": "Tarih", "Opp@stat": "Rakip", "Result@stat": "Sonuç", "Player@stat": "Oyuncu", "GP@stat": "M", "M-A@stat": "İ-D", "W@stat": "G", "L@stat": "M", "PCT@stat": "YÜZDE", "GB@stat": "FARK", "L10@stat": "SON 10", "STRK@stat": "SERİ", "PPG@stat": "SAYI", "OPP PPG@stat": "YEDİĞİ", "DIFF@stat": "AVERAJ", "T@total": "T", "Standings@tab": "Sıralama", "Every player. Every game.": "Her oyuncu. Her maç.", "Games played": "Oynanan maç", "Games to play": "Kalan maç", "Latest": "Son maç günü", "Tip-off": "Sezon açılışı", "Latest results": "Son sonuçlar", "Up next": "Sıradaki maçlar", "See all": "Tümü", "Search": "Ara", "No matches": "Eşleşme yok", "Previous player": "Önceki oyuncu", "Next player": "Sonraki oyuncu", "Shot chart": "Şut haritası", "Shot charts": "Şut haritaları", "Game": "Maç", "Privacy": "Gizlilik", "NBA Player Lab has no accounts, no ads and no tracking, and sets no cookies. Your theme, language and last player are kept in your own browser only.": "NBA Player Lab'de hesap, reklam ve takip yoktur; çerez de kullanılmaz. Tema, dil ve son baktığınız oyuncu yalnızca kendi tarayıcınızda saklanır.", "The site is hosted on GitHub Pages, which keeps standard server logs. Player pictures and club logos load from NBA's servers (cdn.nba.com), which see your IP address as any website would.": "Site GitHub Pages üzerinde barındırılır ve GitHub olağan sunucu kayıtlarını tutar. Oyuncu fotoğrafları ve kulüp logoları NBA'in sunucularından (cdn.nba.com) yüklenir; bu sunucular, her web sitesinde olduğu gibi IP adresinizi görür.", "Private fantasy league": "Özel fantezi ligi", "With its members' agreement, one private Yahoo Fantasy league can have its own page here. A league member reads it from Yahoo with read-only access, at most a few times a day.": "Üyelerinin onayıyla tek bir özel Yahoo Fantasy liginin burada kendi sayfası olabilir. Lig üyelerinden biri ligi Yahoo'dan yalnızca okuma izniyle, günde en fazla birkaç kez okur.", "The league page is encrypted and opens only with the invite link given to the league's members. It is replaced at least every 24 hours and never kept in the site's code or its history. Yahoo account ids and email addresses are never stored or shown.": "Lig sayfası şifrelidir ve yalnızca lig üyelerine verilen davet bağlantısıyla açılır. En geç 24 saatte bir yenilenir; sitenin kodunda ya da geçmişinde hiç tutulmaz. Yahoo hesap kimlikleri ve e-posta adresleri asla saklanmaz ve gösterilmez.", "Any member can ask for the league page to be removed, and it is taken down with the next update.": "Her üye lig sayfasının kaldırılmasını isteyebilir; sayfa bir sonraki güncellemede kaldırılır.", "Contact": "İletişim", "Questions and removal requests:": "Sorular ve kaldırma talepleri:", "My league": "Ligim", "This week": "Bu hafta", "Roster": "Kadro", "Change team": "Takımı değiştir", "Which team is yours?": "Hangi takım senin?", "Open the invite link from your league to see it here.": "Ligini burada görmek için davet bağlantısını aç.", "Paste the invite link": "Davet bağlantısını yapıştır", "Open": "Aç", "That is not a league invite link.": "Bu bir lig davet bağlantısı değil.", "This invite link does not open the league.": "Bu davet bağlantısı ligi açmıyor.", "League data is unavailable right now. It comes back with the next update.": "Lig verisi şu an yok. Bir sonraki güncellemeyle geri gelir.", "Week {n}": "{n}. hafta", "Last game night": "Son maç gecesi", "No games yet this week.": "Bu hafta henüz maç yok.", "No matchup this week.": "Bu hafta eşleşme yok.", "Left@stat": "KALAN", "3PM@stat": "ÜÇLÜK", "T@tie": "B", "W-L-T@stat": "G-M-B", "All-play@stat": "HERKESE KARŞI", "Luck@stat": "ŞANS", "On {team}": "{team} kadrosunda", "Not on a team in your league": "Liginde hiçbir takımda değil", "Lineups": "Beşliler", "On court": "Sahadayken", "Off court": "Kenardayken", "On − off": "Fark", "ORtg@stat": "HÜC", "DRtg@stat": "SAV", "Net@stat": "NET", "With@stat": "BİRLİKTE", "Lineup@stat": "BEŞLİ", "Game flow": "Maç akışı", "Lead changes": "Liderlik değişimi", "Times tied": "Eşitlik", "Biggest lead": "En büyük fark", "Share": "Paylaş", "{season} season": "{season} sezonu", "1 game": "1 maç", "{n} games": "{n} maç"};
+const META = {"season": "2026-27", "base": "teams/2026-27/", "built": "2026-10-24T13:57:49Z"};
+const TR = {"Compare": "Karşılaştır", "Leaders": "Liderler", "Player": "Oyuncu", "Teams": "Takımlar", "Season": "Sezon", "Standings": "Puan durumu", "Games@page": "Maçlar", "Dark mode": "Koyu mod", "Data unavailable": "Veri yok", "Retry": "Tekrar dene", "This page could not be drawn ({err}).": "Bu sayfa çizilemedi ({err}).", "Data: NBA official box scores and play-by-play. Built {d}.": "Veri: NBA resmi maç istatistikleri ve oyun akışı. Güncelleme {d}.", "Team": "Takım", "First player": "Birinci oyuncu", "Second player": "İkinci oyuncu", "Table": "Tablo", "Game days": "Maç günleri", "Stat": "İstatistik", "Game log": "Maç maç", "Score by period": "Periyotlara göre skor", "No players yet.": "Henüz oyuncu yok.", "No games played yet.": "Henüz maç oynamadı.", "No games on this day.": "Bu gün maç yok.", "No player qualifies yet.": "Henüz barajı geçen oyuncu yok.", "Did not play": "Oynamadı", "Height": "Boy", "Age": "Yaş", "Games": "Maç", "Minutes": "Dakika", "vs": "vs", "W": "G", "L": "M", "Final": "Maç sonu", "OT": "UZ", "Q": "Ç", "Totals": "Toplamlar", "Home": "İç saha", "Away": "Deplasman", "Conferences": "Konferanslar", "East": "Doğu", "West": "Batı", "League": "Lig", "Eastern Conference": "Doğu Konferansı", "Western Conference": "Batı Konferansı", "Points": "Sayı", "Rebounds": "Ribaund", "Assists": "Asist", "Steals": "Top çalma", "Blocks": "Blok", "Turnovers": "Top kaybı", "3-pointers": "Üçlük", "FG%": "FG%", "3P%": "3S%", "FT%": "SA%", "TS%": "GŞ%", "USG%": "KUL%", "RAPM": "RAPM", "O-RAPM": "H-RAPM", "D-RAPM": "S-RAPM", "+/-": "+/-", "PTS@stat": "SAYI", "REB@stat": "RİB", "OREB@stat": "HR", "DREB@stat": "SR", "AST@stat": "AST", "STL@stat": "TÇ", "BLK@stat": "BLK", "TOV@stat": "TK", "PF@stat": "F", "MIN@stat": "DK", "FG@stat": "FG", "3P@stat": "3S", "FT@stat": "SA", "FG%@stat": "FG%", "3P%@stat": "3S%", "FT%@stat": "SA%", "TS%@stat": "GŞ%", "+/-@stat": "+/-", "Date@stat": "Tarih", "Opp@stat": "Rakip", "Result@stat": "Sonuç", "Player@stat": "Oyuncu", "GP@stat": "M", "M-A@stat": "İ-D", "W@stat": "G", "L@stat": "M", "PCT@stat": "YÜZDE", "GB@stat": "FARK", "L10@stat": "SON 10", "STRK@stat": "SERİ", "PPG@stat": "SAYI", "OPP PPG@stat": "YEDİĞİ", "DIFF@stat": "AVERAJ", "T@total": "T", "Standings@tab": "Sıralama", "Every player. Every game.": "Her oyuncu. Her maç.", "Games played": "Oynanan maç", "Games to play": "Kalan maç", "Latest": "Son maç günü", "Tip-off": "Sezon açılışı", "Latest results": "Son sonuçlar", "Up next": "Sıradaki maçlar", "See all": "Tümü", "Search": "Ara", "No matches": "Eşleşme yok", "Previous player": "Önceki oyuncu", "Next player": "Sonraki oyuncu", "Shot chart": "Şut haritası", "Shot charts": "Şut haritaları", "Game": "Maç", "Privacy": "Gizlilik", "NBA Player Lab has no accounts, no ads and no tracking, and sets no cookies. Your theme, language and last player are kept in your own browser only.": "NBA Player Lab'de hesap, reklam ve takip yoktur; çerez de kullanılmaz. Tema, dil ve son baktığınız oyuncu yalnızca kendi tarayıcınızda saklanır.", "The site is hosted on GitHub Pages, which keeps standard server logs. Player pictures and club logos load from NBA's servers (cdn.nba.com), which see your IP address as any website would.": "Site GitHub Pages üzerinde barındırılır ve GitHub olağan sunucu kayıtlarını tutar. Oyuncu fotoğrafları ve kulüp logoları NBA'in sunucularından (cdn.nba.com) yüklenir; bu sunucular, her web sitesinde olduğu gibi IP adresinizi görür.", "Private fantasy league": "Özel fantezi ligi", "With its members' agreement, one private Yahoo Fantasy league can have its own page here. A league member reads it from Yahoo with read-only access, at most a few times a day.": "Üyelerinin onayıyla tek bir özel Yahoo Fantasy liginin burada kendi sayfası olabilir. Lig üyelerinden biri ligi Yahoo'dan yalnızca okuma izniyle, günde en fazla birkaç kez okur.", "The league page is encrypted and opens only with the invite link given to the league's members. It is replaced at least every 24 hours and never kept in the site's code or its history. Yahoo account ids and email addresses are never stored or shown.": "Lig sayfası şifrelidir ve yalnızca lig üyelerine verilen davet bağlantısıyla açılır. En geç 24 saatte bir yenilenir; sitenin kodunda ya da geçmişinde hiç tutulmaz. Yahoo hesap kimlikleri ve e-posta adresleri asla saklanmaz ve gösterilmez.", "Any member can ask for the league page to be removed, and it is taken down with the next update.": "Her üye lig sayfasının kaldırılmasını isteyebilir; sayfa bir sonraki güncellemede kaldırılır.", "Contact": "İletişim", "Questions and removal requests:": "Sorular ve kaldırma talepleri:", "My league": "Ligim", "This week": "Bu hafta", "Roster": "Kadro", "Change team": "Takımı değiştir", "Which team is yours?": "Hangi takım senin?", "Open the invite link from your league to see it here.": "Ligini burada görmek için davet bağlantısını aç.", "Paste the invite link": "Davet bağlantısını yapıştır", "Open": "Aç", "That is not a league invite link.": "Bu bir lig davet bağlantısı değil.", "This invite link does not open the league.": "Bu davet bağlantısı ligi açmıyor.", "League data is unavailable right now. It comes back with the next update.": "Lig verisi şu an yok. Bir sonraki güncellemeyle geri gelir.", "Week {n}": "{n}. hafta", "Last game night": "Son maç gecesi", "No games yet this week.": "Bu hafta henüz maç yok.", "No matchup this week.": "Bu hafta eşleşme yok.", "Left@stat": "KALAN", "3PM@stat": "ÜÇLÜK", "T@tie": "B", "W-L-T@stat": "G-M-B", "All-play@stat": "HERKESE KARŞI", "Luck@stat": "ŞANS", "On {team}": "{team} kadrosunda", "Not on a team in your league": "Liginde hiçbir takımda değil", "Lineups": "Beşliler", "On court": "Sahadayken", "Off court": "Kenardayken", "On − off": "Fark", "ORtg@stat": "HÜC", "DRtg@stat": "SAV", "Net@stat": "NET", "With@stat": "BİRLİKTE", "Lineup@stat": "BEŞLİ", "Game flow": "Maç akışı", "Lead changes": "Liderlik değişimi", "Times tied": "Eşitlik", "Biggest lead": "En büyük fark", "Share": "Paylaş", "{season} season": "{season} sezonu", "1 game": "1 maç", "{n} games": "{n} maç", "Ratings": "Reytingler", "Four Factors": "Dört Faktör", "Offense": "Hücum", "Defense": "Savunma", "Pace@stat": "TEMPO", "eFG%@stat": "EFG%", "TOV%@stat": "TK%", "ORB%@stat": "HR%", "FT/FGA@stat": "SA/FG"};
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 let LANG = 'en';
@@ -533,8 +546,15 @@ const get = path => cache[path] || (cache[path] = fetch(`${META.base}${path}${ID
 let IDX = null, TEAMS = {};
 const team = code => TEAMS[code];
 const tname = code => team(code) ? `${team(code).city} ${team(code).name}` : code;
-const colours = code => team(code) ? `--c1:${team(code).colors[0]};--c2:${team(code).colors[1]}` : '';
-const tc = code => team(code) ? `--tc:${team(code).colors[0]}` : '';
+// a club's two print inks: its first colour sunk until it reads as text on paper (--ap) or lifted for the dark sheet (--an),
+// and its second colour for fills (--b), its first instead when the second is near white, a grey for a black-and-white club
+const lum = hex => { const f = x => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }; const [r, g, b] = [1, 3, 5].map(i => f(parseInt(hex.slice(i, i + 2), 16))); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+const mixHex = (h, k, f) => '#' + [1, 3, 5].map(i => Math.round(parseInt(h.slice(i, i + 2), 16) * (1 - f) + parseInt(k.slice(i, i + 2), 16) * f).toString(16).padStart(2, '0')).join('');
+const toward = (h, k, ok) => { let f = 0, x = h; while (!ok(x) && f < 1) { f += 0.05; x = mixHex(h, k, f); } return x; };
+const inks = ([c1, c2]) => { const b = lum(c2) <= 0.7 ? c2 : lum(c1) < 0.03 ? '#b8b8b8' : c1;
+  return `--ap:${toward(c1, '#000000', x => lum(x) <= 0.18)};--an:${toward(c1, '#ffffff', x => lum(x) >= 0.2)};--b:${b};--on2:${light(b) ? '#1a1a1a' : '#f3efe4'}`; };
+const colours = code => team(code) ? `--c1:${team(code).colors[0]};--c2:${team(code).colors[1]};${inks(team(code).colors)}` : '';
+const tc = code => team(code) ? `--tc:${team(code).colors[0]};${inks(team(code).colors)}` : '';
 
 // ---- the remembered player for the Player tab
 let LAST = '';
@@ -551,6 +571,7 @@ async function route() {
   const page = a === '' ? 'home' : a === 'game' ? 'game' : PAGES.includes(a) && a !== 'player' ? a : 'player';
   $('#wipe').classList.add('on');
   $('#fail').hidden = true;
+  if (page !== 'player') document.body.removeAttribute('style');
   try {
     if (page === 'home') await renderHome(my);
     else if (page === 'compare') await renderCompare(b, c, my);
@@ -586,7 +607,7 @@ const stale = my => my !== seq;
 // ---- Shot charts: a half court dressed like a sportypy court, the apron in the club's first colour and the paint in its
 // second, with every field-goal attempt of the play-by-play at its spot (shots.py: tenths of a foot from the rim, x to the
 // shooter's right, y away from the baseline); a make is a dot, a miss a cross. The rim is at the bottom, as the shooter sees it.
-const FLOOR = '#e8e0d7';
+const FLOOR = '#f3efe4';
 const light = hex => { const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)); return 299 * r + 587 * g + 114 * b > 150000; };
 function court(code, shots) {
   const [c1, c2] = team(code) ? team(code).colors : ['#333333', '#999999'];
@@ -669,6 +690,10 @@ async function renderPlayer(code, pid, my) {
   const T = team(code);
   const hero = $('#hero');
   hero.setAttribute('style', colours(code));
+  document.body.setAttribute('style', colours(code));     // the whole page prints in the club's inks
+  const strip = $('#teams');
+  if (!strip.childElementCount) strip.innerHTML = [...IDX.teams].sort((x, y) => x.code.localeCompare(y.code)).map(T => `<a href="#${esc(T.code)}" data-code="${esc(T.code)}" aria-label="${esc(tname(T.code))}" title="${esc(tname(T.code))}">${logo(T.code, 'mark')}</a>`).join('');
+  strip.querySelectorAll('a').forEach(a => { if (a.dataset.code === code) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
   SHARE.player = null;
   if (!p) {
     hero.innerHTML = `<div class="badge">${logo(code, 'crest')}</div><div class="who"><div class="tag">${logo(code, 'mark')}${EN(tname(code))}</div><h1>${EN(T.name)}</h1></div>`;
@@ -764,7 +789,7 @@ $('#cmp-b').addEventListener('change', () => { location.hash = `compare/${$('#cm
 async function renderStandings(view, my) {
   const G = (await get('games.json')).games;
   if (stale(my)) return;
-  view = ['east', 'west', 'league'].includes(view) ? view : 'conf';
+  view = ['east', 'west', 'league', 'ratings', 'factors'].includes(view) ? view : 'conf';
   const R = Object.fromEntries(IDX.teams.map(T => [T.code, {code: T.code, conf: T.conf, w: 0, l: 0, pf: 0, pa: 0, hw: 0, hl: 0, aw: 0, al: 0, seq: []}]));
   for (const g of G) {
     if (g.hs == null) continue;
@@ -789,11 +814,65 @@ async function renderStandings(view, my) {
     }).join('')}</tbody></table></div></section>`;
   };
   const all = Object.values(R).sort(order);
-  const views = [['conf', 'Conferences'], ['east', 'East'], ['west', 'West'], ['league', 'League']];
+  const views = [['conf', 'Conferences'], ['east', 'East'], ['west', 'West'], ['league', 'League'], ['ratings', 'Ratings'], ['factors', 'Four Factors']];
   $('#st-tabs').innerHTML = views.map(([k, l]) => `<a href="#standings/${k}" aria-current="${k === view}">${t(l)}</a>`).join('');
+  if (view === 'ratings' || view === 'factors') {
+    const rt = await get('ratings.json');
+    if (stale(my)) return;
+    $('#st-body').innerHTML = teamRatings(view, rt.teams, all);
+    return;
+  }
   const east = all.filter(r => r.conf === 'E'), west = all.filter(r => r.conf === 'W');
   $('#st-body').innerHTML = view === 'league' ? table('', all) : view === 'east' ? table(t('Eastern Conference'), east) : view === 'west' ? table(t('Western Conference'), west) : table(t('Eastern Conference'), east) + table(t('Western Conference'), west);
 }
+
+// ---- Ratings and the Four Factors, from each club's box-score totals and its opponents' (ratings.json). Possessions
+// are FGA − OREB + TOV + 0.44 FTA, as in the lineups (so 100 × possessions is an integer); every value is rounded once
+// by rq, net is the difference of the shown tenths, and a rank (1 the best of 30) is the place of the shown value, ties
+// sharing it. The default order is net rating, then the standings
+const P100 = x => 100 * (x.fga - x.oreb + x.tov) + 44 * x.fta;
+const RT_COLS = {
+  ratings: [['ortg', 'ORtg', 1], ['drtg', 'DRtg', -1], ['net', 'Net', 1], ['pace', 'Pace', 1]],
+  factors: [['efg', 'eFG%', 1], ['tov', 'TOV%', -1], ['orb', 'ORB%', 1], ['ftr', 'FT/FGA', 1], ['oefg', 'eFG%', -1], ['otov', 'TOV%', 1], ['oorb', 'ORB%', -1], ['oftr', 'FT/FGA', -1]],
+};
+const ff = (x, o) => ({efg: x.fga ? rq(100 * (2 * x.fgm + x.fg3m), 2 * x.fga) : null, tov: x.fga + x.tov + x.fta ? rq(10000 * x.tov, 100 * (x.fga + x.tov) + 44 * x.fta) : null,
+  orb: x.oreb + o.dreb ? rq(100 * x.oreb, x.oreb + o.dreb) : null, ftr: x.fga ? rq(x.ftm, x.fga, 3) : null});
+const teamVals = c => {
+  const f = c.for, a = c.against, po = P100(f), pd = P100(a), ortg = po >= 100 ? rq(10000 * f.pts, po) : null, drtg = pd >= 100 ? rq(10000 * a.pts, pd) : null;
+  const o = ff(f, a), d = ff(a, f);
+  return {ortg, drtg, net: ortg != null && drtg != null ? ortg - drtg : null, pace: c.sec ? rq(72 * (po + pd), c.sec) : null,
+    ...o, ...Object.fromEntries(Object.entries(d).map(([k, v]) => ['o' + k, v]))};
+};
+function teamRatings(view, clubs, standing) {
+  const cols = RT_COLS[view], place = Object.fromEntries(standing.map((r, i) => [r.code, i]));
+  const rows = clubs.map(c => ({code: c.code, v: teamVals(c)}));
+  const rank = {};
+  for (const [k, , dir] of cols) {
+    const shown = rows.map(r => r.v[k]).filter(v => v != null);
+    rank[k] = v => v == null ? null : 1 + shown.filter(x => dir * (x - v) > 0).length;
+  }
+  rows.sort((x, y) => (+(x.v.net == null) - +(y.v.net == null)) || (y.v.net - x.v.net) || (place[x.code] - place[y.code]));
+  const show = (k, q) => q == null ? '–' : k === 'net' ? N(signed(fq(q))) : /ftr$/.test(k) ? N(fq(q, 3).replace(/^0/, '')) : N(fq(q));
+  const cell = (k, v) => { const r = rank[k](v); return `<td data-k="${k}"${r ? ` data-r="${r}"` : ''}${k === 'net' && v ? ` class="${v > 0 ? 'w' : 'lo'}"` : ''}><span class="v">${show(k, v)}</span><small class="rk">${r || ''}</small></td>`; };
+  const th = ([k, l]) => `<th data-sort="${k}"><button type="button" class="sort">${t(l + '@stat')}</button></th>`;
+  const team = `<th class="l" data-sort=""${view === 'factors' ? ' rowspan="2"' : ''}><button type="button" class="sort">${t('Team')}</button></th>`;
+  const head = view === 'factors'
+    ? `<tr>${team}<th class="grp" colspan="4">${t('Offense')}</th><th class="grp" colspan="4">${t('Defense')}</th></tr><tr>${cols.map(th).join('')}</tr>`
+    : `<tr>${team}${cols.map(th).join('')}</tr>`;
+  return `<section class="panel"><div class="scroll"><table class="tbl rt" id="st-${view}"><thead>${head}</thead><tbody>${rows.map((r, i) => `<tr data-team="${r.code}" data-i="${i}"><td class="l"><a href="#${r.code}">${logo(r.code)}<span class="full">${EN(tname(r.code))}</span><span class="abbr">${esc(r.code)}</span></a></td>${cols.map(([k]) => cell(k, r.v[k])).join('')}</tr>`).join('')}</tbody></table></div></section>`;
+}
+// a heading puts the clubs in its rank order, the best first (no value last); the same heading again, or Team, brings
+// the default order back
+$('#st-body').addEventListener('click', e => {
+  const th = e.target.closest('th[data-sort]');
+  if (!th) return;
+  const tb = th.closest('table'), k = th.getAttribute('aria-sort') ? '' : th.dataset.sort;
+  tb.querySelectorAll('th[aria-sort]').forEach(x => x.removeAttribute('aria-sort'));
+  if (k) th.setAttribute('aria-sort', 'ascending');
+  const body = tb.tBodies[0], rows = [...body.rows], r = tr => { const c = tr.querySelector(`td[data-k="${k}"]`); return c && c.dataset.r ? +c.dataset.r : Infinity; };
+  rows.sort((a, b) => (k ? r(a) - r(b) : 0) || (a.dataset.i - b.dataset.i));
+  body.append(...rows);
+});
 
 // ---- Games: one day at a time, the latest day with a final unless a date is asked for
 async function renderGames(date, my) {
