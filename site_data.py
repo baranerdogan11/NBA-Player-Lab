@@ -60,13 +60,15 @@ def period_start(p):
 
 def game_flow(events):
     """events: (period, clock, score_home, score_away) in play-by-play order, clock in seconds left in the period.
-    The game's flow: [[ds, home, away], ...], one point per change of score."""
+    The game's flow: [[ds, home, away], ...], one point per change of score, in game time (a free throw logged after
+    the buzzer goes back to its clock)."""
+    timed = sorted(((period_start(p + 1) - round(10 * clock), h, a) for p, clock, h, a in events
+                    if h is not None and a is not None and clock is not None), key=lambda e: e[0])
     out, last = [], (0, 0)
-    for p, clock, h, a in events:
-        if h is None or a is None or clock is None or (h, a) == last:
-            continue
-        out.append([period_start(p + 1) - round(10 * clock), h, a])
-        last = (h, a)
+    for ds, h, a in timed:
+        if (h, a) != last:
+            out.append([ds, h, a])
+            last = (h, a)
     return out
 
 
