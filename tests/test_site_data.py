@@ -16,7 +16,7 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "tests", "fixtures"))
 import site_fixture  # noqa: E402
 from rounding import rnd  # noqa: E402
-from site_data import RT, STATS, check_ratings, write_lineups, write_ratings, write_site  # noqa: E402
+from site_data import RT, STATS, check_ratings, game_score, write_lineups, write_ratings, write_site  # noqa: E402
 
 checks = {}
 out = tempfile.mkdtemp()
@@ -78,6 +78,13 @@ checks["the ratings gate passes when the lineups add up to the box scores"] = ga
 units[0]["tov"] += 1   # a turnover the box score does not have
 write_lineups(out, teams, units)
 checks["the ratings gate fails when a club's lineups do not"] = not gate()
+night, last = load("night.json"), finals[-1]["date"]
+best = sorted(((game_score(x), x["name"], x["pid"], b["gid"]) for b in boxes.values() if b["date"] == last
+               for side in b["box"].values() for x in side if x["sec"] > 0), key=lambda r: (-r[0], r[1], r[2]))[:5]
+checks["the night's best are the latest night's top five Game Scores, from its box scores"] = (
+    night["date"] == last and [(r["gs"], r["name"], r["pid"], r["gid"]) for r in night["rows"]] == best)
+checks["Game Score is Hollinger's, in tenths"] = game_score(
+    {"pts": 30, "fgm": 11, "fga": 20, "fta": 8, "ftm": 6, "oreb": 2, "dreb": 8, "stl": 2, "ast": 7, "blk": 1, "pf": 3, "tov": 4}) == 258
 
 for name, passed in checks.items():
     print(("PASS " if passed else "FAIL ") + name)

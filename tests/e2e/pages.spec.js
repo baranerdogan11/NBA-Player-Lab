@@ -112,6 +112,31 @@ test.describe('opening page', () => {
     await page.waitForFunction(() => document.body.dataset.page === 'home');
     expect(problems, 'the page reported errors').toEqual([]);
   });
+  test("the night's best are its box scores' top Game Scores, and open the player at that game", async ({page}) => {
+    const problems = await prepare(page);
+    await page.goto('./');
+    await settled(page);
+    const rows = await page.evaluate(() => [...document.querySelectorAll('#hm-best a')].map(a => ({pid: a.dataset.pid, gid: a.dataset.gid, href: a.getAttribute('href'),
+      gs: a.querySelector('.v').firstChild.textContent, line: a.querySelector('.nm small').textContent})));
+    expect(rows.length).toBe(5);
+    // every line of the night's games, scored from its box score in tenths
+    const all = await page.evaluate(async gids => {
+      const out = [];
+      for (const gid of gids) {
+        const g = await fetch(`${META.base}games/${gid}.json`).then(r => r.json());
+        for (const side of Object.values(g.box)) for (const x of side) if (x.sec > 0) out.push({pid: x.pid, gid, name: x.name, line: `${x.pts} PTS · ${x.reb} REB · ${x.ast} AST · ${x.fgm}-${x.fga} FG`,
+          gs: 10 * x.pts + 4 * x.fgm - 7 * x.fga - 4 * (x.fta - x.ftm) + 7 * x.oreb + 3 * x.dreb + 10 * x.stl + 7 * x.ast + 7 * x.blk - 4 * x.pf - 10 * x.tov});
+      }
+      return out;
+    }, await page.evaluate(() => [...document.querySelectorAll('#hm-games a.card')].map(a => a.dataset.gid)));
+    const top = all.sort((x, y) => y.gs - x.gs || x.name.localeCompare(y.name) || x.pid.localeCompare(y.pid)).slice(0, 5);
+    expect(rows.map(r => [r.pid, r.gid, r.gs, r.line])).toEqual(top.map(x => [x.pid, x.gid, (x.gs / 10).toFixed(1), x.line]));
+    await page.click('#hm-best a:first-child');
+    await page.waitForFunction(p => document.body.dataset.page === 'player' && document.querySelector('#player').value === p, rows[0].pid);
+    expect(await page.evaluate(() => document.querySelector('#sc-game').value)).toBe(rows[0].gid);
+    expect(await page.textContent('#sc .sel')).toContain(await page.evaluate(() => document.querySelector('#sc-game').selectedOptions[0].textContent));
+    expect(problems, 'the page reported errors').toEqual([]);
+  });
   for (const lang of ['en', 'tr']) {
     test(`before the first final it shows the first night to come, each card opening its preview, and empty boards (${lang})`, async ({page}) => {
       const problems = await prepare(page, {lang});
