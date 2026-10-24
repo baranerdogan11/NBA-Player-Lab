@@ -20,6 +20,8 @@ Files under <out>/ (out is teams/<season>/):
                     {"teams": [{"code", "gp", "sec", "for": {RT keys}, "against": {RT keys}}, ...]}, sec the club's
                     seconds (five players' worth, 14400 a regulation game), tov with the team turnovers; the page
                     derives ratings, pace and the Four Factors with rdiv
+  night.json        the latest night with a final: {"date", "rows": [{gid, pid, name, team, gs, pts, reb, ast, fgm, fga},
+                    ...]}, its five best lines by Hollinger's Game Score, gs in tenths (game_score()), best first
   leaders.json      every player's season totals, under his current club, his clubs' totals over the same games
                     (tm_fga, tm_fta, tm_tov, tm_sec, for usage) and his RAPM, O-RAPM and D-RAPM (null without one)
 
@@ -84,6 +86,13 @@ def check_flow(g):
         raise ValueError(f"game {g['gid']}: play-by-play ends at {f[-1][1:] if f else [0, 0]}, final is {[g['hs'], g['as']]}")
 
 
+def game_score(x):
+    """Hollinger's Game Score in tenths, an integer: PTS + 0.4 FG - 0.7 FGA - 0.4 (FTA - FT) + 0.7 ORB + 0.3 DRB + STL
+    + 0.7 AST + 0.7 BLK - 0.4 PF - TOV, times ten."""
+    return (10 * x["pts"] + 4 * x["fgm"] - 7 * x["fga"] - 4 * (x["fta"] - x["ftm"]) + 7 * x["oreb"] + 3 * x["dreb"]
+            + 10 * x["stl"] + 7 * x["ast"] + 7 * x["blk"] - 4 * x["pf"] - 10 * x["tov"])
+
+
 def write_site(out, season, label, built, teams, players, games, lines):
     """teams: load_teams() rows. players: pid, team (current), name, jersey, pos, height, born, and optionally
     o_rapm, d_rapm (unrounded, from rapm.py).
@@ -146,6 +155,11 @@ def write_site(out, season, label, built, teams, players, games, lines):
     for t in teams:
         _dump(os.path.join(out, f"{t['code']}.json"), {"code": t["code"], "players": roster.get(t["code"], [])})
     _dump(os.path.join(out, "leaders.json"), {"players": leaders})
+    last = max(final.values(), key=lambda g: (g["time"], g["gid"]))["date"] if final else None
+    night = sorted(({"gid": r["gid"], "pid": r["pid"], "name": r["name"], "team": r["team"], "gs": game_score(_line(r)),
+                     **{k: int(r[k]) for k in ("pts", "reb", "ast", "fgm", "fga")}}
+                    for r in lines if final[r["gid"]]["date"] == last and int(r["sec"]) > 0), key=lambda x: (-x["gs"], x["name"], x["pid"]))
+    _dump(os.path.join(out, "night.json"), {"date": last, "rows": night[:5]})
 
 
 LU_COUNTS = ("fga", "oreb", "tov", "fta")

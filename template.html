@@ -302,6 +302,9 @@ html[data-theme="dark"] .intro{--A:#0078b4}
 .list .chip{margin-right:0;width:24px;height:24px}
 .list .face{width:34px;height:34px;font-size:12px}
 .list .v{font:900 20px/1 var(--sans);letter-spacing:-.03em}
+.list .v small{display:block;margin-top:3px;font:italic 400 12px/1 var(--serif);letter-spacing:0;text-align:right;color:var(--ink2)}
+.best .chip{flex:none}
+.best .nm small{white-space:normal}
 .list a:first-child{background:color-mix(in srgb,var(--riso-yellow) 60%,transparent)}
 .list a:first-child .v{font-size:26px}
 
@@ -425,6 +428,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <div class="hero intro" id="hm-intro"></div>
     <h2 class="sec-h on-floor" id="hm-games-h"></h2>
     <div class="cards" id="hm-games"></div>
+    <div id="hm-best-sec" hidden><h2 class="sec-h on-floor"><span data-t="Best performances">Best performances</span></h2><div class="list best" id="hm-best"></div></div>
     <h2 class="sec-h on-floor"><span data-t="Leaders">Leaders</span><a class="more" href="#leaders" data-t="See all">See all</a></h2>
     <div class="trio" id="hm-leaders"></div>
   </section>
@@ -558,7 +562,7 @@ let LAST = '';
 try { LAST = localStorage.getItem('pl-last') || ''; } catch (e) {}
 const remember = h => { LAST = h; try { localStorage.setItem('pl-last', h); } catch (e) {} $('#tb-player').href = $('#rl-player').href = `#${h}`; };
 
-// ---- routing: the opening page on no hash (or #home), #player (the remembered player), #CODE[/pid], #compare[/a/b], #standings[/east|west|league], #games[/date], #game/gid, #leaders[/stat], #privacy,
+// ---- routing: the opening page on no hash (or #home), #player (the remembered player), #CODE[/pid[/gid]] (gid: his shot chart at that game), #compare[/a/b], #standings[/east|west|league], #games[/date], #game/gid, #leaders[/stat], #privacy,
 // #league[/roster|board|pick|team/<t>] (and the invite link #league/<id>/<key>)
 const PAGES = ['home', 'player', 'compare', 'standings', 'games', 'game', 'leaders', 'privacy', 'league'];
 let seq = 0;
@@ -579,9 +583,9 @@ async function route() {
     else if (page === 'privacy') document.title = `${t('Privacy')} · NBA Player Lab`;
     else if (page === 'league') await renderLeague(b, c, my);
     else {
-      let [code, pid] = team(a) ? [a, b] : LAST.split('/');
+      let [code, pid, gid] = team(a) ? [a, b, c] : LAST.split('/');
       if (!team(code)) code = IDX.teams[0].code;
-      await renderPlayer(code, pid, my);
+      await renderPlayer(code, pid, my, gid);
     }
     if (my !== seq) return;
     for (const p of PAGES) $(`#pg-${p}`).hidden = p !== page;
@@ -673,7 +677,7 @@ async function drawLineups(p, code, clubs, my) {
 }
 
 // ---- Player
-async function renderPlayer(code, pid, my) {
+async function renderPlayer(code, pid, my, gid) {
   const data = await get(`${code}.json`);
   if (stale(my)) return;
   const jersey = p => p.jersey && /^\d+$/.test(p.jersey) ? [Number(p.jersey), p.jersey.length] : [Infinity, 0];
@@ -729,7 +733,8 @@ async function renderPlayer(code, pid, my) {
   const [files] = await Promise.all([Promise.all(clubs.map(c => get(`shots/${c}.json`).catch(() => null))), drawLineups(p, code, clubs, my)]);
   if (stale(my)) return;
   SC = {pid: p.pid, code, shots: files.flatMap(f => f && f.players[p.pid] ? f.players[p.pid].map(s => [f.games[s[0]], s[1], s[2], s[3]]) : []), club: Object.fromEntries(played.map(x => [x.gid, x.team]))};
-  $('#sc-game').innerHTML = `<option value="" data-c="${esc(code)}" selected>${t('Season')}</option>${played.map(x => `<option value="${esc(x.gid)}" data-c="${esc(x.opp)}">${fmtDate(x.date)} ${x.home ? t('vs') : '@'} ${esc(x.opp)}</option>`).join('')}`;
+  const at = played.some(x => x.gid === gid) ? gid : '';
+  $('#sc-game').innerHTML = `<option value="" data-c="${esc(code)}"${at ? '' : ' selected'}>${t('Season')}</option>${played.map(x => `<option value="${esc(x.gid)}" data-c="${esc(x.opp)}"${x.gid === at ? ' selected' : ''}>${fmtDate(x.date)} ${x.home ? t('vs') : '@'} ${esc(x.opp)}</option>`).join('')}`;
   $('#sc').hidden = false;
   drawShots();
   setTimeout(() => prime('player'));
@@ -1204,10 +1209,10 @@ async function renderLeaders(stat, my) {
   ).join('') : `<tr><td class="empty l" colspan="6">${t('No player qualifies yet.')}</td></tr>`}</tbody>`;
 }
 
-// ---- Home: the season so far, the latest night with a final (or the first night to come) and the top five on three
-// boards; every value is drawn by the same code as its own page
+// ---- Home: the season so far, the latest night with a final (or the first night to come), that night's five best
+// lines by Game Score (night.json, in tenths) and the top five on three boards; every value is drawn by the same code as its own page
 async function renderHome(my) {
-  const [G, L] = await Promise.all([get('games.json').then(d => d.games), get('leaders.json').then(d => d.players)]);
+  const [G, L, B] = await Promise.all([get('games.json').then(d => d.games), get('leaders.json').then(d => d.players), get('night.json').catch(() => null)]);
   if (stale(my)) return;
   const played = G.filter(g => g.hs != null), last = played.length ? played[played.length - 1].date : null;
   const day = last || (G.find(g => g.hs == null) || {}).date;
@@ -1215,6 +1220,13 @@ async function renderHome(my) {
   $('#hm-games-h').innerHTML = `<span>${t(last ? 'Latest results' : 'Up next')}</span>${day ? `<a class="more" href="#games/${day}">${t('See all')}</a>` : ''}`;
   const today = G.filter(g => g.date === day);
   $('#hm-games').innerHTML = today.length ? today.map(gameCard).join('') : `<p class="empty">${t('No games on this day.')}</p>`;
+  const best = B && last && B.date === last ? B.rows : [];
+  let rank = 0;
+  $('#hm-best').innerHTML = best.map((x, i) => {
+    if (!i || x.gs !== best[i - 1].gs) rank = i + 1;
+    return `<a href="#${esc(x.team)}/${esc(x.pid)}/${esc(x.gid)}" data-pid="${esc(x.pid)}" data-gid="${esc(x.gid)}"><span class="rk">${rank}</span>${face(x.pid, x.name)}<span class="nm">${EN(x.name)}<small>${x.pts} ${t('PTS@stat')} · ${x.reb} ${t('REB@stat')} · ${x.ast} ${t('AST@stat')} · ${x.fgm}-${x.fga} ${t('FG@stat')}</small></span>${logo(x.team)}<b class="v">${N(rdiv(x.gs, 10))}<small>${t('GmSc@stat')}</small></b></a>`;
+  }).join('');
+  $('#hm-best-sec').hidden = !best.length;
   $('#hm-leaders').innerHTML = ['pts', 'reb', 'ast'].map(stat => {
     const rows = board(L, stat).slice(0, 5);
     return `<section class="panel" data-stat="${stat}"><h2>${t(LEAD[stat][0])}</h2><div class="list">${rows.length ? rows.map(({p, v, rank}) =>
