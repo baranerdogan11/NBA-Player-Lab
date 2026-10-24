@@ -283,6 +283,39 @@ html[data-theme="dark"] .flow svg path[data-team]{filter:brightness(1.7) saturat
 html[data-theme="dark"] .fl-sum [data-team]{--A:color-mix(in srgb,var(--tc) 55%,#fff)}
 @media (max-width:760px){.fl-sum{grid-template-columns:repeat(2,minmax(0,1fr))}.fl-sum .tile:nth-child(2n){border-right:0}}
 
+/* a game to come: the tip-off in the reader's time on the scoreboard, each club's form and rest, and both clubs' ratings
+   face to face, a solid bar in the club's ink as long as its rank is good (rank 1 fills it) */
+.board .score.tip span{color:var(--ink);text-shadow:none;font-size:clamp(48px,7vw,96px)}
+.pv-form{display:grid;grid-template-columns:1fr 1fr;margin-top:6px}
+.pv-form>div{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:6px 14px 4px 0;min-width:0}
+.pv-form>div+div{align-items:flex-end;padding:6px 0 4px 14px;border-left:2px solid var(--ink);text-align:right}
+.pv-form>div+div .nm{flex-direction:row-reverse}
+.pv-form>div+div .nm .chip{margin:0 0 0 8px}
+#pv-meet>.empty{padding-top:0}
+.pv-form .nm{display:flex;align-items:center;font:900 13px/1.1 var(--sans);text-transform:uppercase;letter-spacing:.06em;min-width:0}
+.pv-form .rec{font:900 34px/1 var(--sans);letter-spacing:-.03em;color:var(--A)}
+.pv-form .form{margin:0}
+.pv-form .form b{width:12px;height:12px}
+.pv-form .rest{padding:4px 8px;border:2px solid var(--ink);font:900 10.5px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase}
+.pv-form .rest.b2b{background:var(--ink);color:var(--paper)}
+.tape{display:grid;grid-template-columns:auto minmax(0,1fr) 7.5em minmax(0,1fr) auto;align-items:center;column-gap:10px;margin-top:6px}
+.tape>div{display:contents}
+.tape>div>*{padding:7px 0;border-bottom:1px solid var(--line)}
+.tape>div:last-child>*{border-bottom:0}
+.tape .hd>*{padding:4px 0 8px;border-bottom:0;font:900 10.5px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase}
+.tape .hd .chip{width:18px;height:18px;vertical-align:-4px;margin-right:6px}
+.tape .hd>:last-child .chip{margin:0 0 0 6px}
+.tape .grp>*{padding:12px 0 4px;border-bottom:0;font:900 10.5px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;text-align:center}
+.tape .v{font:900 17px/1 var(--sans);white-space:nowrap}
+.tape .v:last-child{text-align:right}
+.tape .v .rk{display:inline-block;min-width:2.4ch;margin:0 4px;font:italic 400 12px/1 var(--serif);color:var(--muted)}
+.tape .v:first-child .rk{margin-left:4px}
+.tape .lb{text-align:center;font:900 10.5px/1.1 var(--sans);letter-spacing:.12em;text-transform:uppercase}
+.tape .bar{display:flex;height:100%;align-items:center}
+.tape .bar.a{justify-content:flex-end}
+.tape .bar i{display:block;height:14px;background:var(--A);mix-blend-mode:var(--blend);transition:width .5s var(--spring)}
+@media (max-width:760px){.tape{grid-template-columns:auto minmax(0,1fr) 5.2em minmax(0,1fr) auto;column-gap:6px}.tape .v{font-size:14px}.tape .lb{font-size:9.5px;letter-spacing:.06em}.tape .hd .nm{display:none}.pv-form .rec{font-size:26px}}
+
 /* the opening page: the house poster in yellow and blue, then the latest night's tickets and three leader lists */
 .intro{min-height:250px;--A:var(--riso-blue);--B:var(--riso-yellow)}
 html[data-theme="dark"] .intro{--A:#0078b4}
@@ -453,11 +486,19 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
   </section>
   <section class="pg" id="pg-game" hidden>
     <div class="board" id="gm-board"></div>
+    <div id="gm-pre" hidden>
+    <section class="panel"><h2 data-t="Form">Form</h2><div class="pv-form" id="pv-form"></div></section>
+    <section class="panel"><h2 data-t="Ratings">Ratings</h2><div class="tape" id="pv-rt"></div></section>
+    <section class="panel"><h2 data-t="Four Factors">Four Factors</h2><div class="tape" id="pv-ff"></div></section>
+    <section class="panel"><h2 data-t="Season series">Season series</h2><div class="cards" id="pv-meet"></div></section>
+    </div>
+    <div id="gm-final">
     <section class="panel" id="gm-flow-sec" hidden><h2 data-t="Game flow">Game flow</h2><div class="flow" id="gm-flow" tabindex="0"></div><div class="fl-q" id="gm-flow-q"></div><div class="tiles fl-sum" id="gm-flow-sum"></div></section>
     <section class="panel"><h2 data-t="Score by period">Score by period</h2><div class="scroll"><table class="tbl" id="gm-periods"></table></div></section>
     <section class="panel"><h2 data-t="Shot charts">Shot charts</h2><div class="courts two" id="gm-shots"></div></section>
     <div id="gm-box"></div>
     <section class="panel" id="gm-lu" hidden><h2 data-t="Lineups">Lineups</h2><div class="fives" id="gm-fives"></div></section>
+    </div>
   </section>
   <section class="pg" id="pg-leaders" hidden>
     <div class="tabs" id="ld-tabs" role="group" aria-label="Stat" data-ta="Stat"></div>
@@ -837,6 +878,9 @@ const RT_COLS = {
 };
 const ff = (x, o) => ({efg: x.fga ? rq(100 * (2 * x.fgm + x.fg3m), 2 * x.fga) : null, tov: x.fga + x.tov + x.fta ? rq(10000 * x.tov, 100 * (x.fga + x.tov) + 44 * x.fta) : null,
   orb: x.oreb + o.dreb ? rq(100 * x.oreb, x.oreb + o.dreb) : null, ftr: x.fga ? rq(x.ftm, x.fga, 3) : null});
+// the rank of a value among the shown ones (1 the best, dir -1 when less is better), ties sharing it
+const rankBy = (vals, dir) => { const shown = vals.filter(v => v != null); return v => v == null ? null : 1 + shown.filter(x => dir * (x - v) > 0).length; };
+const rtShow = (k, q) => q == null ? '–' : k === 'net' ? N(signed(fq(q))) : /ftr$/.test(k) ? N(fq(q, 3).replace(/^0/, '')) : N(fq(q));
 const teamVals = c => {
   const f = c.for, a = c.against, po = P100(f), pd = P100(a), ortg = po >= 100 ? rq(10000 * f.pts, po) : null, drtg = pd >= 100 ? rq(10000 * a.pts, pd) : null;
   const o = ff(f, a), d = ff(a, f);
@@ -847,13 +891,9 @@ function teamRatings(view, clubs, standing) {
   const cols = RT_COLS[view], place = Object.fromEntries(standing.map((r, i) => [r.code, i]));
   const rows = clubs.map(c => ({code: c.code, v: teamVals(c)}));
   const rank = {};
-  for (const [k, , dir] of cols) {
-    const shown = rows.map(r => r.v[k]).filter(v => v != null);
-    rank[k] = v => v == null ? null : 1 + shown.filter(x => dir * (x - v) > 0).length;
-  }
+  for (const [k, , dir] of cols) rank[k] = rankBy(rows.map(r => r.v[k]), dir);
   rows.sort((x, y) => (+(x.v.net == null) - +(y.v.net == null)) || (y.v.net - x.v.net) || (place[x.code] - place[y.code]));
-  const show = (k, q) => q == null ? '–' : k === 'net' ? N(signed(fq(q))) : /ftr$/.test(k) ? N(fq(q, 3).replace(/^0/, '')) : N(fq(q));
-  const cell = (k, v) => { const r = rank[k](v); return `<td data-k="${k}"${r ? ` data-r="${r}"` : ''}${k === 'net' && v ? ` class="${v > 0 ? 'w' : 'lo'}"` : ''}><span class="v">${show(k, v)}</span><small class="rk">${r || ''}</small></td>`; };
+  const cell = (k, v) => { const r = rank[k](v); return `<td data-k="${k}"${r ? ` data-r="${r}"` : ''}${k === 'net' && v ? ` class="${v > 0 ? 'w' : 'lo'}"` : ''}><span class="v">${rtShow(k, v)}</span><small class="rk">${r || ''}</small></td>`; };
   const th = ([k, l]) => `<th data-sort="${k}"><button type="button" class="sort">${t(l + '@stat')}</button></th>`;
   const team = `<th class="l" data-sort=""${view === 'factors' ? ' rowspan="2"' : ''}><button type="button" class="sort">${t('Team')}</button></th>`;
   const head = view === 'factors'
@@ -887,7 +927,7 @@ async function renderGames(date, my) {
   const today = G.filter(g => g.date === date);
   $('#gm-list').innerHTML = today.length ? today.map(gameCard).join('') : `<p class="empty">${t('No games on this day.')}</p>`;
 }
-// one game: away over home, a final opens its game page, a game to come shows its tip-off in the reader's time
+// one game: away over home; a final opens its game page, a game to come shows its tip-off in the reader's time and opens its preview
 const perName = (i, n) => i < 4 ? `${t('Q')}${i + 1}` : n === 5 ? t('OT') : `${t('OT')}${i - 3}`;
 
 // ---- Game flow (site_data.game_flow): the margin after every change of score on a clock of game time, in tenths of a
@@ -986,13 +1026,19 @@ $('#gm-box').addEventListener('click', e => {
 const gameCard = g => {
   const row = (code, score, win) => `<div class="row${win ? ' win' : ''}">${logo(code)}<span class="nm">${EN(tname(code))}</span>${score != null ? `<span class="sc">${score}</span>` : ''}</div>`;
   const fin = g.hs != null, inner = `${row(g.away, g.as, fin && g.as > g.hs)}${row(g.home, g.hs, fin && g.hs > g.as)}<div class="ft">${fin ? t('Final') : fmtTime(g.time)}</div>`;
-  return fin ? `<a class="card" href="#game/${esc(g.gid)}" data-gid="${esc(g.gid)}">${inner}</a>` : `<div class="card">${inner}</div>`;
+  return `<a class="card${fin ? '' : ' next'}" href="#game/${esc(g.gid)}" data-gid="${esc(g.gid)}">${inner}</a>`;
 };
 
-// ---- Game: the scoreboard in both clubs' colours, the periods and both box scores
+// ---- Game: the scoreboard in both clubs' colours, the periods and both box scores; before the final, the preview
 async function renderGame(gid, my) {
+  const G = (await get('games.json')).games;
+  if (stale(my)) return;
+  const next = G.find(x => x.gid === gid && x.hs == null);
+  if (next) return renderPreview(next, G, my);
   const g = await get(`games/${gid}.json`);
   if (stale(my)) return;
+  $('#gm-pre').hidden = true;
+  $('#gm-final').hidden = false;
   const H = team(g.home), A = team(g.away);
   const board = $('#gm-board'), status = `${t('Final')}${g.periods.length > 4 ? ` · ${g.periods.length === 5 ? t('OT') : `${g.periods.length - 4}${t('OT')}`}` : ''} · ${fmtDate(g.date, true)}`;
   // the picture: the score, each club's three top scorers as the box score has them, and both shot charts once they are in
@@ -1034,6 +1080,46 @@ async function renderGame(gid, my) {
   $('#gm-fives').innerHTML = sides.map(({c, f, rows}) => `<div data-team="${esc(c)}"><div class="court-h">${logo(c)}${EN(tname(c))}</div><div class="scroll"><table class="tbl" style="${tc(c)}"><thead><tr><th class="l">${t('Lineup@stat')}</th><th>${t('MIN@stat')}</th><th>${t('PTS@stat')}</th><th>${t('+/-@stat')}</th></tr></thead><tbody>${rows.map(r =>
     `<tr data-five="${esc(f.fives[r[1]].join(','))}">${fiveCell(c, f.fives[r[1]], name)}<td>${clock(rq(r[2], 10, 0))}</td><td>${r[3]}-${r[4]}</td><td class="k">${N(signed(String(r[3] - r[4])))}</td></tr>`).join('')}</tbody></table></div></div>`).join('');
   document.title = `${g.away} ${g.as} · ${g.home} ${g.hs} · NBA Player Lab`;
+}
+
+// a game to come: the tip-off in the reader's own time and day, each club's record, last ten and rest before it (the days
+// between its last game and this one, on the schedule's dates), both clubs' ratings and Four Factors with their ranks
+// (ratings.json through teamVals, as on Standings), and the season's earlier meetings. No prediction and no odds
+async function renderPreview(g, G, my) {
+  const rt = await get('ratings.json').catch(() => ({teams: []}));
+  if (stale(my)) return;
+  const H = team(g.home), A = team(g.away), i = G.indexOf(g), before = G.slice(0, i);
+  const day = new Intl.DateTimeFormat(loc(), {weekday: 'short', month: 'short', day: 'numeric'}).format(new Date(g.time));
+  const board = $('#gm-board');
+  board.setAttribute('style', `--ch:${H ? H.colors[0] : '#333'};--ca:${A ? A.colors[0] : '#333'}`);
+  const side = (code, T, cls) => `<div class="side ${cls}">${logo(code, 'crest')}<small>${EN(T ? T.city : code)}</small><b><span class="full">${EN(T ? T.name : code)}</span><span class="abbr">${esc(code)}</span></b></div>`;
+  board.innerHTML = `${side(g.away, A, 'a')}<div class="mid"><div class="score tip"><span>${fmtTime(g.time)}</span></div><small>${t('Tip-off@game')} · ${day}</small></div>${side(g.home, H, 'h')}`;
+  const form = code => {
+    const seq = before.filter(x => x.hs != null && (x.home === code || x.away === code)).map(x => (x.home === code) === (x.hs > x.as));
+    const last = before.filter(x => x.home === code || x.away === code).pop();
+    const rest = last ? Math.round((Date.parse(g.date) - Date.parse(last.date)) / 864e5) - 1 : null;
+    const tag = rest == null ? t('First game') : rest === 0 ? t('Back-to-back') : t(rest === 1 ? '1 day of rest' : '{n} days of rest', {n: rest});
+    return `<div data-team="${esc(code)}" style="${tc(code)}"><div class="nm">${logo(code)}${EN(tname(code))}</div><b class="rec">${seq.filter(Boolean).length}-${seq.filter(w => !w).length}</b>${seq.length ? `<i class="form">${seq.slice(-10).map(w => `<b class="${w ? 'w' : 'lo'}"></b>`).join('')}</i>` : ''}<span class="rest${rest === 0 ? ' b2b' : ''}" data-rest="${rest == null ? '' : rest}">${tag}</span></div>`;
+  };
+  $('#pv-form').innerHTML = form(g.away) + form(g.home);
+  const vals = Object.fromEntries(rt.teams.map(c => [c.code, teamVals(c)]));
+  const hd = `<div class="hd"><span>${logo(g.away)}${esc(g.away)}</span><span></span><span></span><span></span><span>${esc(g.home)}${logo(g.home)}</span></div>`;
+  const rows = cols => cols.map(([k, l, dir]) => {
+    const all = Object.values(vals).map(v => v[k]), rank = rankBy(all, dir), n = all.filter(v => v != null).length;
+    const at = code => { const v = vals[code] ? vals[code][k] : null, r = rank(v); return {v, r, w: r ? 100 * (n + 1 - r) / n : 0}; };
+    const a = at(g.away), h = at(g.home);
+    const v = (x, code) => `<span class="v" data-team="${esc(code)}"${x.r ? ` data-r="${x.r}"` : ''}>${code === g.home ? `<small class="rk">${x.r || ''}</small>` : ''}${rtShow(k, x.v)}${code === g.away ? `<small class="rk">${x.r || ''}</small>` : ''}</span>`;
+    const bar = (x, code, cls) => `<span class="bar ${cls}"><i style="${tc(code)};width:${x.w.toFixed(1)}%"></i></span>`;
+    return `<div data-k="${k}">${v(a, g.away)}${bar(a, g.away, 'a')}<span class="lb">${t(l + '@stat')}</span>${bar(h, g.home, 'h')}${v(h, g.home)}</div>`;
+  }).join('');
+  const grp = l => `<div class="grp"><span></span><span></span><span>${t(l)}</span><span></span><span></span></div>`;
+  $('#pv-rt').innerHTML = hd + rows(RT_COLS.ratings);
+  $('#pv-ff').innerHTML = hd + grp('Offense') + rows(RT_COLS.factors.slice(0, 4)) + grp('Defense') + rows(RT_COLS.factors.slice(4));
+  const met = before.filter(x => x.hs != null && [x.home, x.away].sort().join() === [g.home, g.away].sort().join());
+  $('#pv-meet').innerHTML = met.length ? met.map(gameCard).join('') : `<p class="empty">${t('First meeting this season.')}</p>`;
+  $('#gm-pre').hidden = false;
+  $('#gm-final').hidden = true;
+  document.title = `${g.away} @ ${g.home} · ${day} · NBA Player Lab`;
 }
 
 // ---- Share: the Player hero and the Game scoreboard carry a button that draws the night as a 1080 × 1350 picture in the

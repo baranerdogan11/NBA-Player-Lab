@@ -167,5 +167,13 @@
  "eFG%@stat": "EFG%",
  "TOV%@stat": "TK%",
  "ORB%@stat": "HR%",
- "FT/FGA@stat": "SA/FG"
+ "FT/FGA@stat": "SA/FG",
+ "Form": "Form",
+ "Season series": "Sezon serisi",
+ "Tip-off@game": "Başlama",
+ "First game": "Sezonun ilk maçı",
+ "Back-to-back": "Arka arkaya",
+ "1 day of rest": "1 gün dinlenme",
+ "{n} days of rest": "{n} gün dinlenme",
+ "First meeting this season.": "Bu sezonki ilk karşılaşma."
 }
