@@ -56,11 +56,12 @@ FETCHED = os.path.join(CACHE, "fetched_at.json")   # file name -> unix time it w
 fetched_at = json.load(open(FETCHED)) if os.path.exists(FETCHED) else {}
 
 
-def cached(name, fetch, refresh=False):
+def cached(name, fetch, refresh=False, force=False):
     """Read name from the cache, or fetch and store it. With refresh, a copy older than REFRESH_EVERY is fetched again;
-    if that fetch fails the cached copy is kept, so a feed outage never costs a game we already have."""
+    with force, it is fetched again now. If that fetch fails the cached copy is kept, so a feed outage never costs a
+    game we already have."""
     path = os.path.join(CACHE, name)
-    if os.path.exists(path) and not (refresh and time.time() - fetched_at.get(name, 0) >= REFRESH_EVERY):
+    if os.path.exists(path) and not force and not (refresh and time.time() - fetched_at.get(name, 0) >= REFRESH_EVERY):
         return json.load(open(path))
     try:
         data = fetch()
@@ -96,8 +97,20 @@ def fetch_game(gid, tipoff):
         fetched_at.pop(f"box_{gid}.json", None)
         print(f"   {gid}: box score not final yet, skipped")
         return None
-    cached(f"pbp_{gid}.json", lambda: get(PBP.format(gid)), fresh)
+    pbp = cached(f"pbp_{gid}.json", lambda: get(PBP.format(gid)), fresh)
+    if fresh and not complete(pbp, box):
+        # the play-by-play can trail the box score at the buzzer; a copy cached then would fail the warehouse tests
+        # and hold every update until its refresh, so it is fetched again on each run until its last score is final
+        print(f"   {gid}: play-by-play ends before the final score, fetching it again")
+        cached(f"pbp_{gid}.json", lambda: get(PBP.format(gid)), force=True)
     return box
+
+
+def complete(pbp, box):
+    """True when the play-by-play's last scored action has the box score's final score."""
+    b = box["game"]
+    scored = [a for a in pbp["game"]["actions"] if a.get("scoreHome") not in (None, "")]
+    return bool(scored) and (int(scored[-1]["scoreHome"]), int(scored[-1]["scoreAway"])) == (b["homeTeam"]["score"], b["awayTeam"]["score"])
 
 
 # ---- schedule: the CDN's file for the current season, or one rebuilt from the box scores for an earlier season
