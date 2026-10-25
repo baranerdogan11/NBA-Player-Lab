@@ -177,5 +177,11 @@
  "Back-to-back": "Arka arkaya",
  "1 day of rest": "1 gün dinlenme",
  "{n} days of rest": "{n} gün dinlenme",
- "First meeting this season.": "Bu sezonki ilk karşılaşma."
+ "First meeting this season.": "Bu sezonki ilk karşılaşma.",
+ "Trending": "Form durumu",
+ "Trending up": "Yükselişte",
+ "Trending down": "Düşüşte",
+ "Last 5": "Son 5",
+ "Change": "Fark",
+ "L5 MIN@stat": "SON 5 DK"
 }

@@ -8,7 +8,8 @@ RAPM (rapm.py), a model's estimate rather than a ratio of totals, written alread
 Files under <out>/ (out is teams/<season>/):
   index.json        season, label, build time, the 30 clubs with colours and games played
   games.json        every game of the schedule: date, tip time, clubs, and the score once final
-  <CODE>.json       the club's players, each with a log of his box-score lines (any club, newest last)
+  <CODE>.json       the club's players, each with a log of his box-score lines (any club, newest last), each line with
+                    its Game Score gs in tenths (game_score())
   games/<gid>.json  one final: score by period, both box scores and, from the play-by-play, its flow: [[ds, home, away],
                     ...], the score after every change, ds the tenths of a second of game time played; it ends on the
                     final and passes through every period's score
@@ -23,7 +24,8 @@ Files under <out>/ (out is teams/<season>/):
   night.json        the latest night with a final: {"date", "rows": [{gid, pid, name, team, gs, pts, reb, ast, fgm, fga},
                     ...]}, its five best lines by Hollinger's Game Score, gs in tenths (game_score()), best first
   leaders.json      every player's season totals, under his current club, his clubs' totals over the same games
-                    (tm_fga, tm_fta, tm_tov, tm_sec, for usage) and his RAPM, O-RAPM and D-RAPM (null without one)
+                    (tm_fga, tm_fta, tm_tov, tm_sec, for usage), his RAPM, O-RAPM and D-RAPM (null without one), and
+                    for form his Game Score total gs and gs5 and sec5 over his last five games played
 
 from_warehouse() turns the warehouse tables (warehouse/<season>/*.parquet, see warehouse.py) into those rows: regular
 season games only, and box lines of every player who was active (a coach's decision is a line with 0 seconds; inactive
@@ -133,7 +135,7 @@ def write_site(out, season, label, built, teams, players, games, lines):
         ts, os_ = (g["hs"], g["as"]) if home else (g["as"], g["hs"])
         logs.setdefault(r["pid"], []).append({
             "gid": r["gid"], "date": g["date"], "team": r["team"], "opp": g["away"] if home else g["home"], "home": home,
-            "ts": ts, "os": os_, **_line(r)})
+            "ts": ts, "os": os_, **_line(r), "gs": game_score(_line(r))})
     team_tot = {}
     for r in lines:
         t = team_tot.setdefault((r["gid"], r["team"]), {"fga": 0, "fta": 0, "tov": 0, "sec": 0})
@@ -144,6 +146,7 @@ def write_site(out, season, label, built, teams, players, games, lines):
     for p in players:
         log = logs.get(p["pid"], [])
         played = [x for x in log if x["sec"] > 0]
+        last5 = played[-5:]
         info = {k: p[k] for k in ("pid", "name", "jersey", "pos", "height", "born")}
         roster.setdefault(p["team"], []).append({**info, "log": log})
         o, d = p.get("o_rapm"), p.get("d_rapm")
@@ -151,7 +154,8 @@ def write_site(out, season, label, built, teams, players, games, lines):
         leaders.append({"pid": p["pid"], "name": p["name"], "team": p["team"], "pos": p["pos"], "gp": len(played),
                         "sec": sum(x["sec"] for x in played), **{k: sum(x[k] for x in played) for k in STATS},
                         **{f"tm_{k}": sum(team_tot[(x["gid"], x["team"])][k] for x in played) for k in ("fga", "fta", "tov", "sec")},
-                        "rapm": rnd(o + d) if has else None, "orapm": rnd(o) if has else None, "drapm": rnd(d) if has else None})
+                        "rapm": rnd(o + d) if has else None, "orapm": rnd(o) if has else None, "drapm": rnd(d) if has else None,
+                        "gs": sum(x["gs"] for x in played), "gs5": sum(x["gs"] for x in last5), "sec5": sum(x["sec"] for x in last5)})
     for t in teams:
         _dump(os.path.join(out, f"{t['code']}.json"), {"code": t["code"], "players": roster.get(t["code"], [])})
     _dump(os.path.join(out, "leaders.json"), {"players": leaders})
