@@ -39,6 +39,12 @@ def _v(x):
     return None if x is None or x is pd.NA or (isinstance(x, float) and x != x) else x
 
 
+def plays(actions):
+    """The actions without the game's end marker, which the feed can log in a period of its own (PHX-GSW, 24 Oct: "Game
+    End" in period 5 after a regulation final), where it would open a five-minute overtime nobody played."""
+    return [a for a in actions if a["action_type"] != "game"]
+
+
 def ordered(actions):
     """The actions in feed order, each period's together, with two corrections for plays keyed in late. A play entered
     after its period's end, or during the next period, goes back to its clock: after the last play of its period at that
@@ -151,7 +157,7 @@ def stints(actions, starters):
         idx += 1
         sec, cur = 0.0, zero()
 
-    for a in play_order(actions):
+    for a in play_order(plays(actions)):
         t, sub, team = a["action_type"], a.get("sub_type"), _v(a.get("team"))
         p, a_per, c = _v(a.get("player")), int(a["period"]), _v(a.get("clock"))
         if a_per != per:                          # whatever the clock said, the old period ran out
@@ -261,7 +267,7 @@ def main(season, w=None, out=None):
         acts = acts.to_dict("records")
         sts, pr = stints(acts, starters.get(g, {}))
         problems += [f"game {g}: {p}" for p in pr]
-        n_per = max(int(a["period"]) for a in acts)
+        n_per = max(int(a["period"]) for a in plays(acts))
         if abs(sum(s["sec"] for s in sts) / 2 - (2880 + 300 * max(n_per - 4, 0))) > 1:
             problems.append(f"game {g}: stints cover {sum(s['sec'] for s in sts) / 2:.0f} s")
         pts = sorted(sum(s["pts"] for s in sts if s["team"] == c) for c in {s["team"] for s in sts})
