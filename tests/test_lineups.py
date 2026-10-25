@@ -122,6 +122,11 @@ sts, problems = lineups.stints(acts, {H: set(range(10, 15)), A: set(range(20, 25
 first = next(s for s in sts if s["team"] == H)
 checks["a free throw the clock puts before the substitution counts for the five fouled"] = problems == [] and 14 in first["players"] and first["pts"] == 1
 
+# hand-written: the game's end logged in a period of its own adds no overtime (PHX-GSW, 24 Oct)
+acts = [ev(1, "period", "start", None, None, 720.0), ev(2, "period", "end", None, None, 0.0), {**ev(3, "game", "end", None, None, 0.0), "period": 2}]
+sts, problems = lineups.stints(acts, {H: set(range(10, 15)), A: set(range(20, 25))})
+checks["a game end logged in the next period adds no time"] = problems == [] and sum(s["sec"] for s in sts) / 2 == 720
+
 # the site's JSON: one row per five per game, integers, adding up to the stints
 w2 = tempfile.mkdtemp()
 teams = [{"code": c} for c in st.team.unique()]
