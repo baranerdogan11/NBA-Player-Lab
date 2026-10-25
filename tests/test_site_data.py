@@ -44,6 +44,10 @@ checks["every log row is the player's box line"] = all(
 checks["leaders' totals are the sums of the logs"] = all(
     p["gp"] == sum(r["sec"] > 0 for r in logs[p["pid"]]) and all(p[k] == sum(r[k] for r in logs[p["pid"]] if r["sec"] > 0) for k in STATS)
     for p in lead)
+checks["every log row carries its Game Score"] = all(r["gs"] == game_score(r) for log in logs.values() for r in log)
+checks["form totals are his season's and his last five games played"] = all(
+    p["gs"] == sum(r["gs"] for r in played) and p["gs5"] == sum(r["gs"] for r in played[-5:]) and p["sec5"] == sum(r["sec"] for r in played[-5:])
+    for p in lead for played in [[r for r in logs[p["pid"]] if r["sec"] > 0]])
 box_of = {(gid, x["pid"]): side for b in boxes.values() for side in b["box"].values() for x in side for gid in [b["gid"]]}
 checks["usage totals are his clubs' totals over his games"] = all(
     p[f"tm_{k}"] == sum(sum(y[k] for y in box_of[(r["gid"], p["pid"])]) for r in logs[p["pid"]] if r["sec"] > 0)
