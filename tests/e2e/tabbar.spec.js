@@ -39,7 +39,7 @@ test.describe('desktop', () => {
   test.use(DESKTOP);
   test('the header rail carries the five pages and the bar is hidden', async ({page}) => {
     await prepare(page);
-    await page.goto('./#standings');
+    await page.goto('./?l#standings');
     await settled(page);
     expect(await page.isVisible('#tabbar')).toBe(false);
     expect(await page.evaluate(() => [...document.querySelectorAll('#rail a')].map(a => a.textContent.trim()))).toEqual(['Players', 'Compare', 'Standings', 'Games', 'Leaders']);

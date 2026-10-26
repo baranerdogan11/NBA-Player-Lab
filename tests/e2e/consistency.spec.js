@@ -9,7 +9,7 @@ test.use(DESKTOP);
 test('a game, the players in it, their pages, compare and leaders agree', async ({page}) => {
   test.setTimeout(240_000);
   const problems = await prepare(page);
-  await page.goto('./#games/2026-10-21');
+  await page.goto('./?l#games/2026-10-21');
   await settled(page);
   const gids = await page.evaluate(() => [...document.querySelectorAll('#gm-list a.card')].map(a => a.dataset.gid));
   expect(gids.length).toBeGreaterThan(0);
@@ -94,7 +94,7 @@ const marks = el => ({made: el.querySelectorAll('.made circle').length, miss: (e
 const fg = cells => cells.reduce((a, c) => { const [m, n] = c.split('-').map(Number); return {made: a.made + m, miss: a.miss + n - m}; }, {made: 0, miss: 0});
 test('shot charts match the box score and the game log', async ({page}) => {
   const problems = await prepare(page);
-  await page.goto('./#games/2026-10-21');
+  await page.goto('./?l#games/2026-10-21');
   await settled(page);
   const gid = await page.evaluate(() => document.querySelector('#gm-list a.card').dataset.gid);
   await go(page, `#game/${gid}`, () => document.querySelectorAll('#gm-shots svg').length === 2);
@@ -117,7 +117,7 @@ test('shot charts match the box score and the game log', async ({page}) => {
 const num = s => s === '–' ? null : Number(s.replace('−', '-'));
 test('lineups and on/off agree with the game log', async ({page}) => {
   const problems = await prepare(page);
-  await page.goto('./#games/2026-10-21');
+  await page.goto('./?l#games/2026-10-21');
   await settled(page);
   const gid = await page.evaluate(() => document.querySelector('#gm-list a.card').dataset.gid);
   await go(page, `#game/${gid}`, () => document.querySelectorAll('#gm-box table').length === 2);
@@ -142,7 +142,7 @@ test('lineups and on/off agree with the game log', async ({page}) => {
 // fixture plays four or fewer fives a game, so every unit is shown and their points add up to the final
 test('a game\'s lineups add up to its score', async ({page}) => {
   const problems = await prepare(page);
-  await page.goto('./#games/2026-10-21');
+  await page.goto('./?l#games/2026-10-21');
   await settled(page);
   const gid = await page.evaluate(() => document.querySelector('#gm-list a.card').dataset.gid);
   await go(page, `#game/${gid}`, () => !document.querySelector('#gm-lu').hidden);
@@ -169,7 +169,7 @@ test('a game\'s lineups add up to its score', async ({page}) => {
 // play reads the final, and the lead changes, ties and biggest leads are the ones its margins give
 test('a game\'s flow ends on the final', async ({page}) => {
   const problems = await prepare(page);
-  await page.goto('./#games/2026-10-21');
+  await page.goto('./?l#games/2026-10-21');
   await settled(page);
   const gid = await page.evaluate(() => document.querySelector('#gm-list a.card').dataset.gid);
   await go(page, `#game/${gid}`, () => !document.querySelector('#gm-flow-sec').hidden);
@@ -199,7 +199,7 @@ test('a game\'s flow ends on the final', async ({page}) => {
 test('team ratings and the Four Factors are the box scores\' and the lineups\'', async ({page}) => {
   test.setTimeout(120_000);
   const problems = await prepare(page);
-  await page.goto('./#standings/ratings');
+  await page.goto('./?l#standings/ratings');
   await settled(page);
   await page.waitForFunction(() => document.querySelectorAll('#st-ratings tbody tr').length === 30);
   const read = id => page.$$eval(`#${id} tbody tr`, trs => Object.fromEntries(trs.map(tr => [tr.dataset.team,

@@ -1,5 +1,6 @@
-// The site opens on Home: after half an hour away, a reload, a reopened tab or a tab brought back from the background
-// lands on Home wherever it was left, while a link to another page still opens that page, and a quick reload stays put.
+// The site opens on Home: a fresh open lands there whatever address it carries (the home-screen icon keeps the one it was
+// saved on), and so does a tab brought back after half an hour; a shared link (?l), the league invite link and a quick
+// reload keep their page.
 import {test, expect} from '@playwright/test';
 import {DESKTOP, prepare, settled} from './site.js';
 
@@ -12,43 +13,30 @@ const show = (page, hidden) => page.evaluate(h => {
 
 test.describe('opening page', () => {
   test.use(DESKTOP);
-  test('a quick reload stays on the page; reopening the site after half an hour opens Home', async ({page, context}) => {
+  test('a fresh open lands on Home whatever the address, even on a first visit', async ({page}) => {
     const problems = await prepare(page);
-    await context.clock.install();
-    await page.goto('./#BOS');
+    for (const hash of ['#BOS', '#player', '#standings', '#game/0022600001']) {
+      await page.goto(`./?x=${hash.length}${hash}`);   // a new document every time, as an icon or a new tab opens it
+      await settled(page);
+      await page.waitForFunction(HOME);
+    }
+    expect(problems, 'the page reported errors').toEqual([]);
+  });
+  test('a shared link opens its page and drops its mark; and a reload stays on it', async ({page}) => {
+    const problems = await prepare(page);
+    await page.goto('./?l#BOS');
     await settled(page);
     await page.waitForFunction(PLAYER);
+    expect(await page.evaluate(() => location.search + location.hash)).toBe('#BOS');
     await page.reload();
     await settled(page);
     expect(await page.evaluate(() => [document.body.dataset.page, location.hash])).toEqual(['player', '#BOS']);
-    await page.close();
-    await context.clock.fastForward(31 * 60e3);
-    const again = await context.newPage();   // the home-screen icon, or a tab restored on the address it was left on
-    const more = await prepare(again);
-    await again.goto('./#BOS');
-    await settled(again);
-    await again.waitForFunction(HOME);
-    expect([...problems, ...more], 'the page reported errors').toEqual([]);
-  });
-  test('a link to another page opens it, even after a long time away', async ({page, context}) => {
-    const problems = await prepare(page);
-    await context.clock.install();
-    await page.goto('./#standings');
-    await settled(page);
-    await page.close();
-    await context.clock.fastForward(120 * 60e3);
-    const link = await context.newPage();
-    const more = await prepare(link);
-    await link.goto('./#BOS');
-    await settled(link);
-    await link.waitForFunction(PLAYER);
-    expect(await link.evaluate(() => location.hash)).toBe('#BOS');
-    expect([...problems, ...more], 'the page reported errors').toEqual([]);
+    expect(problems, 'the page reported errors').toEqual([]);
   });
   test('a tab brought back after half an hour in the background shows Home', async ({page}) => {
     const problems = await prepare(page);
     await page.clock.install();
-    await page.goto('./#BOS');
+    await page.goto('./?l#BOS');
     await settled(page);
     await page.waitForFunction(PLAYER);
     await show(page, true);
