@@ -118,7 +118,7 @@ test('shot charts match the box score and the game log', async ({page}) => {
 test('shot zones add up to the game log and compare with the league', async ({page}) => {
   test.setTimeout(120_000);
   const problems = await prepare(page);
-  await page.goto('./#games/2026-10-21');
+  await page.goto('./?l#games/2026-10-21');
   await settled(page);
   const gid = await page.evaluate(() => document.querySelector('#gm-list a.card').dataset.gid);
   await go(page, `#game/${gid}`, () => document.querySelectorAll('#gm-box table').length === 2);
