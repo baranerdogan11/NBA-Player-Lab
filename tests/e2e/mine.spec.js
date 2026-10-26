@@ -11,7 +11,7 @@ for (const [name, use, lang] of [['desktop', DESKTOP, 'en'], ['phone', PHONE, 't
     test.use(use);
     test(`a star puts the player on Home with his last game, and taking it off removes him (${lang})`, async ({page}, info) => {
       const problems = await prepare(page, {lang});
-      await page.goto('./#BOS');
+      await page.goto('./?l#BOS');
       await settled(page);
       await page.waitForFunction(PLAYER);
       const pid = await page.evaluate(() => document.querySelector('#player').value);
