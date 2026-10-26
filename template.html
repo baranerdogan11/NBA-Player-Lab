@@ -629,14 +629,22 @@ const remember = h => { LAST = h; try { localStorage.setItem('pl-last', h); } ca
 
 // ---- routing: the opening page on no hash (or #home), #player (the remembered player), #CODE[/pid[/gid]] (gid: his shot chart at that game), #compare[/a/b], #standings[/east|west|league], #games[/date], #game/gid, #leaders[/stat], #privacy,
 // #league[/roster|board|pick|team/<t>] (and the invite link #league/<id>/<key>)
-// ---- the site opens on Home: a visit after half an hour away (a reopened tab, a relaunched phone browser, the home-screen
-// icon, a tab left in the background) starts there, wherever it was left; a link to another page still opens that page
+// ---- the site opens on Home: every fresh open (the home-screen icon, a new or restored tab, a relaunched phone browser)
+// starts there, whatever address it carries, and so does a tab brought back after half an hour in the background. A shared
+// link (link() adds ?l, dropped on arrival), the league invite link and a reload within half an hour keep their page.
 const AWAY = 30 * 60 * 1000;
-let SEEN = 0, AT = '';
-try { SEEN = Number(localStorage.getItem('pl-seen')) || 0; AT = localStorage.getItem('pl-at') || ''; } catch (e) {}
+let SEEN = 0;
+try { SEEN = Number(localStorage.getItem('pl-seen')) || 0; } catch (e) {}
 const NAV = (/** @type {PerformanceNavigationTiming | undefined} */ (performance.getEntriesByType('navigation')[0]))?.type || 'navigate';
 const away = () => SEEN > 0 && Date.now() - SEEN >= AWAY;
-const seen = () => { SEEN = Date.now(); AT = location.hash; try { localStorage.setItem('pl-seen', String(SEEN)); localStorage.setItem('pl-at', AT); } catch (e) {} };
+const seen = () => { SEEN = Date.now(); try { localStorage.setItem('pl-seen', String(SEEN)); } catch (e) {} };
+function opening() {
+  const q = new URLSearchParams(location.search), shared = q.has('l');
+  const keep = shared || /^#league\/\d+\//.test(location.hash) || (NAV === 'reload' && !away());
+  q.delete('l');
+  const url = location.pathname + (q.toString() ? `?${q}` : '') + (keep ? location.hash : '');
+  if (url !== location.pathname + location.search + location.hash) history.replaceState(null, '', url);
+}
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) seen();
   else if (IDX && away() && location.hash) { history.replaceState(null, '', location.pathname + location.search); scrollTo(0, 0); route(); }
@@ -1216,7 +1224,7 @@ const SHARE_BTN = kind => `<button type="button" class="share" data-share="${kin
 const SANS = 'system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif';
 const CW = 1080, CH = 1350, CP = 64;
 const ascii = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/ı/g, 'i').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-const link = hash => `${location.origin}${location.pathname}#${hash}`;
+const link = hash => `${location.origin}${location.pathname}?l#${hash}`;
 // a font of the given weight, as large as fits the width but no larger than size
 const fit = (x, text, w, size, weight = 800) => { let s = size; do x.font = `${weight} ${s}px ${SANS}`; while (x.measureText(text).width > w && --s > 12); };
 const svgImg = svg => { const im = new Image(); im.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" width="560" height="500" '))}`; return im.decode().then(() => im); };
@@ -1708,7 +1716,7 @@ async function boot() {
   $('#lg-btn').hidden = !LKEY;
   applyLang();
   window.addEventListener('hashchange', route);
-  if (away() && !(NAV === 'navigate' && location.hash !== AT)) history.replaceState(null, '', location.pathname + location.search);
+  opening();
   await route();
 }
 $('#retry').addEventListener('click', () => { if (IDX) route(); else boot(); });

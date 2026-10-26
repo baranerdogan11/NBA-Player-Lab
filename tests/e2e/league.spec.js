@@ -76,7 +76,7 @@ test.describe('league', () => {
 
   test('pasting the invite link opens the league; other text is refused', async ({page}) => {
     const problems = await prepare(page);
-    await page.goto('./#league');
+    await page.goto('./?l#league');
     await settled(page);
     await page.fill('#lg-link', 'hello');
     await page.click('#lg-form button');
@@ -90,7 +90,7 @@ test.describe('league', () => {
   test('This week equals the league\'s own week totals, and last night\'s lines equal the game logs', async ({page}) => {
     const problems = await prepare(page);
     await unlocked(page, 1);
-    await page.goto('./#league');
+    await page.goto('./?l#league');
     await settled(page);
     await page.waitForFunction(WEEK);
     const n = LG.league.week, [, a, b] = LG.matchups.find(m => m[0] === n && (m[1] === 1 || m[2] === 1));
@@ -123,7 +123,7 @@ test.describe('league', () => {
   test('the roster lists every player in slot order with the games his club has left this week', async ({page}) => {
     const problems = await prepare(page);
     await unlocked(page, 2);
-    await page.goto('./#league/roster');
+    await page.goto('./?l#league/roster');
     await settled(page);
     await page.waitForFunction(ROSTER);
     const rows = await page.evaluate(() => [...document.querySelectorAll('#lg-roster tbody tr')].map(tr => ({pid: tr.dataset.pid, slot: tr.querySelector('.slot').textContent, left: +tr.querySelector('[data-left]').dataset.left, dots: tr.querySelectorAll('.left i').length, bench: tr.classList.contains('bn'), inj: tr.querySelector('.inj')?.textContent || null})));
@@ -147,7 +147,7 @@ test.describe('league', () => {
   test('the League board: all-play over finished weeks, luck against it, and season category ranks', async ({page}) => {
     const problems = await prepare(page);
     await unlocked(page, 4);
-    await page.goto('./#league/board');
+    await page.goto('./?l#league/board');
     await settled(page);
     await page.waitForFunction(BOARD);
     const cats = LG.league.cats, n = LG.league.week, teams = LG.teams;
@@ -178,12 +178,12 @@ test.describe('league', () => {
   test('the Player page names the team in your league that has the player, and its slot', async ({page}) => {
     const problems = await prepare(page);
     // without a league the badge stays hidden
-    await page.goto('./#player');
+    await page.goto('./?l#player');
     await settled(page);
     await page.waitForFunction(() => document.body.dataset.page === 'player' && !!document.querySelector('#hero').textContent);
     expect(await page.locator('#lg-badge').isHidden()).toBe(true);
     await unlocked(page, 1);
-    await page.goto('./#league/roster');
+    await page.goto('./?l#league/roster');
     await page.reload();   // only a hash change so far: the reload runs the script that unlocks the league
     await settled(page);
     await page.waitForFunction(ROSTER);
