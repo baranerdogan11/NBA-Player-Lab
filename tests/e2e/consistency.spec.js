@@ -9,7 +9,7 @@ test.use(DESKTOP);
 test('a game, the players in it, their pages, compare and leaders agree', async ({page}) => {
   test.setTimeout(240_000);
   const problems = await prepare(page);
-  await page.goto('./#games/2026-10-21');
+  await page.goto('./?l#games/2026-10-21');
   await settled(page);
   const gids = await page.evaluate(() => [...document.querySelectorAll('#gm-list a.card')].map(a => a.dataset.gid));
   expect(gids.length).toBeGreaterThan(0);
@@ -94,7 +94,7 @@ const marks = el => ({made: el.querySelectorAll('.made circle').length, miss: (e
 const fg = cells => cells.reduce((a, c) => { const [m, n] = c.split('-').map(Number); return {made: a.made + m, miss: a.miss + n - m}; }, {made: 0, miss: 0});
 test('shot charts match the box score and the game log', async ({page}) => {
   const problems = await prepare(page);
-  await page.goto('./#games/2026-10-21');
+  await page.goto('./?l#games/2026-10-21');
   await settled(page);
   const gid = await page.evaluate(() => document.querySelector('#gm-list a.card').dataset.gid);
   await go(page, `#game/${gid}`, () => document.querySelectorAll('#gm-shots svg').length === 2);
@@ -112,12 +112,56 @@ test('shot charts match the box score and the game log', async ({page}) => {
   expect(problems, 'the page reported errors').toEqual([]);
 });
 
+// The zones split the FG column along the 3P column: for the season and for each game picked, the five rows add up to the
+// game log's FG and the two three-point rows to its 3P; each FG% is its row's makes over attempts by the one rounding
+// rule, the league column is shots/league.json, and a zone is tinted only past five attempts and only off the league's
+test('shot zones add up to the game log and compare with the league', async ({page}) => {
+  test.setTimeout(120_000);
+  const problems = await prepare(page);
+  await page.goto('./?l#games/2026-10-21');
+  await settled(page);
+  const gid = await page.evaluate(() => document.querySelector('#gm-list a.card').dataset.gid);
+  await go(page, `#game/${gid}`, () => document.querySelectorAll('#gm-box table').length === 2);
+  const pid = await page.$$eval('#gm-box tr[data-pid]', trs => trs.find(tr => tr.cells.length > 2).dataset.pid);
+  await page.click(`#gm-box tr[data-pid="${pid}"] a`);
+  await page.waitForFunction(p => document.querySelector('#player').value === p && document.querySelectorAll('#sc-zones tr[data-z]').length === 5, pid);
+  const league = await page.evaluate(() => fetch(`${META.base}shots/league.json`).then(r => r.json()).then(d => d.zones));
+  const read = () => page.evaluate(() => ({
+    rows: [...document.querySelectorAll('#sc-zones tr[data-z]')].map(tr => ({fg: tr.cells[1].textContent, pct: tr.cells[2].textContent, lg: tr.cells[3].textContent, heat: tr.querySelector('i').className})),
+    tint: Object.fromEntries([...document.querySelectorAll('#sc-court path[data-z]')].map(p => [p.dataset.z, p.getAttribute('class').slice(2)])),
+  }));
+  const check = async (logFg, log3p, what) => {
+    const {rows, tint} = await read();
+    const n = rows.map(r => r.fg.split('-').map(Number));
+    const sum = ns => ns.reduce((a, [m, k]) => [a[0] + m, a[1] + k], [0, 0]).join('-');
+    expect(sum(n), `${what}: zones vs FG`).toBe(sum(logFg.map(c => c.split('-').map(Number))));
+    expect(sum(n.slice(3)), `${what}: three-point zones vs 3P`).toBe(sum(log3p.map(c => c.split('-').map(Number))));
+    const rd = (a, b) => page.evaluate(([x, y]) => /** @type {any} */ (window).eval(`rq(100 * ${x}, ${y})`), [a, b]);
+    for (const [z, r] of rows.entries()) {
+      expect(r.pct, `${what}: zone ${z} FG%`).toBe(n[z][1] ? await page.evaluate(([m, k]) => /** @type {any} */ (window).eval(`pct(${m}, ${k})`), n[z]) : '–');
+      expect(r.lg, `${what}: zone ${z} league`).toBe(await page.evaluate(([m, k]) => /** @type {any} */ (window).eval(`pct(${m}, ${k})`), league[z]));
+      const d = n[z][1] >= 5 ? (await rd(...n[z])) - (await rd(...league[z])) : 0;
+      const want = d > 0 ? 'hi' : d < 0 ? 'lo' : '';
+      expect(r.heat, `${what}: zone ${z} swatch`).toBe(want);
+      expect(tint[z] || '', `${what}: zone ${z} tint`).toBe(want);
+    }
+  };
+  const log = await page.$$eval('#log tr[data-gid]', trs => trs.filter(tr => tr.cells.length > 4).map(tr => [tr.dataset.gid, tr.cells[10].textContent, tr.cells[11].textContent]));
+  await check(log.map(x => x[1]), log.map(x => x[2]), 'season');
+  expect(Object.keys((await read()).tint).length, 'a season has tinted zones').toBeGreaterThan(0);
+  for (const [g, f, t3] of log.slice(0, 3)) {
+    await page.selectOption('#sc-game', g, {force: true});
+    await check([f], [t3], g);
+  }
+  expect(problems, 'the page reported errors').toEqual([]);
+});
+
 // Lineups hold the box score's plus-minus: a player's points for and against on the floor add up to his game log's +/-,
 // on − off is the difference of the two shown rows, and each net is its ORtg minus its DRtg as shown
 const num = s => s === '–' ? null : Number(s.replace('−', '-'));
 test('lineups and on/off agree with the game log', async ({page}) => {
   const problems = await prepare(page);
-  await page.goto('./#games/2026-10-21');
+  await page.goto('./?l#games/2026-10-21');
   await settled(page);
   const gid = await page.evaluate(() => document.querySelector('#gm-list a.card').dataset.gid);
   await go(page, `#game/${gid}`, () => document.querySelectorAll('#gm-box table').length === 2);
@@ -142,7 +186,7 @@ test('lineups and on/off agree with the game log', async ({page}) => {
 // fixture plays four or fewer fives a game, so every unit is shown and their points add up to the final
 test('a game\'s lineups add up to its score', async ({page}) => {
   const problems = await prepare(page);
-  await page.goto('./#games/2026-10-21');
+  await page.goto('./?l#games/2026-10-21');
   await settled(page);
   const gid = await page.evaluate(() => document.querySelector('#gm-list a.card').dataset.gid);
   await go(page, `#game/${gid}`, () => !document.querySelector('#gm-lu').hidden);
@@ -169,7 +213,7 @@ test('a game\'s lineups add up to its score', async ({page}) => {
 // play reads the final, and the lead changes, ties and biggest leads are the ones its margins give
 test('a game\'s flow ends on the final', async ({page}) => {
   const problems = await prepare(page);
-  await page.goto('./#games/2026-10-21');
+  await page.goto('./?l#games/2026-10-21');
   await settled(page);
   const gid = await page.evaluate(() => document.querySelector('#gm-list a.card').dataset.gid);
   await go(page, `#game/${gid}`, () => !document.querySelector('#gm-flow-sec').hidden);
@@ -199,7 +243,7 @@ test('a game\'s flow ends on the final', async ({page}) => {
 test('team ratings and the Four Factors are the box scores\' and the lineups\'', async ({page}) => {
   test.setTimeout(120_000);
   const problems = await prepare(page);
-  await page.goto('./#standings/ratings');
+  await page.goto('./?l#standings/ratings');
   await settled(page);
   await page.waitForFunction(() => document.querySelectorAll('#st-ratings tbody tr').length === 30);
   const read = id => page.$$eval(`#${id} tbody tr`, trs => Object.fromEntries(trs.map(tr => [tr.dataset.team,

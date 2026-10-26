@@ -188,7 +188,7 @@ test.describe('profile sections', () => {
   for (const [id, body, key] of [['sc', '#sc-court', 'pl-shots'], ['lu', '#onoff', 'pl-lineups'], ['log-sec', '#log', 'pl-log']]) {
     test(`the ${id} heading closes and opens its section, and the choice is kept across visits`, async ({page}) => {
       const problems = await prepare(page);
-      await page.goto('./#BOS');
+      await page.goto('./?l#BOS');
       await settled(page);
       await page.waitForFunction(i => !document.getElementById(i).hidden, id);
       const isOpen = () => page.evaluate(i => document.getElementById(i).open, id);
@@ -213,7 +213,7 @@ test.describe('game box scores', () => {
   test.use(DESKTOP);
   test('each club\'s heading folds its box score, and the choice is kept across games and visits', async ({page}) => {
     const problems = await prepare(page);
-    await page.goto('./#game/0022600001');
+    await page.goto('./?l#game/0022600001');
     await settled(page);
     const open = () => page.$$eval('#gm-box details', ds => ds.map(d => d.open));
     expect(await open()).toEqual([true, true]);
@@ -232,7 +232,7 @@ test.describe('game box scores', () => {
 
   test('a stat heading orders that club\'s players by it, most first; again restores the box score order', async ({page}) => {
     const problems = await prepare(page);
-    await page.goto('./#game/0022600001');
+    await page.goto('./?l#game/0022600001');
     await settled(page);
     const tb = '#gm-box table >> nth=0';
     const order = () => page.locator(tb).evaluate(t => [...t.querySelectorAll('tbody tr[data-pid]')].map(r => r.dataset.pid));

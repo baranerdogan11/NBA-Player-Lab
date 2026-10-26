@@ -20,7 +20,7 @@ test.describe('share a player', () => {
           window.shared = {name: f.name, type: f.type, title: d.title, w: bmp.width, h: bmp.height, png: Array.from(bytes)};
         };
       });
-      await page.goto('./#BOS');
+      await page.goto('./?l#BOS');
       await settled(page);
       await page.waitForFunction(() => document.querySelectorAll('#sc-game option').length > 1);
       const gid = await page.evaluate(() => document.querySelectorAll('#sc-game option')[1].value);

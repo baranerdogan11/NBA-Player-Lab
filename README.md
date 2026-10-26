@@ -29,8 +29,9 @@ A port of [Euroleague Player Lab](https://github.com/baranerdogan11/Euroleague-P
   `leaders.json` (season totals), all from the same box-score lines. The page turns integer totals into averages and
   percentages through one rule, `rdiv` (half away from zero, exact integer arithmetic), with the same formula in Python
 - `shots.py`: writes `teams/<season>/shots/<CODE>.json`, every field-goal attempt of the club's finals by shooter, for
-  the shot charts on the Player and Game pages (a half court in the club's two colours, drawn as SVG by the page); it
-  stops if a player's shots in a game differ from his box-score FGM-FGA
+  the shot charts on the Player and Game pages (a half court in the club's two colours, drawn as SVG by the page), each
+  shot tagged with one of five zones, and `shots/league.json`, the league's makes and attempts by zone for the Player
+  page's zone table; it stops if a player's shots in a game differ from his box-score FGM-FGA or his threes from his 3P
 - `tests/fixtures/site_fixture.py`: a made-up, self-consistent league the browser tests run against
 - `tests/`: Python self-tests (`tests/run_all.py` runs every `tests/test_*.py`), the Playwright browser tests
   (`tests/e2e/`) and the lint and type-check setup for the page's script (`tests/lint/`)

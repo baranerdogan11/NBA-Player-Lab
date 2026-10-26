@@ -12,7 +12,7 @@ const games = page => page.evaluate(() => get('games.json').then(d => d.games));
 
 test('a card for a game to come opens its preview, with the tip-off in the reader\'s time', async ({page}) => {
   const problems = await prepare(page);
-  await page.goto('./#games/2026-10-25');
+  await page.goto('./?l#games/2026-10-25');
   await settled(page);
   const card = page.locator('#gm-list a.card.next').first();
   const gid = await card.getAttribute('data-gid');
@@ -32,7 +32,7 @@ test('a card for a game to come opens its preview, with the tip-off in the reade
 
 test('each club\'s record and last ten agree with Standings, and its rest counts the days since its last game', async ({page}) => {
   const problems = await prepare(page);
-  await page.goto(`./${PRE}`);
+  await page.goto(`./?l${PRE}`);
   await settled(page);
   await page.waitForFunction(preview);
   const G = await games(page), i = G.findIndex(g => g.gid === PRE.slice(6)), g = G[i];
@@ -51,7 +51,7 @@ test('each club\'s record and last ten agree with Standings, and its rest counts
 
 test('both clubs\' ratings and Four Factors, values and ranks, are the ones Standings shows', async ({page}) => {
   const problems = await prepare(page);
-  await page.goto(`./${PRE}`);
+  await page.goto(`./?l${PRE}`);
   await settled(page);
   await page.waitForFunction(preview);
   const pv = await page.evaluate(() => [...document.querySelectorAll('#pv-rt [data-k], #pv-ff [data-k]')].flatMap(row =>
@@ -76,7 +76,7 @@ test('the season series lists the earlier finals between the two clubs, each ope
     pair = [f.home, f.away];
     await r.fulfill({json: {games: d.games.map(g => g.gid === PRE.slice(6) ? {...g, home: f.away, away: f.home} : g)}});
   });
-  await page.goto(`./${PRE}`);
+  await page.goto(`./?l${PRE}`);
   await settled(page);
   await page.waitForFunction(preview);
   const G = await games(page);
@@ -91,7 +91,7 @@ test('the season series lists the earlier finals between the two clubs, each ope
 
 test('clubs yet to meet say so; a final and a game to come swap the page between its two states', async ({page}) => {
   const problems = await prepare(page);
-  await page.goto(`./${PRE}`);
+  await page.goto(`./?l${PRE}`);
   await settled(page);
   await page.waitForFunction(preview);
   const G = await games(page), g = G.find(x => x.gid === PRE.slice(6));
