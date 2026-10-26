@@ -113,7 +113,7 @@
  "Shot charts": "Şut haritaları",
  "Game": "Maç",
  "Privacy": "Gizlilik",
- "NBA Player Lab has no accounts, no ads and no tracking, and sets no cookies. Your theme, language and last player are kept in your own browser only.": "NBA Player Lab'de hesap, reklam ve takip yoktur; çerez de kullanılmaz. Tema, dil ve son baktığınız oyuncu yalnızca kendi tarayıcınızda saklanır.",
+ "NBA Player Lab has no accounts, no ads and no tracking, and sets no cookies. Your theme, language, last player and starred players are kept in your own browser only.": "NBA Player Lab'de hesap, reklam ve takip yoktur; çerez de kullanılmaz. Tema, dil, son baktığınız oyuncu ve yıldızladığınız oyuncular yalnızca kendi tarayıcınızda saklanır.",
  "The site is hosted on GitHub Pages, which keeps standard server logs. Player pictures and club logos load from NBA's servers (cdn.nba.com), which see your IP address as any website would.": "Site GitHub Pages üzerinde barındırılır ve GitHub olağan sunucu kayıtlarını tutar. Oyuncu fotoğrafları ve kulüp logoları NBA'in sunucularından (cdn.nba.com) yüklenir; bu sunucular, her web sitesinde olduğu gibi IP adresinizi görür.",
  "Private fantasy league": "Özel fantezi ligi",
  "With its members' agreement, one private Yahoo Fantasy league can have its own page here. A league member reads it from Yahoo with read-only access, at most a few times a day.": "Üyelerinin onayıyla tek bir özel Yahoo Fantasy liginin burada kendi sayfası olabilir. Lig üyelerinden biri ligi Yahoo'dan yalnızca okuma izniyle, günde en fazla birkaç kez okur.",
@@ -183,5 +183,7 @@
  "Trending down": "Düşüşte",
  "Last 5": "Son 5",
  "Change": "Fark",
- "L5 MIN@stat": "SON 5 DK"
+ "L5 MIN@stat": "SON 5 DK",
+ "My players": "Oyuncularım",
+ "No games yet.": "Henüz maç yok."
 }
