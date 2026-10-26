@@ -160,6 +160,10 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 .courts{display:grid;gap:20px;padding:0 0 16px}
 .courts.two{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
 .court{display:block;width:100%;max-width:560px;height:auto;margin:0 auto;border:2px solid var(--ink)}
+.zones{max-width:560px;margin:14px auto 0}
+.zones i{display:inline-block;width:10px;height:10px;margin-right:8px;border:1.5px solid var(--ink);vertical-align:-1px}
+.zones i.hi{background:#ff4fa5}
+.zones i.lo{background:#0078b4}
 .court-h{display:flex;align-items:center;justify-content:center;font:900 13px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px}
 .arr{flex:none;display:grid;place-items:center;width:44px;height:44px;border:2px solid var(--ink);background:var(--paper);box-shadow:4px 4px 0 var(--ink);color:var(--ink);transition:transform .1s}
 .arr svg{width:22px;height:22px}
@@ -487,7 +491,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <a class="lgb" id="lg-badge" href="#league" hidden></a>
     <div class="pick"><select id="team" data-kind="team" aria-label="Team" data-ta="Team"></select><select id="player" data-kind="player" aria-label="Player" data-ta="Player"></select><a class="arr" id="prev" aria-label="Previous player" data-ta="Previous player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="arr" id="next" aria-label="Next player" data-ta="Next player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 5.5 6.5 6.5-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
     <div class="tiles" id="tiles"></div>
-    <details class="panel" id="sc" open><summary><h2 data-t="Shot chart">Shot chart</h2></summary><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div></details>
+    <details class="panel" id="sc" open><summary><h2 data-t="Shot chart">Shot chart</h2></summary><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div><div class="scroll zones" id="sc-zones"></div></details>
     <details class="panel" id="lu" open hidden><summary><h2 data-t="Lineups">Lineups</h2></summary><div class="scroll"><table class="tbl" id="onoff"></table></div><div class="scroll"><table class="tbl" id="fives"></table></div></details>
     <details class="panel" id="log-sec" open><summary><h2 data-t="Game log">Game log</h2></summary><div class="gform" id="form" hidden></div><div class="scroll"><table class="tbl" id="log"></table></div></details>
   </section>
@@ -684,22 +688,46 @@ const stale = my => my !== seq;
 // shooter's right, y away from the baseline); a make is a dot, a miss a cross. The rim is at the bottom, as the shooter sees it.
 const FLOOR = '#f3efe4';
 const light = hex => { const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)); return 299 * r + 587 * g + 114 * b > 150000; };
-function court(code, shots) {
+// The five zones of shots.py (ZONES), as court areas: a zone hotter than the league prints in fluoro pink, a colder one in
+// riso blue, once it has ZMIN attempts
+const ZN = ['Restricted area', 'Paint', 'Mid-range', 'Corner 3', 'Above the break 3'], ZMIN = 5;
+const ZD = ['M-40 52.5V0A40 40 0 0 1 40 0V52.5Z', 'M-80 52.5V-137.5H80V52.5ZM-40 52.5V0A40 40 0 0 1 40 0V52.5Z',
+  'M-220 52.5V-89.5A237.5 237.5 0 0 1 220-89.5V52.5ZM-80 52.5V-137.5H80V52.5Z', 'M-250 52.5V-89.5H-220V52.5ZM250 52.5V-89.5H220V52.5Z',
+  'M-250-89.5H-220A237.5 237.5 0 0 1 220-89.5H250V-417.5H-250Z'];
+const zoneFg = shots => ZN.map((_, z) => shots.reduce((a, s) => s[4] === z ? [a[0] + s[3], a[1] + 1] : a, [0, 0]));
+const zoneHeat = (mine, lg) => mine.map(([m, n], z) => {
+  if (n < ZMIN || !lg[z][1]) return '';
+  const d = rq(100 * m, n) - rq(100 * lg[z][0], lg[z][1]);
+  return d > 0 ? 'hi' : d < 0 ? 'lo' : '';
+});
+function court(code, shots, heat = []) {
   const [c1, c2] = team(code) ? team(code).colors : ['#333333', '#999999'];
   const lane = light(c2) ? c1 : '#fff', ln = (c, w = 3) => `fill="none" stroke="${c}" stroke-width="${w}"`;
+  const tint = heat.map((h, z) => h ? `<path class="z-${h}" data-z="${z}" d="${ZD[z]}" fill="${h === 'hi' ? '#ff4fa5' : '#0078b4'}" fill-rule="evenodd"/>` : '').join('');
+  shots = shots.filter(s => s[1] != null);
   const made = shots.filter(s => s[3]).map(([, x, y]) => `<circle cx="${x}" cy="${-y}" r="6.5"/>`).join('');
   const miss = shots.filter(s => !s[3]).map(([, x, y]) => `M${x - 5} ${-y - 5}l10 10m0-10-10 10`).join('');
   return `<svg class="court" viewBox="-280 -417.5 560 500" role="img" aria-label="${esc(t('Shot chart'))}"><rect x="-280" y="-417.5" width="560" height="500" fill="${c1}"/><rect x="-250" y="-417.5" width="500" height="470" fill="${FLOOR}"/>`
     + `<rect x="-80" y="-137.5" width="160" height="190" fill="${c2}" stroke="${lane}" stroke-width="3"/><path d="${[70, 110, 140, 170].map(d => `M-80 ${52.5 - d}h-9M80 ${52.5 - d}h9`).join('')}" ${ln(lane)}/>`
+    + (tint ? `<g opacity=".22">${tint}</g>` : '')
     + `<path d="M-60 -137.5a60 60 0 0 1 120 0" ${ln(c1)}/><path d="M60 -137.5a60 60 0 0 1-120 0" ${ln(lane)} stroke-dasharray="10 9"/>`
     + `<path d="M-220 52.5V-89.5A237.5 237.5 0 0 1 220-89.5V52.5M-40 12.5V0a40 40 0 0 1 80 0v12.5M-60-417.5a60 60 0 0 0 120 0M-20-417.5a20 20 0 0 0 40 0" ${ln(c1)}/>`
     + `<path d="M-30 12.5h60" ${ln(c1, 5)}/><path d="M0 12.5v-5" ${ln(c1, 2.5)}/><circle r="7.5" ${ln(c1, 2.5)}/><rect x="-250" y="-417.5" width="500" height="470" ${ln(c1, 5)}/>`
     + `<path d="${miss}" ${ln('#fff', 5)} stroke-linecap="round"/><path class="miss" d="${miss}" ${ln(c1, 2.5)} stroke-linecap="round"/><g class="made" fill="${c1}" stroke="#fff" stroke-width="1.5">${made}</g></svg>`;
 }
 // the Player page's chart: his season, or one game picked from his log, on the court of the club he shot for
-let SC = {pid: '', code: '', shots: [], club: {}};
-const shotsSvg = () => { const g = $('#sc-game').value; return court(g ? SC.club[g] : SC.code, g ? SC.shots.filter(s => s[0] === g) : SC.shots); };
-const drawShots = () => { $('#sc-court').innerHTML = shotsSvg(); };
+// with his zones against the league's below it (the season's league totals, for a game too)
+let SC = {pid: '', code: '', shots: [], club: {}, league: null};
+const scPick = () => { const g = $('#sc-game').value, shots = g ? SC.shots.filter(s => s[0] === g) : SC.shots, lg = SC.league && SC.shots.every(s => s[4] != null) ? SC.league : null;
+  const zf = lg ? zoneFg(shots) : null; return {code: g ? SC.club[g] : SC.code, shots, lg, zf, heat: lg ? zoneHeat(zf, lg) : []}; };
+const shotsSvg = () => { const k = scPick(); return court(k.code, k.shots, k.heat); };
+const drawShots = () => {
+  const k = scPick();
+  $('#sc-court').innerHTML = court(k.code, k.shots, k.heat);
+  $('#sc-zones').hidden = !k.lg;
+  $('#sc-zones').innerHTML = k.lg ? `<table class="tbl" style="${tc(k.code)}"><thead><tr><th class="l">${t('Zone')}</th><th>${t('FG@stat')}</th><th>${t('FG%@stat')}</th><th>${t('League')}</th></tr></thead><tbody>${k.zf.map(([m, n], z) =>
+    `<tr data-z="${z}"><td class="l"><i class="${k.heat[z] || ''}"></i>${t(ZN[z])}</td><td>${m}-${n}</td><td class="k">${n ? pct(m, n) : '–'}</td><td>${pct(...k.lg[z])}</td></tr>`).join('')}</tbody></table>` : '';
+};
 $('#sc-game').addEventListener('change', () => { drawShots(); prime('player'); });
 
 // ---- Lineups (lineups.py): each club's fives, one row of integer totals per five per game. A rating is points per 100
@@ -805,9 +833,9 @@ async function renderPlayer(code, pid, my, gid) {
   }).join('') : `<tr><td class="empty l" colspan="${head.length}">${t('No games played yet.')}</td></tr>`}</tbody>`;
   const played = log.filter(x => x.sec > 0), clubs = [...new Set([code, ...played.map(x => x.team)])];
   drawForm(played, code);
-  const [files] = await Promise.all([Promise.all(clubs.map(c => get(`shots/${c}.json`).catch(() => null))), drawLineups(p, code, clubs, my)]);
+  const [files, league] = await Promise.all([Promise.all(clubs.map(c => get(`shots/${c}.json`).catch(() => null))), get('shots/league.json').then(d => d.zones).catch(() => null), drawLineups(p, code, clubs, my)]);
   if (stale(my)) return;
-  SC = {pid: p.pid, code, shots: files.flatMap(f => f && f.players[p.pid] ? f.players[p.pid].map(s => [f.games[s[0]], s[1], s[2], s[3]]) : []), club: Object.fromEntries(played.map(x => [x.gid, x.team]))};
+  SC = {pid: p.pid, code, shots: files.flatMap(f => f && f.players[p.pid] ? f.players[p.pid].map(s => [f.games[s[0]], s[1], s[2], s[3], s[4]]) : []), club: Object.fromEntries(played.map(x => [x.gid, x.team])), league};
   const at = played.some(x => x.gid === gid) ? gid : '';
   $('#sc-game').innerHTML = `<option value="" data-c="${esc(code)}"${at ? '' : ' selected'}>${t('Season')}</option>${played.map(x => `<option value="${esc(x.gid)}" data-c="${esc(x.opp)}"${x.gid === at ? ' selected' : ''}>${fmtDate(x.date)} ${x.home ? t('vs') : '@'} ${esc(x.opp)}</option>`).join('')}`;
   $('#sc').hidden = false;

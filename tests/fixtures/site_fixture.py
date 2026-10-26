@@ -114,7 +114,8 @@ def spots(rng, games, lines):
             else:
                 a, r = rng.uniform(.4, math.pi - .4) if three else rng.uniform(0, math.pi), rng.uniform(245, 275) if three else rng.uniform(0, 210)
                 px, py = round(r * math.cos(a)), round(r * math.sin(a))
-            out.append({"gid": x["gid"], "time": when[x["gid"]], "team": x["team"], "pid": x["pid"], "x": px, "y": py, "made": made})
+            out.append({"gid": x["gid"], "time": when[x["gid"]], "team": x["team"], "pid": x["pid"], "x": px, "y": py, "made": made,
+                        "pts": 3 if three else 2})
     return out
 
 
