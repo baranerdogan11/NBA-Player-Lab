@@ -625,6 +625,18 @@ const remember = h => { LAST = h; try { localStorage.setItem('pl-last', h); } ca
 
 // ---- routing: the opening page on no hash (or #home), #player (the remembered player), #CODE[/pid[/gid]] (gid: his shot chart at that game), #compare[/a/b], #standings[/east|west|league], #games[/date], #game/gid, #leaders[/stat], #privacy,
 // #league[/roster|board|pick|team/<t>] (and the invite link #league/<id>/<key>)
+// ---- the site opens on Home: a visit after half an hour away (a reopened tab, a relaunched phone browser, the home-screen
+// icon, a tab left in the background) starts there, wherever it was left; a link to another page still opens that page
+const AWAY = 30 * 60 * 1000;
+let SEEN = 0, AT = '';
+try { SEEN = Number(localStorage.getItem('pl-seen')) || 0; AT = localStorage.getItem('pl-at') || ''; } catch (e) {}
+const NAV = (/** @type {PerformanceNavigationTiming | undefined} */ (performance.getEntriesByType('navigation')[0]))?.type || 'navigate';
+const away = () => SEEN > 0 && Date.now() - SEEN >= AWAY;
+const seen = () => { SEEN = Date.now(); AT = location.hash; try { localStorage.setItem('pl-seen', String(SEEN)); localStorage.setItem('pl-at', AT); } catch (e) {} };
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) seen();
+  else if (IDX && away() && location.hash) { history.replaceState(null, '', location.pathname + location.search); scrollTo(0, 0); route(); }
+});
 const PAGES = ['home', 'player', 'compare', 'standings', 'games', 'game', 'leaders', 'privacy', 'league'];
 let seq = 0;
 async function route() {
@@ -653,6 +665,7 @@ async function route() {
     const tab = page === 'game' ? 'games' : page;
     for (const el of $$('[data-pg]')) { if (el.dataset.pg === tab) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current'); }
     document.body.dataset.page = page;
+    seen();
     const pg = $(`#pg-${page}`);
     pg.classList.remove('in'); void pg.offsetWidth; pg.classList.add('in');
   } catch (e) {
@@ -1667,6 +1680,7 @@ async function boot() {
   $('#lg-btn').hidden = !LKEY;
   applyLang();
   window.addEventListener('hashchange', route);
+  if (away() && !(NAV === 'navigate' && location.hash !== AT)) history.replaceState(null, '', location.pathname + location.search);
   await route();
 }
 $('#retry').addEventListener('click', () => { if (IDX) route(); else boot(); });
