@@ -38,8 +38,7 @@ for (const [name, use, lang] of [['desktop', DESKTOP, 'en'], ['phone', PHONE, 't
       await page.waitForFunction(HOME);
       await expect(row).toBeVisible();
       await row.click();
-      await page.waitForFunction(g => location.hash.endsWith(g) && !!document.querySelector('#hero .star'), last.gid);
-      expect(await page.evaluate(() => document.querySelector('#sc-game').value)).toBe(last.gid);
+      await page.waitForFunction(g => location.hash.endsWith(g) && document.body.dataset.page === 'player' && document.querySelector('#sc-game').value === g, last.gid);   // his shot chart at that game
       await page.click('#hero .star');
       await expect(page.locator('#hero .star')).toHaveAttribute('aria-pressed', 'false');
       expect(await page.evaluate(() => localStorage.getItem('pl-stars'))).toBeNull();
