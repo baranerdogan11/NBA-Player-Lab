@@ -1,4 +1,6 @@
-"""SQL assertions over the silver layer. Exits non-zero if any fails, printing a few offending rows.
+"""SQL assertions over the silver layer, printing a few offending rows of each that fails. A failing test whose rows
+name their game quarantines those games (quarantine.py): a box-score test the whole game, a play-by-play test what is
+built from the play-by-play. Exits non-zero only for a test that names no game, or a systemic quarantine.
 
 usage: python warehouse_tests.py [2026-27]
 """
@@ -7,6 +9,7 @@ import json
 import os
 import sys
 import duckdb
+import quarantine
 from season import ROOT, season
 
 SEASON = season()
@@ -101,28 +104,52 @@ WARNINGS = [
 
 
 def run(name, q, word):
-    rows = con.execute(f"select * from ({q}) limit 6").fetchall()
-    n = con.execute(f"select count(*) from ({q})").fetchone()[0] if rows else 0
-    print(("PASS " if not n else word + " ") + name + ("" if not n else f"  ({n} rows)"))
+    """The test's offending rows, counted and a few printed: (count, {game: rows}), or (count, None) for rows naming no game."""
+    rel = con.execute(f"select * from ({q})")
+    cols = [c[0] for c in rel.description]
+    rows = rel.fetchall()
+    print(("PASS " if not rows else word + " ") + name + ("" if not rows else f"  ({len(rows)} rows)"))
     for r in rows[:5]:
         print("       ", r)
-    return n
+    if "game" not in cols:
+        return len(rows), None
+    by = {}
+    for r in rows:
+        by.setdefault(r[cols.index("game")], []).append(r)
+    return len(rows), by
 
 
-warn = sum(run(n, q, "WARN") != 0 for n, q in WARNINGS)
-bad = sum(run(n, q, "FAIL") != 0 for n, q in TESTS)
+# a test of the play-by-play (or what is built from it) holds the game out of the play-by-play's outputs; any other, all of it
+scope = lambda name: "pbp" if name.startswith(("play-by-play", "events", "shots")) else "box"  # noqa: E731
+failures, systemic = {}, 0
+warn = sum(run(n, q, "WARN")[0] != 0 for n, q in WARNINGS)
+for n, q in TESTS:
+    k, by = run(n, q, "FAIL")
+    if k and by is None:
+        systemic += 1
+    for g, rows in (by or {}).items():
+        quarantine.add(failures, g, scope(n), f"{n}: {len(rows)} rows, e.g. {rows[0]}")
 allowed = max(2, con.execute("select count(*) from box").fetchone()[0] // 1000)
 for n, q in TOLERATED:
-    k = run(n, q, "WARN")
+    k, by = run(n, q, "WARN")
     if k > allowed:
-        print(f"FAIL {n}: {k} rows differ, more than the {allowed} stat corrections allowed")
-        bad += 1
+        # the games with the most differing lines are held until what is left is within the stat corrections allowed
+        for g, rows in sorted(by.items(), key=lambda x: -len(x[1])):
+            if k <= allowed:
+                break
+            quarantine.add(failures, g, "pbp", f"{n}: {len(rows)} lines differ, e.g. {rows[0]}")
+            k -= len(rows)
+        print(f"FAIL {n}: more than the {allowed} stat corrections allowed; the games with the most are quarantined")
     elif k:
         warn += 1
+quarantine.record(W, "warehouse_tests", failures)
+code = 1 if systemic else quarantine.exit_code(W)
 stats = {t: con.execute(f"select count(*) from {t}").fetchone()[0] for t in TABLES}
 json.dump({"season": SEASON, "checked_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "rows": stats,
-           "games": con.execute("select count(distinct game) from box").fetchone()[0], "tests": len(TESTS) + len(TOLERATED), "failures": bad, "warnings": warn, "ok": bad == 0},
+           "games": con.execute("select count(distinct game) from box").fetchone()[0], "tests": len(TESTS) + len(TOLERATED), "failures": systemic,
+           "quarantined": len(failures), "warnings": warn, "ok": code == 0},
           open(os.path.join(W, "status.json"), "w"), indent=1)
 print("rows:", stats)
-print("RESULT:", "OK" if not bad else f"{bad} test(s) failed")
-sys.exit(0 if not bad else 1)
+print("RESULT:", f"{systemic} test(s) failed" if systemic else "systemic quarantine" if code else
+      f"OK, {len(failures)} game(s) quarantined" if failures else "OK")
+sys.exit(code)

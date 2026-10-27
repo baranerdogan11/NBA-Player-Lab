@@ -1,8 +1,11 @@
 name: Update data
 
 # Unattended publishing: every 5 minutes on game evenings, and once a night, the pipeline fetches what is new, passes
-# every gate and deploys. A failed gate stops the run before anything is committed, so the last good build stays live.
-# The season comes from config.json.
+# every gate and deploys. A game that fails a gate is quarantined (quarantine.py): held out of what the gate protects,
+# fetched again on every run, and released once its feed passes, while the rest of the night publishes. Only a
+# systemic failure (the fetch, a gate that names no game, more than a quarter of the night's games held, the build or
+# the smoke test) stops the run before anything is committed, so the last good build stays live. A game held for more
+# than 12 hours turns the quarantine job red without holding the deploy. The season comes from config.json.
 
 on:
   schedule:
@@ -104,11 +107,11 @@ jobs:
         if: hashFiles('warehouse.py') != ''
         run: python warehouse.py
 
-      - name: Warehouse gates (play-by-play totals match the official box score; writes status.json)
+      - name: Warehouse gates (play-by-play totals match the official box score; quarantines a failing game; writes status.json)
         if: hashFiles('warehouse_tests.py') != ''
         run: python warehouse_tests.py
 
-      - name: Lineups and RAPM (stints from the substitution log; checks every game's five, seconds and points)
+      - name: Lineups and RAPM (stints from the substitution log; checks every game's five, seconds and points, quarantines a failing game)
         if: hashFiles('warehouse.py') != ''
         run: python lineups.py && python rapm.py
 
@@ -116,7 +119,7 @@ jobs:
         if: hashFiles('warehouse.py') != ''
         run: python site_data.py
 
-      - name: Shot charts (teams/<season>/shots/ from the warehouse; every player's shots match his box-score FG)
+      - name: Shot charts (teams/<season>/shots/ from the warehouse; every player's shots match his box-score FG, or the game is quarantined)
         if: hashFiles('warehouse.py') != ''
         run: python shots.py
 
@@ -169,6 +172,20 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 14
+
+  quarantine:
+    # a game the gates have held for more than 12 hours shows red here; the deploy does not wait for this job
+    needs: update
+    if: needs.update.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.update.outputs.sha || github.sha }}
+
+      - name: No game quarantined for more than 12 hours
+        run: python3 quarantine.py --check
 
   deploy:
     # the commit just pushed passed every gate above; a push made with GITHUB_TOKEN does not start test.yml, so the
