@@ -122,6 +122,27 @@ sts, problems = lineups.stints(acts, {H: set(range(10, 15)), A: set(range(20, 25
 first = next(s for s in sts if s["team"] == H)
 checks["a free throw the clock puts before the substitution counts for the five fouled"] = problems == [] and 14 in first["players"] and first["pts"] == 1
 
+# hand-written: a technical logged after substitutions made after a foul releases them, so its free throw counts for the
+# five coming in (DEN at GSW, 26 Oct: an offensive foul, the changes, then a technical)
+acts = [ev(1, "period", "start", None, None, 720.0), ev(2, "foul", "offensive", H, 10, 600.0), ev(3, "substitution", "out", H, 14, 600.0),
+        ev(4, "substitution", "in", H, 15, 600.0), ev(5, "foul", "technical", A, 20, 600.0), ev(6, "freethrow", "1 of 1", H, 10, 600.0)]
+acts[5]["score_home"] = 1
+sts, problems = lineups.stints(acts, {H: set(range(10, 15)), A: set(range(20, 25))})
+last = [s for s in sts if s["team"] == H][-1]
+checks["a technical after the changes counts for the five coming in"] = problems == [] and 15 in last["players"] and last["pts"] == 1
+
+# hand-written: a technical in the middle of a three-shot trip, after the changes, counts for the five coming in, and the
+# trip's last free throw, keyed in after it, for the five fouled (OKC at PHX, 26 Oct)
+acts = [ev(1, "period", "start", None, None, 720.0), ev(2, "foul", "personal", A, 20, 600.0), ev(3, "freethrow", "1 of 3", H, 10, 600.0),
+        ev(4, "freethrow", "2 of 3", H, 10, 600.0), ev(5, "substitution", "out", H, 14, 600.0), ev(6, "substitution", "in", H, 15, 600.0),
+        ev(7, "foul", "technical", H, None, 600.0), ev(8, "freethrow", "1 of 1", A, 20, 600.0), ev(9, "freethrow", "3 of 3", H, 10, 600.0)]
+for a, (h, w) in zip(acts[2:], [(1, 0), (2, 0), (2, 0), (2, 0), (2, 0), (2, 1), (3, 1)]):
+    a["score_home"], a["score_away"] = h, w
+sts, problems = lineups.stints(acts, {H: set(range(10, 15)), A: set(range(20, 25))})
+first, last = next(s for s in sts if s["team"] == H), [s for s in sts if s["team"] == H][-1]
+checks["a trip's last free throw after a technical counts for the five fouled"] = (problems == [] and 14 in first["players"] and first["pts"] == 3
+                                                                                  and first["opp_pts"] == 0 and 15 in last["players"] and last["opp_pts"] == 1 and last["pts"] == 0)
+
 # hand-written: the game's end logged in a period of its own adds no overtime (PHX-GSW, 24 Oct)
 acts = [ev(1, "period", "start", None, None, 720.0), ev(2, "period", "end", None, None, 0.0), {**ev(3, "game", "end", None, None, 0.0), "period": 2}]
 sts, problems = lineups.stints(acts, {H: set(range(10, 15)), A: set(range(20, 25))})
