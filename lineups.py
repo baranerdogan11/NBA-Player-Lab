@@ -95,22 +95,67 @@ def play_order(actions):
         return False
 
     def ft_ahead(i):
-        for b in acts[i + 1:]:
+        for j in range(i + 1, len(acts)):
+            b = acts[j]
             if b["period"] != acts[i]["period"] or b["clock"] != acts[i]["clock"]:
                 return False
-            if b["action_type"] == "freethrow":
+            if b["action_type"] == "freethrow" and j not in moved:
                 return True
         return False
-    out, held = [], []
+    def trip_left(i):
+        """The free throws after i that finish the trip already under way at its clock (a third free throw keyed in after
+        a technical), as indices."""
+        last = next((b for b in reversed(out) if b["action_type"] == "freethrow"), None)
+        if last is None or last["period"] != acts[i]["period"] or last["clock"] != acts[i]["clock"]:
+            return []
+        k, n = (str(last.get("sub_type")).split(" of ") + [""])[:2]
+        rest = []
+        for j in range(i + 1, len(acts)):
+            b = acts[j]
+            if b["period"] != acts[i]["period"] or b["clock"] != acts[i]["clock"]:
+                break
+            m = (str(b.get("sub_type")).split(" of ") + [""])[:2]
+            if b["action_type"] == "freethrow" and b["player"] == last["player"] and m[1] == n and m[0].isdigit() and k.isdigit() and int(m[0]) > int(k):
+                rest.append(j)
+        return rest
+    out, held, moved = [], [], set()
     for i, a in enumerate(acts):
+        if i in moved:
+            continue
         if a["action_type"] == "substitution" and (held or fouled_before(i)) and ft_ahead(i):
             held.append(a)
             continue
+        if held and a["action_type"] == "foul":
+            # a foul logged after the held substitution is one the five coming in were on the floor for (OKC at PHX,
+            # 26 Oct: a technical between a three-shot trip's second and third free throws); the trip under way is
+            # finished first, by the five fouled
+            rest = trip_left(i)
+            moved.update(rest)
+            out += [acts[j] for j in rest] + held
+            held = []
         out.append(a)
         if held and not ft_ahead(i):
             out += held
             held = []
-    return out + held
+    return rescored(acts, out + held) if moved else out + held
+
+
+def rescored(before, after):
+    """after, a reordering of before, with the running score rebuilt from each action's own points in before, so a free
+    throw moved ahead carries its own point and not the ones scored between."""
+    own, score = {}, (0, 0)
+    for a in before:
+        sh, sa = _v(a.get("score_home")), _v(a.get("score_away"))
+        if sh is not None and sa is not None:
+            own[id(a)] = (int(sh) - score[0], int(sa) - score[1])
+            score = (int(sh), int(sa))
+    out, score = [], (0, 0)
+    for a in after:
+        if id(a) in own:
+            score = (score[0] + own[id(a)][0], score[1] + own[id(a)][1])
+            a = {**a, "score_home": score[0], "score_away": score[1]}
+        out.append(a)
+    return out
 
 
 def infer_starters(actions):
