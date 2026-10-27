@@ -1,6 +1,6 @@
 {
  "season": "2026-27",
- "checked_at": "2026-10-27T04:57:58Z",
+ "checked_at": "2026-10-27T06:15:36Z",
  "rows": {
   "teams": 30,
   "games": 1274,
@@ -15,6 +15,7 @@
  "games": 52,
  "tests": 39,
  "failures": 0,
+ "quarantined": 0,
  "warnings": 3,
  "ok": true
 }
