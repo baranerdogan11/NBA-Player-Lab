@@ -184,15 +184,22 @@ def write_ratings(out, teams, rows):
     _dump(os.path.join(out, "ratings.json"), {"teams": list(tot.values())})
 
 
-def check_ratings(out):
+def check_ratings(out, rows=(), held=()):
     """Raises unless every club's totals behind its ratings (points, FGA, OREB, TOV and FTA, its own and its
-    opponents') are the sums of its lineup rows, over the same games."""
+    opponents') are the sums of its lineup rows, over the same games: its finals but those held out of the lineups
+    (quarantine.py), whose write_ratings() rows are taken off the totals first."""
+    by = {(r["gid"], r["team"]): r for r in rows}
     for c in json.load(open(os.path.join(out, "ratings.json")))["teams"]:
         path = os.path.join(out, "lineups", f"{c['code']}.json")
         lu = json.load(open(path)) if os.path.exists(path) else {"games": [], "rows": []}
         got = [sum(r[i] for r in lu["rows"]) for i in range(3, 13)]
         box = [c["for"]["pts"], c["against"]["pts"], *(c["for"][k] for k in LU_COUNTS), *(c["against"][k] for k in LU_COUNTS)]
-        if len(lu["games"]) != c["gp"] or got != box:
+        gp = c["gp"]
+        for r in (r for r in rows if r["team"] == c["code"] and r["gid"] in held):
+            o = by[(r["gid"], r["opp"])]
+            gp -= 1
+            box = [b - x for b, x in zip(box, [r["pts"], o["pts"], *(r[k] for k in LU_COUNTS), *(o[k] for k in LU_COUNTS)])]
+        if len(lu["games"]) != gp or got != box:
             raise ValueError(f"{c['code']}: lineups add up to {len(lu['games'])} games {got}, box scores {c['gp']} games {box} "
                              f"(pts, opp_pts, {', '.join(LU_COUNTS)}, opp_...)")
 
@@ -221,11 +228,15 @@ def write_lineups(out, teams, rows):
 
 
 def from_warehouse(wh):
-    """players, games, lines for write_site() from the Parquet tables in the directory wh."""
+    """players, games, lines for write_site() from the Parquet tables in the directory wh. A game whose box score is
+    quarantined (quarantine.py) is read as not final yet; one held out of the game flow has no flow."""
     import duckdb
+    import quarantine
     con = duckdb.connect()
-    for t in ("games", "box", "players", "periods"):
+    for t in ("box", "players", "periods"):
         con.execute(f"create view {t} as select * from read_parquet('{os.path.join(wh, t + '.parquet')}')")
+    con.execute(f"create view games as select * from {quarantine.games_sql(wh)}")
+    no_flow = quarantine.held(wh, "flow", gate="flow")
     if os.path.exists(os.path.join(wh, "roster.parquet")):
         con.execute(f"create view roster as select * from read_parquet('{os.path.join(wh, 'roster.parquet')}')")
     else:   # an earlier season, or a warehouse built before rosters were fetched: players come from box scores only
@@ -247,7 +258,7 @@ def from_warehouse(wh):
                              "join games g using (game) where g.game_type = 'regular' and g.final order by e.game, e.order_no").fetchall():
             flows.setdefault(r[0], []).append(r[1:])
     games = [{**g, "final": bool(g["final"]), **({"periods": qtr.get(g["gid"], [])} if g["final"] else {}),
-              **({"flow": game_flow(flows[g["gid"]])} if g["gid"] in flows else {})}
+              **({"flow": game_flow(flows[g["gid"]])} if g["gid"] in flows and g["gid"] not in no_flow else {})}
              for g in rows("select game as gid, strftime(date, '%Y-%m-%d') as \"date\", strftime(tipoff_utc, '%Y-%m-%dT%H:%M:%SZ') as \"time\", "
                            "home, away, final, home_score as hs, away_score as \"as\" from games where game_type = 'regular'")]
     stat = ", ".join(f"coalesce(b.{'plus_minus' if k == 'pm' else k}, 0) as {k}" for k in STATS)
@@ -273,10 +284,11 @@ def team_lines(wh):
     """write_ratings() rows from the warehouse's team box scores, regular-season finals only. Turnovers count the
     team's own (a shot-clock violation, say) as the play-by-play does; rebounds are the players', as in lineups.py."""
     import duckdb
+    import quarantine
     cur = duckdb.connect().execute(
         f"select t.game as gid, t.team, t.opponent as opp, round(t.seconds)::int as sec, {', '.join(f't.{k}' for k in RT if k != 'tov')}, "
         f"t.tov + coalesce(t.team_tov, 0) as tov from read_parquet('{os.path.join(wh, 'team_box.parquet')}') t "
-        f"join read_parquet('{os.path.join(wh, 'games.parquet')}') g using (game) where g.game_type = 'regular' and g.final")
+        f"join {quarantine.games_sql(wh)} g using (game) where g.game_type = 'regular' and g.final")
     cols = [c[0] for c in cur.description]
     return [dict(zip(cols, r)) for r in cur.fetchall()]
 
@@ -289,8 +301,21 @@ if __name__ == "__main__":
     out, wh = os.path.join(ROOT, "teams", SEASON), os.path.join(ROOT, "warehouse", SEASON)
     if not os.path.exists(os.path.join(wh, "box.parquet")):
         raise SystemExit(f"{SEASON}: no warehouse tables in {wh}; run warehouse.py first")
+    import quarantine
     teams = load_teams()
-    write_site(out, SEASON, SEASON, built, teams, *from_warehouse(wh))
-    write_ratings(out, teams, team_lines(wh))
-    check_ratings(out)   # lineups.py has written teams/<season>/lineups/ by now
+    players, games, lines = from_warehouse(wh)
+    bad = {}
+    for g in games:   # a game whose flow fails its check is quarantined and drawn without one
+        try:
+            if "flow" in g:
+                check_flow(g)
+        except ValueError as e:
+            bad[g["gid"]] = ("flow", str(e))
+            del g["flow"]
+    quarantine.record(wh, "flow", bad)
+    write_site(out, SEASON, SEASON, built, teams, players, games, lines)
+    rows = team_lines(wh)
+    write_ratings(out, teams, rows)
+    check_ratings(out, rows, quarantine.held(wh, "lineups"))   # lineups.py has written teams/<season>/lineups/ by now
     print(f"{SEASON}: site JSON written to {out}")
+    raise SystemExit(quarantine.exit_code(wh))

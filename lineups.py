@@ -20,7 +20,8 @@ And, from the regular-season finals' stints, the site's teams/<season>/lineups/<
 
 Checks, every run: five per club at every action, stint points equal the final score, stint seconds equal the game
 length, each player's seconds on the floor agree with the box score within a minute, and his points for and against on the
-floor add up to his box-score plus-minus.
+floor add up to his box-score plus-minus. A game that fails is quarantined (quarantine.py) and left out of all three
+tables, as is a game the warehouse tests hold; the run fails only when the quarantine is systemic.
 
 usage: python lineups.py [season]
 """
@@ -28,6 +29,7 @@ import os
 import sys
 import duckdb
 import pandas as pd
+import quarantine
 
 PERIOD_SEC = lambda per: 720 if per <= 4 else 300  # noqa: E731
 # who an action puts on the floor: the actor, and the other players it names (technical fouls and ejections can name
@@ -307,11 +309,14 @@ def main(season, w=None, out=None):
     box["player"] = box.player.astype(int)
     starters = {g: {t: set(d.player) for t, d in gd[gd.starter].groupby("team")} for g, gd in box.groupby("game")}
     final = {r.game: sorted([r.home_score, r.away_score]) for r in con.execute(f"select * from read_parquet('{w}/games.parquet') where final").df().itertuples()}
-    rows, problems = [], []
+    rows, bad = [], {}
+    skip = quarantine.held(w, "lineups", gate="lineups")
     for g, acts in ev.groupby("game"):
+        if g in skip:
+            continue
         acts = acts.to_dict("records")
-        sts, pr = stints(acts, starters.get(g, {}))
-        problems += [f"game {g}: {p}" for p in pr]
+        sts, problems = stints(acts, starters.get(g, {}))
+        problems = [f"game {g}: {p}" for p in problems]
         n_per = max(int(a["period"]) for a in plays(acts))
         if abs(sum(s["sec"] for s in sts) / 2 - (2880 + 300 * max(n_per - 4, 0))) > 1:
             problems.append(f"game {g}: stints cover {sum(s['sec'] for s in sts) / 2:.0f} s")
@@ -327,7 +332,10 @@ def main(season, w=None, out=None):
                 problems.append(f"game {g}: {b.player} on the floor {on.get((b.team, b.player), 0):.0f} s, box {b.seconds:.0f} s")
             if g in final and _v(b.plus_minus) is not None and pm.get((b.team, b.player), 0) != b.plus_minus:
                 problems.append(f"game {g}: {b.player} +/- on the floor {pm.get((b.team, b.player), 0)}, box {b.plus_minus}")
-        rows += [{"game": g, **s} for s in sts]
+        if problems:
+            bad[g] = problems
+        else:
+            rows += [{"game": g, **s} for s in sts]
     cols = ["game", "team", "stint", "players", "opp_players", "sec", "pts", "opp_pts", *COUNTS, *(f"opp_{k}" for k in COUNTS)]
     st = pd.DataFrame(rows, columns=cols)       # before opening night there are no games: the tables are written empty
     lu, oo = season_tables(st) if len(st) else (pd.DataFrame(columns=["team", "players"]), pd.DataFrame(columns=["team", "player"]))
@@ -340,13 +348,17 @@ def main(season, w=None, out=None):
                           "where game_type = 'regular' and final").fetchall()
         when = dict(reg)
         write_lineups(out, load_teams(), [{**r, "gid": r["game"], "time": when[r["game"]]} for r in rows if r["game"] in when])
+    problems = [p for g in sorted(bad) for p in bad[g]]
     for p in problems[:20]:
         print("FAIL", p)
-    print(f"{season}: {st.game.nunique()} games, {len(st)} stint rows, {len(lu)} fives, {len(oo)} players; {len(problems)} problems")
+    quarantine.record(w, "lineups", {g: ("lineups", f"{len(pr)} problems: " + "; ".join(pr[:3])) for g, pr in bad.items()})
+    print(f"{season}: {st.game.nunique()} games, {len(st)} stint rows, {len(lu)} fives, {len(oo)} players; {len(problems)} problems in "
+          f"{len(bad)} games, quarantined; {len(skip)} games held by an earlier gate")
     return problems
 
 
 if __name__ == "__main__":
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from season import ROOT, season
-    sys.exit(1 if main(season(), out=os.path.join(ROOT, "teams", season())) else 0)
+    main(season(), out=os.path.join(ROOT, "teams", season()))
+    sys.exit(quarantine.exit_code(os.path.join(ROOT, "warehouse", season())))

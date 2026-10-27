@@ -1,6 +1,7 @@
 """Bronze layer: pulls the season's schedule and, for every final game, the official box score and play-by-play from
 the NBA's game-data bucket, into cache/<season>/. Each rerun fetches only games that are new, plus the
-games of the last 72 hours again so late stat corrections land. Runs in GitHub Actions only.
+games of the last 72 hours again so late stat corrections land, and every game the gates hold
+(warehouse/<season>/quarantine.json) on every run, so a corrected feed clears it. Runs in GitHub Actions only.
 
 The CDN's schedule file covers the current season only; for an earlier season the regular-season games are found by
 walking the game ids, and the schedule is rebuilt from their box scores.
@@ -57,6 +58,8 @@ NEW_WINDOW = 12 * 3600
 NEW_EVERY = 30 * 60
 FETCHED = os.path.join(CACHE, "fetched_at.json")   # file name -> unix time it was last fetched (mtimes do not survive the CI cache)
 fetched_at = json.load(open(FETCHED)) if os.path.exists(FETCHED) else {}
+QUARANTINE = os.path.join(ROOT, "warehouse", SEASON, "quarantine.json")
+held = {e["game"] for e in json.load(open(QUARANTINE))["games"]} if os.path.exists(QUARANTINE) else set()
 
 
 def cached(name, fetch, refresh=False, force=False, every=REFRESH_EVERY):
@@ -95,13 +98,16 @@ def recent(tipoff, window=REFRESH_WINDOW):
 def fetch_game(gid, tipoff):
     fresh = recent(tipoff)
     every = NEW_EVERY if recent(tipoff, NEW_WINDOW) else REFRESH_EVERY   # the box score and play-by-play on one clock
-    box = cached(f"box_{gid}.json", lambda: get(BOX.format(gid)), fresh, every=every)
+    again = gid in held
+    if again:
+        print(f"   {gid}: quarantined, fetching its box score and play-by-play again")
+    box = cached(f"box_{gid}.json", lambda: get(BOX.format(gid)), fresh, force=again, every=every)
     if box["game"]["gameStatus"] != FINAL:          # the schedule can mark a game final a moment before its box score does
         os.remove(os.path.join(CACHE, f"box_{gid}.json"))
         fetched_at.pop(f"box_{gid}.json", None)
         print(f"   {gid}: box score not final yet, skipped")
         return None
-    pbp = cached(f"pbp_{gid}.json", lambda: get(PBP.format(gid)), fresh, every=every)
+    pbp = cached(f"pbp_{gid}.json", lambda: get(PBP.format(gid)), fresh, force=again, every=every)
     if fresh and not complete(pbp, box):
         # the play-by-play can trail the box score at the buzzer; a copy cached then would fail the warehouse tests
         # and hold every update until its refresh, so it is fetched again on each run until its last score is final

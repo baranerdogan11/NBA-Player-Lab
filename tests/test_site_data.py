@@ -70,15 +70,19 @@ checks["ratings totals are each club's box scores and its opponents'"] = len(rt)
     for t in idx["teams"] for c in [rt[t["code"]]])
 
 
-def gate():
+def gate(*held):
     try:
-        check_ratings(out)
+        check_ratings(out, *held)
         return True
     except ValueError:
         return False
 
 
 checks["the ratings gate passes when the lineups add up to the box scores"] = gate()
+gone = units[0]["gid"]
+write_lineups(out, teams, [u for u in units if u["gid"] != gone])
+checks["a game quarantined out of the lineups is taken off the box totals it is checked against"] = (
+    gate(site_fixture.team_lines(games, lines), {gone}) and not gate())
 units[0]["tov"] += 1   # a turnover the box score does not have
 write_lineups(out, teams, units)
 checks["the ratings gate fails when a club's lineups do not"] = not gate()

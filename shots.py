@@ -10,11 +10,13 @@ A player traded mid-season has shots in each club's file, under the club he shot
 
 from_warehouse() reads warehouse/<season>/shots.parquet (warehouse.py) and checks every player's attempts and makes per
 game against his box-score line, threes against his 3P line, so a chart always holds the shots of the FG column beside it
-and its two three-point zones add up to the 3P column.
+and its two three-point zones add up to the 3P column. A game that fails is quarantined (quarantine.py) and left out of
+the charts, as is a game an earlier gate holds; the run fails only when the quarantine is systemic.
 usage: python shots.py [2026-27]   (reads warehouse/<season>/, writes teams/<season>/shots/)
 """
 import json
 import os
+import quarantine
 
 ZONES = ("Restricted area", "Paint", "Mid-range", "Corner 3", "Above the break 3")
 
@@ -58,14 +60,22 @@ def write_shots(out, teams, shots):
         json.dump({"zones": league}, f, separators=(",", ":"))
 
 
-def from_warehouse(wh):
-    """shots for write_shots() from the Parquet tables in the directory wh; raises if a player's shots in a game do not
-    add up to his box-score FGM-FGA, or his threes to his 3PM-3PA."""
+class Mismatch(ValueError):
+    """Shots that differ from the box score; games: {game id: what differs}."""
+    def __init__(self, msg, games):
+        super().__init__(msg)
+        self.games = games
+
+
+def from_warehouse(wh, skip=()):
+    """shots for write_shots() from the Parquet tables in the directory wh, leaving out the games in skip; raises
+    Mismatch if a player's shots in a game do not add up to his box-score FGM-FGA, or his threes to his 3PM-3PA."""
     import duckdb
     con = duckdb.connect()
     for t in ("games", "box", "shots"):
         con.execute(f"create view {t} as select * from read_parquet('{os.path.join(wh, t + '.parquet')}')")
-    final = "join games g using (game) where g.game_type = 'regular' and g.final"
+    final = "join games g using (game) where g.game_type = 'regular' and g.final" + \
+        (f" and g.game not in ({', '.join(repr(x) for x in sorted(skip))})" if skip else "")
     bad = con.execute(f"""
         with s as (select s.game, s.player, count(*) as fga, count(*) filter (where s.made) as fgm, count(*) filter (where s.pts = 3) as fg3a,
                           count(*) filter (where s.made and s.pts = 3) as fg3m from shots s {final} group by all),
@@ -74,8 +84,11 @@ def from_warehouse(wh):
         from s full join b using (game, player) where s.fga is distinct from b.fga or s.fgm is distinct from b.fgm
                                                    or s.fg3a is distinct from b.fg3a or s.fg3m is distinct from b.fg3m""").fetchall()
     if bad:
-        raise ValueError(f"{len(bad)} player-games whose shots differ from the box score, e.g. game {bad[0][0]} player {bad[0][1]}: "
-                         f"shots {bad[0][2]}-{bad[0][3]} (3P {bad[0][6]}-{bad[0][7]}), box {bad[0][4]}-{bad[0][5]} (3P {bad[0][8]}-{bad[0][9]})")
+        games = {}
+        for r in bad:
+            games.setdefault(r[0], f"player {r[1]}: shots {r[2]}-{r[3]} (3P {r[6]}-{r[7]}), box {r[4]}-{r[5]} (3P {r[8]}-{r[9]})")
+        raise Mismatch(f"{len(bad)} player-games whose shots differ from the box score, e.g. game {bad[0][0]} player {bad[0][1]}: "
+                         f"shots {bad[0][2]}-{bad[0][3]} (3P {bad[0][6]}-{bad[0][7]}), box {bad[0][4]}-{bad[0][5]} (3P {bad[0][8]}-{bad[0][9]})", games)
     cur = con.execute(f"""select s.game as gid, strftime(g.tipoff_utc, '%Y-%m-%dT%H:%M:%SZ') as time, s.team, s.player::varchar as pid,
                                  s.x, s.y, s.made, s.pts, s.area from shots s {final} order by g.tipoff_utc, s.game, s.action""")
     cols = [c[0] for c in cur.description]
@@ -89,5 +102,13 @@ if __name__ == "__main__":
     out, wh = os.path.join(ROOT, "teams", SEASON), os.path.join(ROOT, "warehouse", SEASON)
     if not os.path.exists(os.path.join(wh, "shots.parquet")):
         raise SystemExit(f"{SEASON}: no warehouse tables in {wh}; run warehouse.py first")
-    write_shots(out, load_teams(), from_warehouse(wh))
-    print(f"{SEASON}: shot charts written to {os.path.join(out, 'shots')}")
+    skip, bad = quarantine.held(wh, "shots", gate="shots"), {}
+    try:
+        shots = from_warehouse(wh, skip)
+    except Mismatch as e:
+        bad = e.games
+        shots = from_warehouse(wh, skip | set(bad))
+    quarantine.record(wh, "shots", {g: ("shots", f"shots differ from the box score, e.g. {r}") for g, r in bad.items()})
+    write_shots(out, load_teams(), shots)
+    print(f"{SEASON}: shot charts written to {os.path.join(out, 'shots')}; {len(bad)} games quarantined, {len(skip)} held by an earlier gate")
+    raise SystemExit(quarantine.exit_code(wh))
