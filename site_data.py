@@ -23,6 +23,10 @@ Files under <out>/ (out is teams/<season>/):
                     derives ratings, pace and the Four Factors with rdiv
   night.json        the latest night with a final: {"date", "rows": [{gid, pid, name, team, gs, pts, reb, ast, fgm, fga},
                     ...]}, its five best lines by Hollinger's Game Score, gs in tenths (game_score()), best first
+  highs.json        the season's best single games: {"stats": {stat: [{gid, date, pid, name, team, club, opp, home, v},
+                    ...]}} for each of HIGHS, its ten best lines, v the line's value (gs in tenths), team his club that
+                    night and club his current one; best first, then the earlier game, then the name; check_highs()
+                    holds it to the game box scores
   leaders.json      every player's season totals, under his current club, his clubs' totals over the same games
                     (tm_fga, tm_fta, tm_tov, tm_sec, for usage), his RAPM, O-RAPM and D-RAPM (null without one), and
                     for form his Game Score total gs and gs5 and sec5 over his last five games played
@@ -164,6 +168,42 @@ def write_site(out, season, label, built, teams, players, games, lines):
                      **{k: int(r[k]) for k in ("pts", "reb", "ast", "fgm", "fga")}}
                     for r in lines if final[r["gid"]]["date"] == last and int(r["sec"]) > 0), key=lambda x: (-x["gs"], x["name"], x["pid"]))
     _dump(os.path.join(out, "night.json"), {"date": last, "rows": night[:5]})
+    club = {p["pid"]: p["team"] for p in players}
+    played = [x | {"pid": pid} for pid, log in logs.items() for x in log if x["sec"] > 0]
+    name = {r["pid"]: r["name"] for r in lines}
+    _dump(os.path.join(out, "highs.json"), {"stats": {k: [
+        {"gid": x["gid"], "date": x["date"], "pid": x["pid"], "name": name[x["pid"]], "team": x["team"], "club": club.get(x["pid"], x["team"]),
+         "opp": x["opp"], "home": x["home"], "v": x[k]}
+        for x in sorted((x for x in played if x[k] > 0), key=lambda x: (-x[k], final[x["gid"]]["time"], x["gid"], name[x["pid"]], x["pid"]))[:10]]
+        for k in HIGHS}})
+    check_highs(out, final)
+
+
+HIGHS = ("pts", "reb", "ast", "stl", "blk", "fg3m", "gs")
+
+
+def check_highs(out, gids):
+    """Raises unless every line in highs.json is its game's box-score line (games/<gid>.json), and no line of the
+    finals gids beats the last one shown for its stat, or is left out of a board with fewer than ten."""
+    hs = json.load(open(os.path.join(out, "highs.json")))["stats"]
+    box = {}
+    for gid in gids:
+        g = json.load(open(os.path.join(out, "games", f"{gid}.json")))
+        for side in g["box"].values():
+            for x in side:
+                if x["sec"] > 0:
+                    box[(g["gid"], x["pid"])] = {**x, "gs": game_score(x)}
+    for k in HIGHS:
+        rows = hs[k]
+        for r in rows:
+            x = box.get((r["gid"], r["pid"]))
+            if x is None or x[k] != r["v"]:
+                raise ValueError(f"highs.json {k}: {r['name']} {r['v']} in {r['gid']}, the box score says {x and x[k]}")
+        floor = rows[-1]["v"] if len(rows) == 10 else 0
+        shown = {(r["gid"], r["pid"]) for r in rows}
+        over = [key for key, x in box.items() if x[k] > floor and key not in shown]
+        if over:
+            raise ValueError(f"highs.json {k}: {len(over)} box-score lines beat the board, {over[0]} among them")
 
 
 LU_COUNTS = ("fga", "oreb", "tov", "fta")
