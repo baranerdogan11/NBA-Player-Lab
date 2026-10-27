@@ -16,7 +16,7 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "tests", "fixtures"))
 import site_fixture  # noqa: E402
 from rounding import rnd  # noqa: E402
-from site_data import RT, STATS, check_ratings, game_score, write_lineups, write_ratings, write_site  # noqa: E402
+from site_data import HIGHS, RT, STATS, check_highs, check_ratings, game_score, write_lineups, write_ratings, write_site  # noqa: E402
 
 checks = {}
 out = tempfile.mkdtemp()
@@ -91,6 +91,33 @@ best = sorted(((game_score(x), x["name"], x["pid"], b["gid"]) for b in boxes.val
                for side in b["box"].values() for x in side if x["sec"] > 0), key=lambda r: (-r[0], r[1], r[2]))[:5]
 checks["the night's best are the latest night's top five Game Scores, from its box scores"] = (
     night["date"] == last and [(r["gs"], r["name"], r["pid"], r["gid"]) for r in night["rows"]] == best)
+highs, order = load("highs.json")["stats"], {g["gid"]: i for i, g in enumerate(finals)}
+club = {p["pid"]: p["team"] for p in players}
+every = [{**x, "gid": b["gid"], "team": c, "gs": game_score(x)} for b in boxes.values() for c, side in b["box"].items() for x in side if x["sec"] > 0]
+checks["the season highs are each stat's ten best box-score lines, best first, then the earlier game"] = all(
+    [(r["v"], r["gid"], r["pid"], r["team"], r["club"]) for r in highs[k]]
+    == [(x[k], x["gid"], x["pid"], x["team"], club[x["pid"]]) for x in sorted((x for x in every if x[k] > 0),
+                                                                         key=lambda x: (-x[k], order[x["gid"]], x["gid"], x["name"], x["pid"]))[:10]]
+    for k in HIGHS)
+
+
+def highs_gate():
+    try:
+        check_highs(out, list(boxes))
+        return True
+    except ValueError:
+        return False
+
+
+checks["the season highs gate passes on the box scores"] = highs_gate()
+hs = load("highs.json")
+hs["stats"]["pts"][0]["v"] += 1   # a line the box score does not have
+json.dump(hs, open(os.path.join(out, "highs.json"), "w"))
+checks["the season highs gate fails on a line the box score does not have"] = not highs_gate()
+hs["stats"]["pts"][0]["v"] -= 1
+hs["stats"]["reb"].pop(0)        # a better line left off the board
+json.dump(hs, open(os.path.join(out, "highs.json"), "w"))
+checks["the season highs gate fails when a better line is left off"] = not highs_gate()
 checks["Game Score is Hollinger's, in tenths"] = game_score(
     {"pts": 30, "fgm": 11, "fga": 20, "fta": 8, "ftm": 6, "oreb": 2, "dreb": 8, "stl": 2, "ast": 7, "blk": 1, "pf": 3, "tov": 4}) == 258
 
