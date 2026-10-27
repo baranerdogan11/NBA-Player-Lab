@@ -20,7 +20,7 @@ test('its record is the one Standings shows, and the Standings row opens it', as
   const shown = await page.evaluate(() => ({
     tiles: Object.fromEntries([...document.querySelectorAll('#tm-tiles .tile')].map(x => [x.dataset.k, x.querySelector('b').textContent])),
     facts: [...document.querySelectorAll('#tm-hero .facts > span > b')].map(b => b.textContent),
-    tab: document.querySelector('#tb-standings').getAttribute('aria-current'),
+    tab: document.querySelector('#tb-team').getAttribute('aria-current'),
   }));
   const [, , w, l, pctv, , home, away, l10, strk, ppg, opp, diff] = row;
   expect(shown.tiles).toEqual({W: w, L: l, PCT: pctv, PPG: ppg, 'OPP PPG': opp, DIFF: diff});

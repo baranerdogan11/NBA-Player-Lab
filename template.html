@@ -62,7 +62,7 @@ a,button,select,.card{-webkit-tap-highlight-color:transparent}
   .id span{display:none}
   .tools button{min-width:32px;padding:0 6px}
   .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;padding:0 0 env(safe-area-inset-bottom);background:var(--paper);border-top:2px dashed var(--ink);box-shadow:0 -6px 0 var(--paper)}
-  .tabbar a{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:58px;color:var(--ink);text-decoration:none;font:900 9.5px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase}
+  .tabbar a{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:58px;color:var(--ink);text-decoration:none;font:900 9px/1 var(--sans);letter-spacing:.04em;text-transform:uppercase}
   .tabbar a+a{border-left:1px dashed var(--ink)}
   .tabbar a span{max-width:100%;overflow:hidden;white-space:nowrap}
   .tabbar svg{width:22px;height:22px}
@@ -462,6 +462,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
 <header class="top">
   <a class="id" href="#" title="NBA Player Lab"><i></i>NBA Player Lab <span id="tag-season"></span></a>
   <nav class="rail" id="rail" aria-label="Pages">
+    <a id="rl-team" href="#team" data-pg="team" data-t="Teams">Teams</a>
     <a id="rl-player" href="#player" data-pg="player" data-t="Players">Players</a>
     <a id="rl-compare" href="#compare" data-pg="compare" data-t="Compare">Compare</a>
     <a id="rl-standings" href="#standings" data-pg="standings" data-t="Standings">Standings</a>
@@ -476,6 +477,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
   </div>
 </header>
 <nav class="tabbar" id="tabbar" aria-label="Pages">
+  <a id="tb-team" href="#team" data-pg="team"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 7.8 8 9 4.6-1.2 8-4.5 8-9V6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span data-t="Teams">Teams</span></a>
   <a id="tb-player" href="#player" data-pg="player"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 20c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span data-t="Players">Players</span></a>
   <a id="tb-compare" href="#compare" data-pg="compare"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h13M14 4l4 4-4 4M20 16H7M10 12l-4 4 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-t="Compare">Compare</span></a>
   <a id="tb-standings" href="#standings" data-pg="standings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span data-t="Standings@tab">Standings</span></a>
@@ -534,7 +536,9 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     </div>
   </section>
   <section class="pg" id="pg-team" hidden>
+    <nav class="teams" id="tm-teams" aria-label="Teams" data-ta="Teams"></nav>
     <div class="hero" id="tm-hero"></div>
+    <div class="pick"><select id="tm-pick" data-kind="team" aria-label="Team" data-ta="Team"></select></div>
     <div class="tiles" id="tm-tiles"></div>
     <section class="panel"><h2 data-t="Up next">Up next</h2><div class="cards" id="tm-next"></div></section>
     <section class="panel"><h2 data-t="Roster">Roster</h2><div class="scroll"><table class="tbl" id="tm-roster"></table></div></section>
@@ -693,7 +697,7 @@ async function route() {
     }
     if (my !== seq) return;
     for (const p of PAGES) $(`#pg-${p}`).hidden = p !== page;
-    const tab = page === 'game' ? 'games' : page === 'team' ? 'standings' : page;
+    const tab = page === 'game' ? 'games' : page;
     for (const el of $$('[data-pg]')) { if (el.dataset.pg === tab) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current'); }
     document.body.dataset.page = page;
     seen();
@@ -1039,10 +1043,18 @@ $('#st-body').addEventListener('click', e => {
 // ---- Club: its record as Standings counts it, its next five games with the rest before each (as the preview has it),
 // the roster's per-game averages from the same season totals as the Player page, and its ratings and Four Factors with
 // their league ranks (teamVals and rankBy, as on Standings)
+let CLUB = '';
+try { CLUB = localStorage.getItem('pl-club') || ''; } catch (e) {}
 async function renderTeam(code, my) {
-  if (!team(code)) code = IDX.teams[0].code;
+  if (!team(code)) code = team(CLUB) ? CLUB : IDX.teams[0].code;
   const [G, data, rt] = await Promise.all([get('games.json').then(d => d.games), get(`${code}.json`), get('ratings.json').catch(() => ({teams: []}))]);
   if (stale(my)) return;
+  CLUB = code;
+  try { localStorage.setItem('pl-club', code); } catch (e) {}
+  $('#tb-team').href = $('#rl-team').href = `#team/${code}`;
+  const clubs = [...IDX.teams].sort((x, y) => x.code.localeCompare(y.code));
+  $('#tm-teams').innerHTML = clubs.map(T => `<a href="#team/${esc(T.code)}" data-code="${esc(T.code)}" aria-label="${esc(tname(T.code))}" title="${esc(tname(T.code))}"${T.code === code ? ' aria-current="true"' : ''}>${logo(T.code, 'mark')}</a>`).join('');
+  $('#tm-pick').innerHTML = IDX.teams.map(x => `<option value="${x.code}"${x.code === code ? ' selected' : ''}>${esc(x.city)} ${esc(x.name)}</option>`).join('');
   const T = team(code), r = records(G)[code], gp = r.w + r.l, d = signed(rdiv(r.pf - r.pa, gp));
   document.body.setAttribute('style', colours(code));
   $('#tm-hero').setAttribute('style', colours(code));
@@ -1067,6 +1079,8 @@ async function renderTeam(code, my) {
     `<tr data-side="${l.toLowerCase()}"><td class="l">${t(l)}</td>${RT_COLS.factors.slice(4 * i, 4 * i + 4).map(cell).join('')}</tr>`).join('')}</tbody>`;
   document.title = `${tname(code)} · NBA Player Lab`;
 }
+
+$('#tm-pick').addEventListener('change', e => { location.hash = `team/${e.target.value}`; });
 
 // ---- Games: one day at a time, the latest day with a final unless a date is asked for
 async function renderGames(date, my) {
