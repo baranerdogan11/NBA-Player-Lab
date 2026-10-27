@@ -360,6 +360,7 @@ html[data-theme="dark"] .intro{--A:#0078b4}
 .list .v{font:900 20px/1 var(--sans);letter-spacing:-.03em}
 .list .v small{display:block;margin-top:3px;font:italic 400 12px/1 var(--serif);letter-spacing:0;text-align:right;color:var(--ink2)}
 .best .chip{flex:none}
+#log td.best{background:var(--riso-yellow);color:#1a1a1a;font-weight:900}
 .best .nm small{white-space:normal}
 .list a:first-child{background:color-mix(in srgb,var(--riso-yellow) 60%,transparent)}
 .list a:first-child .v{font-size:26px}
@@ -535,6 +536,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
       <section class="panel"><h2 data-t="Trending up">Trending up</h2><div class="scroll"><table class="tbl trend" id="ld-up"></table></div></section>
       <section class="panel"><h2 data-t="Trending down">Trending down</h2><div class="scroll"><table class="tbl trend" id="ld-down"></table></div></section>
     </div>
+    <div class="trio" id="ld-highs" hidden></div>
   </section>
   <section class="pg" id="pg-privacy" hidden>
     <section class="panel"><h2 data-t="Privacy">Privacy</h2><div class="prose">
@@ -837,11 +839,15 @@ async function renderPlayer(code, pid, my, gid) {
   };
   $('#tiles').innerHTML = tiles.map(([k, v], i) => `<div class="tile${i === 0 ? ' lead' : ''}" data-k="${k}"><b>${v}</b><span>${t(k + '@stat')}</span></div>`).join('');
   const log = [...p.log].reverse();
+  // his season highs: the games where a stat is at its most over his games played, marked once he has played two
+  const top = {}, games = log.filter(x => x.sec > 0);
+  if (games.length > 1) for (const k of ['pts', 'reb', 'ast', 'stl', 'blk', 'fg3m']) { const m = Math.max(...games.map(x => x[k])); if (m > 0) top[k] = m; }
+  const td = (x, k, v, cls = '') => { const hi = top[k] === x[k]; return `<td${cls || hi ? ` class="${[cls, hi ? 'best' : ''].filter(Boolean).join(' ')}"` : ''}${hi ? ` data-high="${k}" title="${esc(t('Season high'))}"` : ''}>${v}</td>`; };
   const head = ['Date', 'Opp', 'Result', 'MIN', 'PTS', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'FG', '3P', 'FT', '+/-'];
   $('#log').setAttribute('style', tc(code));
   $('#log').innerHTML = `<thead><tr>${head.map((h, i) => `<th${i < 3 ? ' class="l"' : ''}>${t(h + '@stat')}</th>`).join('')}</tr></thead><tbody>${log.length ? log.map(x => {
     const won = x.ts > x.os;
-    return `<tr data-gid="${esc(x.gid)}"><td>${fmtDate(x.date)}</td><td class="l">${x.home ? t('vs') : '@'} ${esc(x.opp)}</td><td class="l"><a href="#game/${esc(x.gid)}" class="${won ? 'w' : 'lo'}">${won ? t('W') : t('L')} ${x.ts}-${x.os}</a></td>${x.sec > 0 ? `<td>${x.start ? '<i class="st"></i>' : ''}${clock(x.sec)}</td><td class="k">${x.pts}</td><td>${x.reb}</td><td>${x.ast}</td><td>${x.stl}</td><td>${x.blk}</td><td>${x.tov}</td><td>${x.fgm}-${x.fga}</td><td>${x.fg3m}-${x.fg3a}</td><td>${x.ftm}-${x.fta}</td><td>${N(signed(String(x.pm)))}</td>` : `<td class="dim l" colspan="11">${t('Did not play')}</td>`}</tr>`;
+    return `<tr data-gid="${esc(x.gid)}"><td>${fmtDate(x.date)}</td><td class="l">${x.home ? t('vs') : '@'} ${esc(x.opp)}</td><td class="l"><a href="#game/${esc(x.gid)}" class="${won ? 'w' : 'lo'}">${won ? t('W') : t('L')} ${x.ts}-${x.os}</a></td>${x.sec > 0 ? `<td>${x.start ? '<i class="st"></i>' : ''}${clock(x.sec)}</td>${td(x, 'pts', x.pts, 'k')}${td(x, 'reb', x.reb)}${td(x, 'ast', x.ast)}${td(x, 'stl', x.stl)}${td(x, 'blk', x.blk)}<td>${x.tov}</td><td>${x.fgm}-${x.fga}</td>${td(x, 'fg3m', `${x.fg3m}-${x.fg3a}`)}<td>${x.ftm}-${x.fta}</td><td>${N(signed(String(x.pm)))}</td>` : `<td class="dim l" colspan="11">${t('Did not play')}</td>`}</tr>`;
   }).join('') : `<tr><td class="empty l" colspan="${head.length}">${t('No games played yet.')}</td></tr>`}</tbody>`;
   const played = log.filter(x => x.sec > 0), clubs = [...new Set([code, ...played.map(x => x.team)])];
   drawForm(played, code);
@@ -1391,11 +1397,13 @@ const board = (L, stat) => {
 async function renderLeaders(stat, my) {
   const L = (await get('leaders.json')).players;
   if (stale(my)) return;
-  if (!LEAD[stat] && stat !== 'form') stat = 'pts';
-  $('#ld-tabs').innerHTML = [...Object.entries(LEAD), ['form', ['Trending']]].map(([k, [l]]) => `<a href="#leaders/${k}" aria-current="${k === stat}">${t(l)}</a>`).join('');
-  $('#ld-sec').hidden = stat === 'form';
+  if (!LEAD[stat] && stat !== 'form' && stat !== 'highs') stat = 'pts';
+  $('#ld-tabs').innerHTML = [...Object.entries(LEAD), ['form', ['Trending']], ['highs', ['Season highs']]].map(([k, [l]]) => `<a href="#leaders/${k}" aria-current="${k === stat}">${t(l)}</a>`).join('');
+  $('#ld-sec').hidden = stat === 'form' || stat === 'highs';
   $('#ld-form').hidden = stat !== 'form';
+  $('#ld-highs').hidden = stat !== 'highs';
   if (stat === 'form') return drawTrend(L);
+  if (stat === 'highs') return drawHighs(await get('highs.json').catch(() => ({stats: {}})), my);
   const extra = LEAD[stat][4], rows = board(L, stat);
   $('#ld').innerHTML = `<thead><tr><th>#</th><th class="l">${t('Player')}</th><th class="l">${t('Team')}</th><th>${t('GP@stat')}</th>${extra ? `<th>${t(stat === 'ts' ? 'PTS@stat' : 'M-A@stat')}</th>` : ''}<th>${t(LEAD[stat][0])}</th></tr></thead><tbody>${rows.length ? rows.map(({p, v, rank}) =>
     `<tr data-pid="${esc(p.pid)}"><td>${rank}</td><td class="l"><a href="#${esc(p.team)}/${esc(p.pid)}">${esc(p.name)}</a></td><td class="l">${logo(p.team)}${esc(p.team)}</td><td>${p.gp}</td>${extra ? `<td>${extra(p)}</td>` : ''}<td class="k">${v}</td></tr>`
@@ -1419,6 +1427,21 @@ function drawTrend(L) {
   };
   $('#ld-up').innerHTML = table(all.filter(r => r.d > 0).sort((x, y) => y.d - x.d || x.p.name.localeCompare(y.p.name)), 'up');
   $('#ld-down').innerHTML = table(all.filter(r => r.d < 0).sort((x, y) => x.d - y.d || x.p.name.localeCompare(y.p.name)), 'dn');
+}
+
+// ---- Season highs: the season's ten best single games for each stat (highs.json, Game Score in tenths), ranks tied on
+// the value; each line opens his page at that game, under his current club
+const HIGH = [['pts', 'Points', 'PTS'], ['reb', 'Rebounds', 'REB'], ['ast', 'Assists', 'AST'], ['stl', 'Steals', 'STL'], ['blk', 'Blocks', 'BLK'], ['fg3m', '3-pointers', '3P'], ['gs', 'Game Score', 'GmSc']];
+function drawHighs(H, my) {
+  if (stale(my)) return;
+  $('#ld-highs').innerHTML = HIGH.map(([k, label, unit]) => {
+    const rows = H.stats[k] || [];
+    let rank = 0;
+    return `<section class="panel" data-stat="${k}"><h2>${t(label)}</h2><div class="list best">${rows.length ? rows.map((x, i) => {
+      if (!i || x.v !== rows[i - 1].v) rank = i + 1;
+      return `<a href="#${esc(x.club)}/${esc(x.pid)}/${esc(x.gid)}" data-pid="${esc(x.pid)}" data-gid="${esc(x.gid)}"><span class="rk">${rank}</span>${face(x.pid, x.name)}<span class="nm">${EN(x.name)}<small>${fmtDate(x.date, true)} · ${x.home ? t('vs') : '@'} ${esc(x.opp)}</small></span>${logo(x.team)}<b class="v">${k === 'gs' ? N(rdiv(x.v, 10)) : x.v}<small>${t(unit + '@stat')}</small></b></a>`;
+    }).join('') : `<p class="empty">${t('No games played yet.')}</p>`}</div></section>`;
+  }).join('');
 }
 
 // ---- Home: the season so far, the latest night with a final (or the first night to come), that night's five best

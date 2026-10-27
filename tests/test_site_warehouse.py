@@ -74,7 +74,7 @@ write_site(read, *ARGS, teams, *from_warehouse(wh))
 
 cmp = filecmp.dircmp(direct, read)
 diff = [*cmp.left_only, *cmp.right_only, *cmp.diff_files, *(f"games/{f}" for f in cmp.subdirs["games"].diff_files + cmp.subdirs["games"].left_only)]
-checks = {"warehouse tables give the same site JSON" + (f" (differs: {diff[:5]})" if diff else ""): not diff and len(os.listdir(read)) == 35}
+checks = {"warehouse tables give the same site JSON" + (f" (differs: {diff[:5]})" if diff else ""): not diff and len(os.listdir(read)) == 36}
 rt_direct, rt_read = tempfile.mkdtemp(), tempfile.mkdtemp()
 write_ratings(rt_direct, teams, site_fixture.team_lines(games, lines))
 write_ratings(rt_read, teams, team_lines(wh))
