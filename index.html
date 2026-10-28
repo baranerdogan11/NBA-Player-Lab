@@ -151,6 +151,7 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 .sel .face,.menu .face{flex:none;width:26px;height:26px;font-size:10px}
 .sel:focus-visible,a:focus-visible,button:focus-visible{outline:3px solid var(--A);outline-offset:3px}
 .pick{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+#from+.sel{flex:0 1 210px}
 .panel>.pick{margin:0 0 14px}
 .prose{padding:0 0 16px;max-width:68ch;font:17px/1.55 var(--serif)}
 .prose p{margin:0}
@@ -176,17 +177,19 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 .menu input:focus-visible{box-shadow:3px 3px 0 var(--B)}
 .menu ul{list-style:none;margin:0;padding:6px;overflow-y:auto;overscroll-behavior:contain;outline:0}
 .menu li{display:flex;align-items:center;gap:10px;padding:7px 8px;cursor:pointer;font-weight:700;border-bottom:1px dotted var(--line)}
-.menu li>span:last-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.menu li>span:last-of-type{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .menu li.h{padding:14px 8px 5px;font:900 10.5px/1 var(--sans);text-transform:uppercase;letter-spacing:.16em;color:var(--muted);cursor:default;border-bottom:2px solid var(--ink)}
 .menu li.on{background:color-mix(in srgb,var(--riso-yellow) 45%,transparent)}
 .menu li[aria-selected="true"]{color:var(--A)}
 .menu li[aria-selected="true"]::after{content:"\2713";font-weight:900}
 .menu .empty{padding:10px}
-@media (max-width:760px){.veil{background:rgba(0,0,0,.35)}.menu{left:10px!important;right:10px;width:auto!important;top:auto!important;bottom:calc(12px + env(safe-area-inset-bottom));max-height:60vh!important}}
+.menu li>.chip{flex:none}
+@media (max-width:760px){.veil{background:rgba(0,0,0,.35)}.menu{left:10px!important;right:10px;width:auto!important;top:auto!important;bottom:calc(12px + env(safe-area-inset-bottom));max-height:60vh!important}.menu.find{top:calc(10px + env(safe-area-inset-top))!important;bottom:auto;max-height:50vh!important}}
 .tabs,.dates{display:flex;gap:10px;overflow-x:auto;padding:2px 6px 8px 2px;scrollbar-width:none}
 .tabs::-webkit-scrollbar,.dates::-webkit-scrollbar{display:none}
 .tabs button,.tabs a,.dates a{flex:none;border:2px solid var(--ink);background:var(--paper);padding:9px 14px;cursor:pointer;font:900 12px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--ink);text-decoration:none;box-shadow:3px 3px 0 var(--ink);transition:transform .1s}
 .tabs button:active,.tabs a:active,.dates a:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.ld-only{padding-top:0;margin-top:-4px}
 .tabs [aria-pressed="true"],.tabs [aria-current="true"],.dates a[aria-current="true"]{background:var(--A);color:var(--paper);box-shadow:3px 3px 0 var(--B)}
 
 /* the club strip on the Player page: thirty logos printed grey, the chosen one in full ink on a darker sheet */
@@ -470,6 +473,8 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <a id="rl-leaders" href="#leaders" data-pg="leaders" data-t="Leaders">Leaders</a>
   </nav>
   <div class="tools">
+    <button type="button" id="find-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Search players" data-ta="Search players" title="/"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="m15 15 5.5 5.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"/></svg></button>
+    <select id="find" data-kind="player" aria-label="Search players" data-ta="Search players" hidden></select>
     <a class="lg" id="lg-btn" href="#league" data-pg="league" aria-label="My league" data-ta="My league" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v4a5 5 0 0 1-10 0zM7 6H4v1a4 4 0 0 0 3.5 4M17 6h3v1a4 4 0 0 1-3.5 4M12 13v4M8 20h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
     <button type="button" data-lang="en" aria-pressed="false" aria-label="English">EN</button>
     <button type="button" data-lang="tr" aria-pressed="false" aria-label="Türkçe">TR</button>
@@ -500,7 +505,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <nav class="teams" id="teams" aria-label="Teams" data-ta="Teams"></nav>
     <div class="hero" id="hero"></div>
     <a class="lgb" id="lg-badge" href="#league" hidden></a>
-    <div class="pick"><select id="team" data-kind="team" aria-label="Team" data-ta="Team"></select><select id="player" data-kind="player" aria-label="Player" data-ta="Player"></select><a class="arr" id="prev" aria-label="Previous player" data-ta="Previous player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="arr" id="next" aria-label="Next player" data-ta="Next player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 5.5 6.5 6.5-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
+    <div class="pick"><select id="team" data-kind="team" aria-label="Team" data-ta="Team"></select><select id="from" data-kind="country" aria-label="From" data-ta="From"></select><select id="player" data-kind="player" aria-label="Player" data-ta="Player"></select><a class="arr" id="prev" aria-label="Previous player" data-ta="Previous player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="arr" id="next" aria-label="Next player" data-ta="Next player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 5.5 6.5 6.5-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
     <div class="tiles" id="tiles"></div>
     <details class="panel" id="sc" open><summary><h2 data-t="Shot chart">Shot chart</h2></summary><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div><div class="scroll zones" id="sc-zones"></div></details>
     <details class="panel" id="lu" open hidden><summary><h2 data-t="Lineups">Lineups</h2></summary><div class="scroll"><table class="tbl" id="onoff"></table></div><div class="scroll"><table class="tbl" id="fives"></table></div></details>
@@ -547,6 +552,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
   </section>
   <section class="pg" id="pg-leaders" hidden>
     <div class="tabs" id="ld-tabs" role="group" aria-label="Stat" data-ta="Stat"></div>
+    <div class="tabs ld-only"><button type="button" id="ld-rook" aria-pressed="false" data-t="Rookies">Rookies</button></div>
     <section class="panel" id="ld-sec"><div class="scroll"><table class="tbl" id="ld"></table></div></section>
     <div id="ld-form" hidden>
       <section class="panel"><h2 data-t="Trending up">Trending up</h2><div class="scroll"><table class="tbl trend" id="ld-up"></table></div></section>
@@ -578,8 +584,8 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
 <div class="veil" id="veil" hidden></div>
 <div class="menu" id="menu" hidden><input type="search" autocomplete="off" aria-label="Search" data-ta="Search"><ul role="listbox" tabindex="-1"></ul></div>
 <script>
-const META = {"season": "2026-27", "base": "teams/2026-27/", "built": "2026-10-28T10:34:27Z"};
-const TR = {"Compare": "Karşılaştır", "Leaders": "Liderler", "Player": "Oyuncu", "Players": "Oyuncular", "Teams": "Takımlar", "Season": "Sezon", "Standings": "Puan durumu", "Games@page": "Maçlar", "Dark mode": "Koyu mod", "Data unavailable": "Veri yok", "Retry": "Tekrar dene", "This page could not be drawn ({err}).": "Bu sayfa çizilemedi ({err}).", "Data: NBA official box scores and play-by-play. Built {d}.": "Veri: NBA resmi maç istatistikleri ve oyun akışı. Güncelleme {d}.", "Team": "Takım", "First player": "Birinci oyuncu", "Second player": "İkinci oyuncu", "Table": "Tablo", "Game days": "Maç günleri", "Stat": "İstatistik", "Game log": "Maç maç", "Score by period": "Periyotlara göre skor", "No players yet.": "Henüz oyuncu yok.", "No games played yet.": "Henüz maç oynamadı.", "No games on this day.": "Bu gün maç yok.", "No player qualifies yet.": "Henüz barajı geçen oyuncu yok.", "Did not play": "Oynamadı", "Height": "Boy", "Age": "Yaş", "Games": "Maç", "Minutes": "Dakika", "vs": "vs", "W": "G", "L": "M", "Final": "Maç sonu", "OT": "UZ", "Q": "Ç", "Totals": "Toplamlar", "Home": "İç saha", "Away": "Deplasman", "Conferences": "Konferanslar", "East": "Doğu", "West": "Batı", "League": "Lig", "Eastern Conference": "Doğu Konferansı", "Western Conference": "Batı Konferansı", "Points": "Sayı", "Rebounds": "Ribaund", "Assists": "Asist", "Steals": "Top çalma", "Blocks": "Blok", "Turnovers": "Top kaybı", "3-pointers": "Üçlük", "FG%": "FG%", "3P%": "3S%", "FT%": "SA%", "TS%": "GŞ%", "USG%": "KUL%", "RAPM": "RAPM", "O-RAPM": "H-RAPM", "D-RAPM": "S-RAPM", "+/-": "+/-", "PTS@stat": "SAYI", "REB@stat": "RİB", "OREB@stat": "HR", "DREB@stat": "SR", "AST@stat": "AST", "STL@stat": "TÇ", "BLK@stat": "BLK", "TOV@stat": "TK", "PF@stat": "F", "MIN@stat": "DK", "FG@stat": "FG", "3P@stat": "3S", "FT@stat": "SA", "FG%@stat": "FG%", "3P%@stat": "3S%", "FT%@stat": "SA%", "TS%@stat": "GŞ%", "+/-@stat": "+/-", "Date@stat": "Tarih", "Opp@stat": "Rakip", "Result@stat": "Sonuç", "Player@stat": "Oyuncu", "GP@stat": "M", "M-A@stat": "İ-D", "W@stat": "G", "L@stat": "M", "PCT@stat": "YÜZDE", "GB@stat": "FARK", "L10@stat": "SON 10", "STRK@stat": "SERİ", "PPG@stat": "SAYI", "OPP PPG@stat": "YEDİĞİ", "DIFF@stat": "AVERAJ", "T@total": "T", "Standings@tab": "Sıralama", "Every player. Every game.": "Her oyuncu. Her maç.", "Games played": "Oynanan maç", "Games to play": "Kalan maç", "Latest": "Son maç günü", "Tip-off": "Sezon açılışı", "Latest results": "Son sonuçlar", "Up next": "Sıradaki maçlar", "See all": "Tümü", "Best performances": "Gecenin en iyileri", "GmSc@stat": "Oyun skoru", "Search": "Ara", "No matches": "Eşleşme yok", "Previous player": "Önceki oyuncu", "Next player": "Sonraki oyuncu", "Shot chart": "Şut haritası", "Shot charts": "Şut haritaları", "Game": "Maç", "Privacy": "Gizlilik", "NBA Player Lab has no accounts, no ads and no tracking, and sets no cookies. Your theme, language, last player and starred players are kept in your own browser only.": "NBA Player Lab'de hesap, reklam ve takip yoktur; çerez de kullanılmaz. Tema, dil, son baktığınız oyuncu ve yıldızladığınız oyuncular yalnızca kendi tarayıcınızda saklanır.", "The site is hosted on GitHub Pages, which keeps standard server logs. Player pictures and club logos load from NBA's servers (cdn.nba.com), which see your IP address as any website would.": "Site GitHub Pages üzerinde barındırılır ve GitHub olağan sunucu kayıtlarını tutar. Oyuncu fotoğrafları ve kulüp logoları NBA'in sunucularından (cdn.nba.com) yüklenir; bu sunucular, her web sitesinde olduğu gibi IP adresinizi görür.", "Private fantasy league": "Özel fantezi ligi", "With its members' agreement, one private Yahoo Fantasy league can have its own page here. A league member reads it from Yahoo with read-only access, at most a few times a day.": "Üyelerinin onayıyla tek bir özel Yahoo Fantasy liginin burada kendi sayfası olabilir. Lig üyelerinden biri ligi Yahoo'dan yalnızca okuma izniyle, günde en fazla birkaç kez okur.", "The league page is encrypted and opens only with the invite link given to the league's members. It is replaced at least every 24 hours and never kept in the site's code or its history. Yahoo account ids and email addresses are never stored or shown.": "Lig sayfası şifrelidir ve yalnızca lig üyelerine verilen davet bağlantısıyla açılır. En geç 24 saatte bir yenilenir; sitenin kodunda ya da geçmişinde hiç tutulmaz. Yahoo hesap kimlikleri ve e-posta adresleri asla saklanmaz ve gösterilmez.", "Any member can ask for the league page to be removed, and it is taken down with the next update.": "Her üye lig sayfasının kaldırılmasını isteyebilir; sayfa bir sonraki güncellemede kaldırılır.", "Contact": "İletişim", "Questions and removal requests:": "Sorular ve kaldırma talepleri:", "My league": "Ligim", "This week": "Bu hafta", "Roster": "Kadro", "Change team": "Takımı değiştir", "Which team is yours?": "Hangi takım senin?", "Open the invite link from your league to see it here.": "Ligini burada görmek için davet bağlantısını aç.", "Paste the invite link": "Davet bağlantısını yapıştır", "Open": "Aç", "That is not a league invite link.": "Bu bir lig davet bağlantısı değil.", "This invite link does not open the league.": "Bu davet bağlantısı ligi açmıyor.", "League data is unavailable right now. It comes back with the next update.": "Lig verisi şu an yok. Bir sonraki güncellemeyle geri gelir.", "Week {n}": "{n}. hafta", "Last game night": "Son maç gecesi", "No games yet this week.": "Bu hafta henüz maç yok.", "No matchup this week.": "Bu hafta eşleşme yok.", "Left@stat": "KALAN", "3PM@stat": "ÜÇLÜK", "T@tie": "B", "W-L-T@stat": "G-M-B", "All-play@stat": "HERKESE KARŞI", "Luck@stat": "ŞANS", "On {team}": "{team} kadrosunda", "Not on a team in your league": "Liginde hiçbir takımda değil", "Lineups": "Beşliler", "On court": "Sahadayken", "Off court": "Kenardayken", "On − off": "Fark", "ORtg@stat": "HÜC", "DRtg@stat": "SAV", "Net@stat": "NET", "With@stat": "BİRLİKTE", "Lineup@stat": "BEŞLİ", "Game flow": "Maç akışı", "Lead changes": "Liderlik değişimi", "Times tied": "Eşitlik", "Biggest lead": "En büyük fark", "Share": "Paylaş", "{season} season": "{season} sezonu", "1 game": "1 maç", "{n} games": "{n} maç", "Ratings": "Reytingler", "Four Factors": "Dört Faktör", "Offense": "Hücum", "Defense": "Savunma", "Pace@stat": "TEMPO", "eFG%@stat": "EFG%", "TOV%@stat": "TK%", "ORB%@stat": "HR%", "FT/FGA@stat": "SA/FG", "Form": "Form", "Season series": "Sezon serisi", "Tip-off@game": "Başlama", "First game": "Sezonun ilk maçı", "Back-to-back": "Arka arkaya", "1 day of rest": "1 gün dinlenme", "{n} days of rest": "{n} gün dinlenme", "First meeting this season.": "Bu sezonki ilk karşılaşma.", "Trending": "Form durumu", "Trending up": "Yükselişte", "Trending down": "Düşüşte", "Last 5": "Son 5", "Change": "Fark", "L5 MIN@stat": "SON 5 DK", "Zone": "Bölge", "Restricted area": "Pota altı", "Paint": "Boya alanı", "Mid-range": "Orta mesafe", "Corner 3": "Köşe üçlük", "Above the break 3": "Yay tepesi üçlük", "My players": "Oyuncularım", "No games yet.": "Henüz maç yok.", "Season highs": "Sezon rekorları", "Game Score": "Oyun skoru", "Season high": "Sezon rekoru", "No games to come.": "Kalan maç yok."};
+const META = {"season": "2026-27", "base": "teams/2026-27/", "built": "2026-10-28T22:18:38Z"};
+const TR = {"Compare": "Karşılaştır", "Leaders": "Liderler", "Player": "Oyuncu", "Players": "Oyuncular", "Teams": "Takımlar", "Season": "Sezon", "Standings": "Puan durumu", "Games@page": "Maçlar", "Dark mode": "Koyu mod", "Data unavailable": "Veri yok", "Retry": "Tekrar dene", "This page could not be drawn ({err}).": "Bu sayfa çizilemedi ({err}).", "Data: NBA official box scores and play-by-play. Built {d}.": "Veri: NBA resmi maç istatistikleri ve oyun akışı. Güncelleme {d}.", "Team": "Takım", "First player": "Birinci oyuncu", "Second player": "İkinci oyuncu", "Table": "Tablo", "Game days": "Maç günleri", "Stat": "İstatistik", "Game log": "Maç maç", "Score by period": "Periyotlara göre skor", "No players yet.": "Henüz oyuncu yok.", "No games played yet.": "Henüz maç oynamadı.", "No games on this day.": "Bu gün maç yok.", "No player qualifies yet.": "Henüz barajı geçen oyuncu yok.", "Did not play": "Oynamadı", "Height": "Boy", "Age": "Yaş", "Games": "Maç", "Minutes": "Dakika", "vs": "vs", "W": "G", "L": "M", "Final": "Maç sonu", "OT": "UZ", "Q": "Ç", "Totals": "Toplamlar", "Home": "İç saha", "Away": "Deplasman", "Conferences": "Konferanslar", "East": "Doğu", "West": "Batı", "League": "Lig", "Eastern Conference": "Doğu Konferansı", "Western Conference": "Batı Konferansı", "Points": "Sayı", "Rebounds": "Ribaund", "Assists": "Asist", "Steals": "Top çalma", "Blocks": "Blok", "Turnovers": "Top kaybı", "3-pointers": "Üçlük", "FG%": "FG%", "3P%": "3S%", "FT%": "SA%", "TS%": "GŞ%", "USG%": "KUL%", "RAPM": "RAPM", "O-RAPM": "H-RAPM", "D-RAPM": "S-RAPM", "+/-": "+/-", "PTS@stat": "SAYI", "REB@stat": "RİB", "OREB@stat": "HR", "DREB@stat": "SR", "AST@stat": "AST", "STL@stat": "TÇ", "BLK@stat": "BLK", "TOV@stat": "TK", "PF@stat": "F", "MIN@stat": "DK", "FG@stat": "FG", "3P@stat": "3S", "FT@stat": "SA", "FG%@stat": "FG%", "3P%@stat": "3S%", "FT%@stat": "SA%", "TS%@stat": "GŞ%", "+/-@stat": "+/-", "Date@stat": "Tarih", "Opp@stat": "Rakip", "Result@stat": "Sonuç", "Player@stat": "Oyuncu", "GP@stat": "M", "M-A@stat": "İ-D", "W@stat": "G", "L@stat": "M", "PCT@stat": "YÜZDE", "GB@stat": "FARK", "L10@stat": "SON 10", "STRK@stat": "SERİ", "PPG@stat": "SAYI", "OPP PPG@stat": "YEDİĞİ", "DIFF@stat": "AVERAJ", "T@total": "T", "Standings@tab": "Sıralama", "Every player. Every game.": "Her oyuncu. Her maç.", "Games played": "Oynanan maç", "Games to play": "Kalan maç", "Latest": "Son maç günü", "Tip-off": "Sezon açılışı", "Latest results": "Son sonuçlar", "Up next": "Sıradaki maçlar", "See all": "Tümü", "Best performances": "Gecenin en iyileri", "GmSc@stat": "Oyun skoru", "Search": "Ara", "No matches": "Eşleşme yok", "Previous player": "Önceki oyuncu", "Next player": "Sonraki oyuncu", "Shot chart": "Şut haritası", "Shot charts": "Şut haritaları", "Game": "Maç", "Privacy": "Gizlilik", "NBA Player Lab has no accounts, no ads and no tracking, and sets no cookies. Your theme, language, last player and starred players are kept in your own browser only.": "NBA Player Lab'de hesap, reklam ve takip yoktur; çerez de kullanılmaz. Tema, dil, son baktığınız oyuncu ve yıldızladığınız oyuncular yalnızca kendi tarayıcınızda saklanır.", "The site is hosted on GitHub Pages, which keeps standard server logs. Player pictures and club logos load from NBA's servers (cdn.nba.com), which see your IP address as any website would.": "Site GitHub Pages üzerinde barındırılır ve GitHub olağan sunucu kayıtlarını tutar. Oyuncu fotoğrafları ve kulüp logoları NBA'in sunucularından (cdn.nba.com) yüklenir; bu sunucular, her web sitesinde olduğu gibi IP adresinizi görür.", "Private fantasy league": "Özel fantezi ligi", "With its members' agreement, one private Yahoo Fantasy league can have its own page here. A league member reads it from Yahoo with read-only access, at most a few times a day.": "Üyelerinin onayıyla tek bir özel Yahoo Fantasy liginin burada kendi sayfası olabilir. Lig üyelerinden biri ligi Yahoo'dan yalnızca okuma izniyle, günde en fazla birkaç kez okur.", "The league page is encrypted and opens only with the invite link given to the league's members. It is replaced at least every 24 hours and never kept in the site's code or its history. Yahoo account ids and email addresses are never stored or shown.": "Lig sayfası şifrelidir ve yalnızca lig üyelerine verilen davet bağlantısıyla açılır. En geç 24 saatte bir yenilenir; sitenin kodunda ya da geçmişinde hiç tutulmaz. Yahoo hesap kimlikleri ve e-posta adresleri asla saklanmaz ve gösterilmez.", "Any member can ask for the league page to be removed, and it is taken down with the next update.": "Her üye lig sayfasının kaldırılmasını isteyebilir; sayfa bir sonraki güncellemede kaldırılır.", "Contact": "İletişim", "Questions and removal requests:": "Sorular ve kaldırma talepleri:", "My league": "Ligim", "This week": "Bu hafta", "Roster": "Kadro", "Change team": "Takımı değiştir", "Which team is yours?": "Hangi takım senin?", "Open the invite link from your league to see it here.": "Ligini burada görmek için davet bağlantısını aç.", "Paste the invite link": "Davet bağlantısını yapıştır", "Open": "Aç", "That is not a league invite link.": "Bu bir lig davet bağlantısı değil.", "This invite link does not open the league.": "Bu davet bağlantısı ligi açmıyor.", "League data is unavailable right now. It comes back with the next update.": "Lig verisi şu an yok. Bir sonraki güncellemeyle geri gelir.", "Week {n}": "{n}. hafta", "Last game night": "Son maç gecesi", "No games yet this week.": "Bu hafta henüz maç yok.", "No matchup this week.": "Bu hafta eşleşme yok.", "Left@stat": "KALAN", "3PM@stat": "ÜÇLÜK", "T@tie": "B", "W-L-T@stat": "G-M-B", "All-play@stat": "HERKESE KARŞI", "Luck@stat": "ŞANS", "On {team}": "{team} kadrosunda", "Not on a team in your league": "Liginde hiçbir takımda değil", "Lineups": "Beşliler", "On court": "Sahadayken", "Off court": "Kenardayken", "On − off": "Fark", "ORtg@stat": "HÜC", "DRtg@stat": "SAV", "Net@stat": "NET", "With@stat": "BİRLİKTE", "Lineup@stat": "BEŞLİ", "Game flow": "Maç akışı", "Lead changes": "Liderlik değişimi", "Times tied": "Eşitlik", "Biggest lead": "En büyük fark", "Share": "Paylaş", "{season} season": "{season} sezonu", "1 game": "1 maç", "{n} games": "{n} maç", "Ratings": "Reytingler", "Four Factors": "Dört Faktör", "Offense": "Hücum", "Defense": "Savunma", "Pace@stat": "TEMPO", "eFG%@stat": "EFG%", "TOV%@stat": "TK%", "ORB%@stat": "HR%", "FT/FGA@stat": "SA/FG", "Form": "Form", "Season series": "Sezon serisi", "Tip-off@game": "Başlama", "First game": "Sezonun ilk maçı", "Back-to-back": "Arka arkaya", "1 day of rest": "1 gün dinlenme", "{n} days of rest": "{n} gün dinlenme", "First meeting this season.": "Bu sezonki ilk karşılaşma.", "Trending": "Form durumu", "Trending up": "Yükselişte", "Trending down": "Düşüşte", "Last 5": "Son 5", "Change": "Fark", "L5 MIN@stat": "SON 5 DK", "Zone": "Bölge", "Restricted area": "Pota altı", "Paint": "Boya alanı", "Mid-range": "Orta mesafe", "Corner 3": "Köşe üçlük", "Above the break 3": "Yay tepesi üçlük", "My players": "Oyuncularım", "No games yet.": "Henüz maç yok.", "Season highs": "Sezon rekorları", "Game Score": "Oyun skoru", "Season high": "Sezon rekoru", "No games to come.": "Kalan maç yok.", "From": "Ülke", "Rookie": "Çaylak", "Rookies": "Çaylaklar", "All countries": "Tüm ülkeler", "Australia@country": "Avustralya", "Austria@country": "Avusturya", "Bahamas@country": "Bahamalar", "Belgium@country": "Belçika", "Bosnia and Herzegovina@country": "Bosna-Hersek", "Brazil@country": "Brezilya", "Cameroon@country": "Kamerun", "Canada@country": "Kanada", "China@country": "Çin", "Croatia@country": "Hırvatistan", "Czech Republic@country": "Çekya", "DRC@country": "Kongo DC", "Dominican Republic@country": "Dominik Cumhuriyeti", "Estonia@country": "Estonya", "Finland@country": "Finlandiya", "France@country": "Fransa", "Georgia@country": "Gürcistan", "Germany@country": "Almanya", "Greece@country": "Yunanistan", "Guinea@country": "Gine", "Israel@country": "İsrail", "Italy@country": "İtalya", "Jamaica@country": "Jamaika", "Japan@country": "Japonya", "Latvia@country": "Letonya", "Lithuania@country": "Litvanya", "Mexico@country": "Meksika", "Montenegro@country": "Karadağ", "Netherlands@country": "Hollanda", "New Zealand@country": "Yeni Zelanda", "Nigeria@country": "Nijerya", "Portugal@country": "Portekiz", "Russia@country": "Rusya", "Senegal@country": "Senegal", "Serbia@country": "Sırbistan", "Slovenia@country": "Slovenya", "South Sudan@country": "Güney Sudan", "Spain@country": "İspanya", "Sweden@country": "İsveç", "Switzerland@country": "İsviçre", "Turkey@country": "Türkiye", "USA@country": "ABD", "Uganda@country": "Uganda", "Ukraine@country": "Ukrayna", "United Kingdom@country": "Birleşik Krallık", "Argentina@country": "Arjantin", "Angola@country": "Angola", "Mali@country": "Mali", "Egypt@country": "Mısır", "Poland@country": "Polonya", "Denmark@country": "Danimarka", "Norway@country": "Norveç", "Puerto Rico@country": "Porto Riko", "Haiti@country": "Haiti", "Venezuela@country": "Venezuela", "South Korea@country": "Güney Kore", "Philippines@country": "Filipinler", "Ghana@country": "Gana", "Sudan@country": "Sudan", "Lebanon@country": "Lübnan", "Iran@country": "İran", "Hungary@country": "Macaristan", "Slovakia@country": "Slovakya", "Bulgaria@country": "Bulgaristan", "Romania@country": "Romanya", "North Macedonia@country": "Kuzey Makedonya", "Saint Lucia@country": "Saint Lucia", "Tunisia@country": "Tunus", "Cape Verde@country": "Yeşil Burun Adaları", "Gabon@country": "Gabon", "Republic of the Congo@country": "Kongo", "Ireland@country": "İrlanda", "Belarus@country": "Belarus", "Kazakhstan@country": "Kazakistan", "Iceland@country": "İzlanda", "Panama@country": "Panama", "Cuba@country": "Küba", "Taiwan@country": "Tayvan", "Trinidad and Tobago@country": "Trinidad ve Tobago", "US Virgin Islands@country": "ABD Virjin Adaları", "Sri Lanka@country": "Sri Lanka", "Search players": "Oyuncu ara"};
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 let LANG = 'en';
@@ -595,6 +601,9 @@ const t = (s, vars) => {
   return out;
 };
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+// a name folded for matching, the same in every language: accents dropped, ı and İ by hand (the feed spells Şengün "Sengun"),
+// lower case without the reader's locale (a Turkish lower case turns JOKIC into jokıc)
+const fold = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ı/g, 'i').replace(/[đĐ]/g, 'd').replace(/[łŁ]/g, 'l').replace(/[øØ]/g, 'o').toLowerCase();
 // a club or player name keeps English capitals inside a Turkish page (CAVALIERS, not CAVALİERS)
 const EN = s => `<span lang="en">${esc(s)}</span>`;
 
@@ -687,7 +696,7 @@ async function route() {
     else if (page === 'games') await renderGames(b, my);
     else if (page === 'game') await renderGame(b, my);
     else if (page === 'team') await renderTeam(b, my);
-    else if (page === 'leaders') await renderLeaders(b, my);
+    else if (page === 'leaders') await renderLeaders(b, my, c === 'rookies');
     else if (page === 'privacy') document.title = `${t('Privacy')} · NBA Player Lab`;
     else if (page === 'league') await renderLeague(b, c, my);
     else {
@@ -810,15 +819,28 @@ async function drawLineups(p, code, clubs, my) {
 }
 
 // ---- Player
+// the country picked on the Player page (pl-from): the player list is then everyone in the league from there, by club;
+// it lets go when the page shows a player from elsewhere or another club is picked
+let FROM = '';
+try { FROM = localStorage.getItem('pl-from') || ''; } catch (e) {}
+const setFrom = c => { FROM = c; try { if (c) localStorage.setItem('pl-from', c); else localStorage.removeItem('pl-from'); } catch (e) {} };
+const country = c => t(c + '@country');
 async function renderPlayer(code, pid, my, gid) {
-  const data = await get(`${code}.json`);
+  const [data, L] = await Promise.all([get(`${code}.json`), get('leaders.json').then(d => d.players).catch(() => [])]);
   if (stale(my)) return;
   const jersey = p => p.jersey && /^\d+$/.test(p.jersey) ? [Number(p.jersey), p.jersey.length] : [Infinity, 0];
   const ps = data.players.map(p => ({...p, s: sum(p.log)})).sort((x, y) => { const a = jersey(x), b = jersey(y); return (a[0] - b[0]) || (a[1] - b[1]) || x.name.localeCompare(y.name); });
   const p = ps.find(x => x.pid === pid) || ps[0];
+  if (FROM && (!p || p.country !== FROM)) setFrom('');
+  const n = {};
+  for (const x of L) if (x.country) n[x.country] = (n[x.country] || 0) + 1;
   $('#team').innerHTML = IDX.teams.map(x => `<option value="${x.code}"${x.code === code ? ' selected' : ''}>${esc(x.city)} ${esc(x.name)}</option>`).join('');
-  $('#player').innerHTML = ps.map(x => `<option value="${esc(x.pid)}"${x.jersey ? ` data-j="${esc(x.jersey)}"` : ''}${x === p ? ' selected' : ''}>${esc(x.name)}</option>`).join('');
-  const i = ps.indexOf(p), step = (el, k) => { if (ps.length > 1) el.href = `#${code}/${ps[(i + k + ps.length) % ps.length].pid}`; else el.removeAttribute('href'); };
+  $('#from').innerHTML = `<option value="">${t('All countries')}</option>${Object.keys(n).sort((a, b) => n[b] - n[a] || country(a).localeCompare(country(b), loc())).map(c => `<option value="${esc(c)}"${c === FROM ? ' selected' : ''}>${esc(country(c))} · ${n[c]}</option>`).join('')}`;
+  const tm = c => IDX.teams.findIndex(x => x.code === c);
+  const list = FROM ? L.filter(x => x.country === FROM).sort((x, y) => tm(x.team) - tm(y.team) || x.name.localeCompare(y.name)) : ps.map(x => ({...x, team: code}));
+  const opt = x => `<option value="${esc(x.pid)}" data-c="${esc(x.team)}"${!FROM && x.jersey ? ` data-j="${esc(x.jersey)}"` : ''}${p && x.pid === p.pid ? ' selected' : ''}>${esc(x.name)}</option>`;
+  $('#player').innerHTML = FROM ? [...new Set(list.map(x => x.team))].map(c => `<optgroup label="${esc(tname(c))}">${list.filter(x => x.team === c).map(opt).join('')}</optgroup>`).join('') : list.map(opt).join('');
+  const i = p ? list.findIndex(x => x.pid === p.pid) : -1, step = (el, k) => { if (list.length > 1) { const x = list[(i + k + list.length) % list.length]; el.href = `#${x.team}/${x.pid}`; } else el.removeAttribute('href'); };
   step($('#prev'), -1); step($('#next'), 1);
   $('#player').disabled = !p;
   const T = team(code);
@@ -841,7 +863,7 @@ async function renderPlayer(code, pid, my, gid) {
   remember(`${code}/${p.pid}`);
   leagueBadge(p.pid);
   const s = p.s, a = age(p.born);
-  hero.innerHTML = `<div class="badge">${face(p.pid, p.name, true)}</div><div class="who"><div class="tag"><a href="#team/${esc(code)}">${logo(code, 'mark')}${EN(tname(code))}</a>${p.pos ? ` · ${esc(p.pos)}` : ''}</div><h1>${EN(p.name)}</h1><div class="facts">${p.height ? `<span>${t('Height')} <b>${esc(p.height)}</b></span>` : ''}${a != null ? `<span>${t('Age')} <b>${a}</b></span>` : ''}<span>${t('Games')} <b>${s.gp}</b></span><span>${t('Minutes')} <b>${mpg(s.sec, s.gp)}</b></span></div></div>${p.jersey !== '' && p.jersey != null ? `<div class="num" aria-hidden="true">${esc(p.jersey)}</div>` : ''}${STAR_BTN(p.pid)}${SHARE_BTN('player')}`;
+  hero.innerHTML = `<div class="badge">${face(p.pid, p.name, true)}</div><div class="who"><div class="tag"><a href="#team/${esc(code)}">${logo(code, 'mark')}${EN(tname(code))}</a>${p.pos ? ` · ${esc(p.pos)}` : ''}${p.rookie ? ` · <span class="rook">${t('Rookie')}</span>` : ''}</div><h1>${EN(p.name)}</h1><div class="facts">${p.country ? `<span data-k="from">${t('From')} <b>${esc(country(p.country))}</b></span>` : ''}${p.height ? `<span>${t('Height')} <b>${esc(p.height)}</b></span>` : ''}${a != null ? `<span>${t('Age')} <b>${a}</b></span>` : ''}<span>${t('Games')} <b>${s.gp}</b></span><span>${t('Minutes')} <b>${mpg(s.sec, s.gp)}</b></span></div></div>${p.jersey !== '' && p.jersey != null ? `<div class="num" aria-hidden="true">${esc(p.jersey)}</div>` : ''}${STAR_BTN(p.pid)}${SHARE_BTN('player')}`;
   const tiles = [['PTS', avg(s.pts, s.gp)], ['REB', avg(s.reb, s.gp)], ['AST', avg(s.ast, s.gp)], ['STL', avg(s.stl, s.gp)], ['BLK', avg(s.blk, s.gp)], ['TOV', avg(s.tov, s.gp)],
     ['FG%', pct(s.fgm, s.fga)], ['3P%', pct(s.fg3m, s.fg3a)], ['FT%', pct(s.ftm, s.fta)], ['TS%', ts(s.pts, s.fga, s.fta)], ['+/-', N(signed(rdiv(s.pm, s.gp)))], ['MIN', mpg(s.sec, s.gp)]];
   // the picture: the game picked on the shot chart, as its log row shows it (and its fouls, from the box score), or the season's tiles
@@ -895,7 +917,16 @@ function drawForm(played, code) {
     + `<div class="fm-plot">${lo < 0 ? `<span class="fm-zero" style="bottom:${f(y(0))}%"></span>` : ''}<span class="fm-avg" style="bottom:${f(y(sa))}%"></span>${ten.map(bar).join('')}</div>`
     + `<div class="fm-x" aria-hidden="true">${ten.map(x => `<span>${x.home ? '' : '@'}${esc(x.opp)}</span>`).join('')}</div>`;
 }
-$('#team').addEventListener('change', e => { location.hash = e.target.value; });
+$('#team').addEventListener('change', e => { setFrom(''); location.hash = e.target.value; });
+// picking a country opens its first player, by club, unless the one shown is from there
+$('#from').addEventListener('change', async e => {
+  const c = e.target.value, pid = $('#player').value;
+  setFrom(c);
+  const L = c ? (await get('leaders.json')).players.filter(x => x.country === c) : [];
+  if (!c || L.some(x => x.pid === pid)) return route();
+  const tm = x => IDX.teams.findIndex(y => y.code === x.team), x = L.sort((a, b) => tm(a) - tm(b) || a.name.localeCompare(b.name))[0];
+  location.hash = `${x.team}/${x.pid}`;
+});
 // each section of the profile opens and closes, and stays as the reader left it
 for (const [id, key] of Object.entries({sc: 'pl-shots', lu: 'pl-lineups', 'log-sec': 'pl-log'})) {
   const d = $('#' + id);
@@ -915,7 +946,7 @@ $('#hero').addEventListener('touchend', e => {
   swipe = null;
   if (Math.abs(dx) > 60 && Math.abs(dy) < 40) stepPlayer(dx > 0);
 });
-$('#player').addEventListener('change', e => { location.hash = `${$('#team').value}/${e.target.value}`; });
+$('#player').addEventListener('change', e => { location.hash = `${e.target.selectedOptions[0].dataset.c || $('#team').value}/${e.target.value}`; });
 
 // ---- Compare: any two players, per game, from the same season totals the leaders use
 const CMP_ROWS = [{k: 'Games', v: s => s.gp, f: s => String(s.gp)}, {k: 'Minutes', v: s => s.gp && s.sec / s.gp, f: s => mpg(s.sec, s.gp)},
@@ -1312,7 +1343,7 @@ document.addEventListener('click', e => {
 const SHARE_BTN = kind => `<button type="button" class="share" data-share="${kind}" aria-label="${esc(t('Share'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v11M7.5 8 12 3.5 16.5 8M8 11.5H6v9h12v-9h-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`;
 const SANS = 'system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif';
 const CW = 1080, CH = 1350, CP = 64;
-const ascii = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/ı/g, 'i').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const ascii = s => fold(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const link = hash => `${location.origin}${location.pathname}?l#${hash}`;
 // a font of the given weight, as large as fits the width but no larger than size
 const fit = (x, text, w, size, weight = 800) => { let s = size; do x.font = `${weight} ${s}px ${SANS}`; while (x.measureText(text).width > w && --s > 12); };
@@ -1460,11 +1491,19 @@ const board = (L, stat) => {
     return {p, v, rank};
   });
 };
-async function renderLeaders(stat, my) {
-  const L = (await get('leaders.json')).players;
+// the Rookies switch (#leaders/<stat>/rookies) keeps every board to players in their first NBA season, floors unchanged;
+// the season highs stay league-wide
+async function renderLeaders(stat, my, rookies) {
+  let L = (await get('leaders.json')).players;
   if (stale(my)) return;
   if (!LEAD[stat] && stat !== 'form' && stat !== 'highs') stat = 'pts';
-  $('#ld-tabs').innerHTML = [...Object.entries(LEAD), ['form', ['Trending']], ['highs', ['Season highs']]].map(([k, [l]]) => `<a href="#leaders/${k}" aria-current="${k === stat}">${t(l)}</a>`).join('');
+  rookies = rookies && stat !== 'highs';
+  if (rookies) L = L.filter(p => p.rookie);
+  $('#ld-tabs').innerHTML = [...Object.entries(LEAD), ['form', ['Trending']], ['highs', ['Season highs']]].map(([k, [l]]) => `<a href="#leaders/${k}${rookies && k !== 'highs' ? '/rookies' : ''}" aria-current="${k === stat}">${t(l)}</a>`).join('');
+  const rk = $('#ld-rook');
+  rk.parentElement.hidden = stat === 'highs';
+  rk.setAttribute('aria-pressed', String(rookies));
+  rk.dataset.stat = stat;
   $('#ld-sec').hidden = stat === 'form' || stat === 'highs';
   $('#ld-form').hidden = stat !== 'form';
   $('#ld-highs').hidden = stat !== 'highs';
@@ -1475,6 +1514,8 @@ async function renderLeaders(stat, my) {
     `<tr data-pid="${esc(p.pid)}"><td>${rank}</td><td class="l"><a href="#${esc(p.team)}/${esc(p.pid)}">${esc(p.name)}</a></td><td class="l">${logo(p.team)}${esc(p.team)}</td><td>${p.gp}</td>${extra ? `<td>${extra(p)}</td>` : ''}<td class="k">${v}</td></tr>`
   ).join('') : `<tr><td class="empty l" colspan="6">${t('No player qualifies yet.')}</td></tr>`}</tbody>`;
 }
+
+$('#ld-rook').addEventListener('click', e => { const b = e.currentTarget; location.hash = `leaders/${b.dataset.stat}${b.getAttribute('aria-pressed') === 'true' ? '' : '/rookies'}`; });
 
 // ---- Trending: the change from a player's season Game Score average to his last five games' average, both in tenths
 // as shown (gs, gs5 in leaders.json), the change their difference; ten games played, the per-game boards' floor, and
@@ -1764,15 +1805,20 @@ $('#theme').addEventListener('click', () => {
 // ---- pickers: a button in the select's place and one shared menu; the select keeps the options, the value and the change event
 const MENU = $('#menu'), VEIL = $('#veil'), Q = $('#menu input'), LIST = $('#menu ul');
 let OPEN = null;
-const icon = (sel, o) => sel.dataset.kind === 'team' ? logo(o.value) : sel.dataset.kind === 'game' ? logo(o.dataset.c) : face(o.value, o.textContent);
-const label = (sel, o) => `${icon(sel, o)}${o.dataset.j ? `<i class="j">${esc(o.dataset.j)}</i>` : ''}<span>${esc(o.textContent)}</span>`;
+const icon = (sel, o) => sel.dataset.kind === 'country' ? '' : sel.dataset.kind === 'team' ? logo(o.value) : sel.dataset.kind === 'game' ? logo(o.dataset.c) : face(o.value, o.textContent);
+// the header's search: every player in leaders.json, under his current club, in the shared menu; choosing one opens his page
+const FIND = /** @type {HTMLSelectElement} */ ($('#find')), FIND_BTN = $('#find-btn');
+const label = (sel, o) => `${icon(sel, o)}${o.dataset.j ? `<i class="j">${esc(o.dataset.j)}</i>` : ''}<span>${esc(o.textContent)}</span>${sel === FIND ? logo(o.dataset.c) : ''}`;
 const item = (sel, o) => `<li role="option" id="mo-${esc(o.value)}" data-v="${esc(o.value)}" aria-selected="${o.selected}">${label(sel, o)}</li>`;
 const activate = li => { for (const x of $$('.on', LIST)) x.classList.remove('on'); if (li) { li.classList.add('on'); LIST.setAttribute('aria-activedescendant', li.id); } };
 function fillMenu(sel, q = '') {
-  const f = q.trim().toLocaleLowerCase(loc()), hit = o => !f || o.textContent.toLocaleLowerCase(loc()).includes(f);
+  // every word typed is in the name (or the club's name); names that start with it come first, then a later word that does
+  const f = fold(q).split(/\s+/).filter(Boolean), has = s => f.every(w => fold(s).includes(w));
+  const hit = o => has(o.dataset.c ? `${o.textContent} ${tname(o.dataset.c)}` : o.textContent);
+  const rank = o => { const n = fold(o.textContent); return n.startsWith(f[0]) ? 0 : n.split(/[\s-]+/).some(w => w.startsWith(f[0])) ? 1 : 2; };
   const groups = $$('optgroup', sel);
-  LIST.innerHTML = (groups.length ? groups.map(g => { const rows = $$('option', g).filter(o => hit(o) || g.label.toLocaleLowerCase(loc()).includes(f)); return rows.length ? `<li class="h">${esc(g.label)}</li>${rows.map(o => item(sel, o)).join('')}` : ''; }).join('')
-    : $$('option', sel).filter(hit).map(o => item(sel, o)).join('')) || `<li class="empty">${t('No matches')}</li>`;
+  LIST.innerHTML = (groups.length ? groups.map(g => { const rows = $$('option', g).filter(o => hit(o) || has(g.label)); return rows.length ? `<li class="h">${esc(g.label)}</li>${rows.map(o => item(sel, o)).join('')}` : ''; }).join('')
+    : $$('option', sel).filter(hit).map((o, i) => [f.length ? rank(o) : 0, i, o]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).map(([, , o]) => item(sel, o)).join('')) || `<li class="empty">${t('No matches')}</li>`;
   activate($('[aria-selected="true"]', LIST) || $('[role="option"]', LIST));
 }
 function closeMenu() {
@@ -1785,17 +1831,18 @@ function closeMenu() {
 function openMenu(sel, btn) {
   OPEN = {sel, btn};
   btn.setAttribute('aria-expanded', 'true');
-  Q.value = ''; Q.placeholder = t('Search'); Q.hidden = sel.options.length <= 12;
+  Q.value = ''; Q.placeholder = t(sel === FIND ? 'Search players' : 'Search'); Q.hidden = sel !== FIND && sel.options.length <= 12;
   fillMenu(sel);
   MENU.hidden = VEIL.hidden = false;
-  const r = btn.getBoundingClientRect(), w = Math.max(r.width, 260);
+  MENU.classList.toggle('find', sel === FIND);
+  const r = btn.getBoundingClientRect(), w = Math.max(r.width, sel === FIND ? 340 : 260);
   MENU.style.left = `${Math.max(10, Math.min(r.left, innerWidth - w - 10))}px`; MENU.style.width = `${w}px`; MENU.style.top = `${r.bottom + 6}px`;
   MENU.style.maxHeight = `${Math.max(220, Math.min(420, innerHeight - r.bottom - 16))}px`;
-  (Q.hidden || !matchMedia('(hover:hover)').matches ? LIST : Q).focus({preventScroll: true});   // no keyboard popping up over a phone's sheet
+  (Q.hidden || (sel !== FIND && !matchMedia('(hover:hover)').matches) ? LIST : Q).focus({preventScroll: true});   // no keyboard popping up over a phone's sheet, but the search wants one
   const on = $('.on', LIST); if (on) on.scrollIntoView({block: 'center'});
 }
 const choose = v => { const {sel} = OPEN; closeMenu(); if (sel.value !== v) { sel.value = v; sel.dispatchEvent(new Event('change', {bubbles: true})); } };
-for (const sel of $$('select')) {
+for (const sel of $$('select:not(#find)')) {
   const btn = document.createElement('button');
   btn.type = 'button'; btn.className = 'sel'; btn.setAttribute('aria-haspopup', 'listbox'); btn.setAttribute('aria-expanded', 'false');
   sel.after(btn); sel.hidden = true;
@@ -1804,9 +1851,27 @@ for (const sel of $$('select')) {
   sel.addEventListener('change', sync);
   btn.addEventListener('click', () => OPEN && OPEN.sel === sel ? closeMenu() : openMenu(sel, btn));
 }
+async function openFind() {
+  if (OPEN) { const was = OPEN.sel; closeMenu(); if (was === FIND) return; }
+  if (!FIND.options.length) {
+    let L;
+    try { L = (await get('leaders.json')).players; } catch (e) { return; }
+    FIND.innerHTML = [...L].sort((x, y) => x.name.localeCompare(y.name)).map(p => `<option value="${esc(p.pid)}" data-c="${esc(p.team)}">${esc(p.name)}</option>`).join('');
+  }
+  FIND.selectedIndex = -1;
+  openMenu(FIND, FIND_BTN);
+}
+FIND_BTN.addEventListener('click', openFind);
+FIND.addEventListener('change', () => { const o = FIND.selectedOptions[0]; if (o) location.hash = `${o.dataset.c}/${o.value}`; });
+document.addEventListener('keydown', e => {
+  if (e.key !== '/' || e.altKey || e.ctrlKey || e.metaKey || OPEN || e.target.closest('input,textarea,select')) return;
+  e.preventDefault(); openFind();
+});
+// the search sits at the top of a phone's screen, out of the keyboard's way, so the keyboard opening (a resize, a scroll) leaves it open
+const shut = () => { if (OPEN && OPEN.sel !== FIND) closeMenu(); };
 VEIL.addEventListener('click', closeMenu);
-window.addEventListener('resize', closeMenu);
-window.addEventListener('scroll', closeMenu, {passive: true});
+window.addEventListener('resize', shut);
+window.addEventListener('scroll', shut, {passive: true});
 Q.addEventListener('input', () => fillMenu(OPEN.sel, Q.value));
 LIST.addEventListener('click', e => { const li = e.target.closest('[role="option"]'); if (li) choose(li.dataset.v); });
 LIST.addEventListener('mousemove', e => { const li = e.target.closest('[role="option"]'); if (li && !li.classList.contains('on')) activate(li); });
