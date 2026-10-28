@@ -4,6 +4,18 @@ import {test, expect} from '@playwright/test';
 import {DESKTOP, PHONE, prepare, settled, go, noSidewaysScroll} from './site.js';
 
 const BOARD = () => document.body.dataset.page === 'leaders' && document.querySelectorAll('#ld tbody tr').length > 0;
+// a picker's menu closes when the page scrolls, so the page is done drawing and the picker goes near the top, its scroll
+// event fired, before its menu opens
+async function pick(page, id, value) {
+  await page.waitForLoadState('networkidle');   // the shot chart and lineups land after the page settles, and move it
+  await page.evaluate(i => {
+    const b = document.querySelector(`#${i} + .sel`);
+    scrollTo(0, scrollY + b.getBoundingClientRect().top - 120);
+    return new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  }, id);
+  await page.locator(`#${id} + .sel`).click();
+  await page.locator(`#menu li[data-v="${value}"]`).click();
+}
 const leaders = page => page.evaluate(() => fetch(`${META.base}leaders.json`).then(r => r.json()).then(d => d.players));
 
 for (const [name, use, lang] of [['desktop', DESKTOP, 'en'], ['phone', PHONE, 'tr']]) {
@@ -55,8 +67,7 @@ for (const [name, use, lang] of [['desktop', DESKTOP, 'en'], ['phone', PHONE, 't
       if (p.rookie) await expect(page.locator('#hero .rook')).toHaveText(lang === 'tr' ? 'Çaylak' : 'Rookie');
       expect(await page.$eval('#from', s => s.value), 'no country picked yet').toBe('');
 
-      await page.locator('#from + .sel').click();
-      await page.locator(`#menu li[data-v="France"]`).click();
+      await pick(page, 'from', 'France');
       await page.waitForFunction(n => document.querySelectorAll('#player option').length === n && document.querySelector('#from').value === 'France', fr.length);
       expect(await page.$eval('#player', s => s.value), 'the player shown stays').toBe(p.pid);
       const clubs = await page.$$eval('#player optgroup', gs => gs.length);
@@ -77,8 +88,7 @@ for (const [name, use, lang] of [['desktop', DESKTOP, 'en'], ['phone', PHONE, 't
 
       // picking a club lets go of the country
       const other = await page.evaluate(c => IDX.teams.find(x => x.code !== c).code, nclub);
-      await page.locator('#team + .sel').click();
-      await page.locator(`#menu li[data-v="${other}"]`).click();
+      await pick(page, 'team', other);
       await page.waitForFunction(c => document.querySelector('#team').value === c && document.querySelector('#from').value === '' && !document.querySelector('#player optgroup'), other);
       expect(await page.evaluate(() => localStorage.getItem('pl-from'))).toBeNull();
       expect(problems, 'the page reported errors').toEqual([]);
