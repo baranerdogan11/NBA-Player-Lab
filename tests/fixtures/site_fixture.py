@@ -16,6 +16,7 @@ SEASON, LABEL, BUILT = "2026-27", "2026-27", "2026-10-26T06:00:00Z"
 FIRST = ["Jalen", "Marcus", "Tyrese", "Luka", "Devin", "Andre", "Cole", "Isaiah", "Malik", "Darius", "Evan", "Kobe"]
 LAST = ["Carter", "Brooks", "Hayes", "Mitchell", "Coleman", "Reed", "Price", "Ward", "Bishop", "Fields", "Grant", "Holt"]
 POS = ["G", "G", "F", "F", "C", "G", "F", "G-F", "F-C", "C"]
+COUNTRY = ["USA", "USA", "USA", "France", "USA", "Canada", "USA", "Turkey", "USA", "Serbia", "USA"]
 
 
 def make(rng):
@@ -25,7 +26,8 @@ def make(rng):
         for j in range(10):
             players.append({"pid": f"{1630000 + i * 10 + j}", "team": t["code"], "name": f"{FIRST[(i + j) % 12]} {LAST[(i * 3 + j) % 12]}",
                             "jersey": str((j * 7 + i) % 45), "pos": POS[j], "height": f"6-{2 + j % 9}",
-                            "born": f"{1996 + (i + j) % 9}-0{1 + j % 9}-1{j % 9}"})
+                            "born": f"{1996 + (i + j) % 9}-0{1 + j % 9}-1{j % 9}",
+                            "country": COUNTRY[(i + j) % len(COUNTRY)], "rookie": j in (2, 8)})
     other = random.Random(11)   # RAPM from its own generator, so the box scores stay as they were
     for p in players[:-5]:      # the last club's bench has none
         p["o_rapm"], p["d_rapm"] = other.gauss(0, 2), other.gauss(0, 2)
