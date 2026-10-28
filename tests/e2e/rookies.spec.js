@@ -4,7 +4,7 @@ import {test, expect} from '@playwright/test';
 import {DESKTOP, PHONE, prepare, settled, go, noSidewaysScroll} from './site.js';
 
 const BOARD = () => document.body.dataset.page === 'leaders' && document.querySelectorAll('#ld tbody tr').length > 0;
-const leaders = page => page.evaluate(() => get('leaders.json').then(d => d.players));
+const leaders = page => page.evaluate(() => fetch(`${META.base}leaders.json`).then(r => r.json()).then(d => d.players));
 
 for (const [name, use, lang] of [['desktop', DESKTOP, 'en'], ['phone', PHONE, 'tr']]) {
   test.describe(`rookies and countries (${name})`, () => {
