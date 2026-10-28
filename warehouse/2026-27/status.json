@@ -1,18 +1,18 @@
 {
  "season": "2026-27",
- "checked_at": "2026-10-28T02:34:29Z",
+ "checked_at": "2026-10-28T02:59:17Z",
  "rows": {
   "teams": 30,
   "games": 1274,
   "players": 443,
   "roster": 522,
-  "box": 1480,
-  "team_box": 108,
-  "periods": 440,
-  "events": 33315,
-  "shots": 9670
+  "box": 1509,
+  "team_box": 110,
+  "periods": 448,
+  "events": 33975,
+  "shots": 9845
  },
- "games": 54,
+ "games": 55,
  "tests": 39,
  "failures": 0,
  "quarantined": 0,
