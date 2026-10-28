@@ -151,6 +151,7 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 .sel .face,.menu .face{flex:none;width:26px;height:26px;font-size:10px}
 .sel:focus-visible,a:focus-visible,button:focus-visible{outline:3px solid var(--A);outline-offset:3px}
 .pick{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+#from+.sel{flex:0 1 210px}
 .panel>.pick{margin:0 0 14px}
 .prose{padding:0 0 16px;max-width:68ch;font:17px/1.55 var(--serif)}
 .prose p{margin:0}
@@ -188,6 +189,7 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 .tabs::-webkit-scrollbar,.dates::-webkit-scrollbar{display:none}
 .tabs button,.tabs a,.dates a{flex:none;border:2px solid var(--ink);background:var(--paper);padding:9px 14px;cursor:pointer;font:900 12px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--ink);text-decoration:none;box-shadow:3px 3px 0 var(--ink);transition:transform .1s}
 .tabs button:active,.tabs a:active,.dates a:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.ld-only{padding-top:0;margin-top:-4px}
 .tabs [aria-pressed="true"],.tabs [aria-current="true"],.dates a[aria-current="true"]{background:var(--A);color:var(--paper);box-shadow:3px 3px 0 var(--B)}
 
 /* the club strip on the Player page: thirty logos printed grey, the chosen one in full ink on a darker sheet */
@@ -503,7 +505,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <nav class="teams" id="teams" aria-label="Teams" data-ta="Teams"></nav>
     <div class="hero" id="hero"></div>
     <a class="lgb" id="lg-badge" href="#league" hidden></a>
-    <div class="pick"><select id="team" data-kind="team" aria-label="Team" data-ta="Team"></select><select id="player" data-kind="player" aria-label="Player" data-ta="Player"></select><a class="arr" id="prev" aria-label="Previous player" data-ta="Previous player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="arr" id="next" aria-label="Next player" data-ta="Next player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 5.5 6.5 6.5-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
+    <div class="pick"><select id="team" data-kind="team" aria-label="Team" data-ta="Team"></select><select id="from" data-kind="country" aria-label="From" data-ta="From"></select><select id="player" data-kind="player" aria-label="Player" data-ta="Player"></select><a class="arr" id="prev" aria-label="Previous player" data-ta="Previous player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="arr" id="next" aria-label="Next player" data-ta="Next player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 5.5 6.5 6.5-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
     <div class="tiles" id="tiles"></div>
     <details class="panel" id="sc" open><summary><h2 data-t="Shot chart">Shot chart</h2></summary><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div><div class="scroll zones" id="sc-zones"></div></details>
     <details class="panel" id="lu" open hidden><summary><h2 data-t="Lineups">Lineups</h2></summary><div class="scroll"><table class="tbl" id="onoff"></table></div><div class="scroll"><table class="tbl" id="fives"></table></div></details>
@@ -550,6 +552,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
   </section>
   <section class="pg" id="pg-leaders" hidden>
     <div class="tabs" id="ld-tabs" role="group" aria-label="Stat" data-ta="Stat"></div>
+    <div class="tabs ld-only"><button type="button" id="ld-rook" aria-pressed="false" data-t="Rookies">Rookies</button></div>
     <section class="panel" id="ld-sec"><div class="scroll"><table class="tbl" id="ld"></table></div></section>
     <div id="ld-form" hidden>
       <section class="panel"><h2 data-t="Trending up">Trending up</h2><div class="scroll"><table class="tbl trend" id="ld-up"></table></div></section>
@@ -693,7 +696,7 @@ async function route() {
     else if (page === 'games') await renderGames(b, my);
     else if (page === 'game') await renderGame(b, my);
     else if (page === 'team') await renderTeam(b, my);
-    else if (page === 'leaders') await renderLeaders(b, my);
+    else if (page === 'leaders') await renderLeaders(b, my, c === 'rookies');
     else if (page === 'privacy') document.title = `${t('Privacy')} · NBA Player Lab`;
     else if (page === 'league') await renderLeague(b, c, my);
     else {
@@ -816,15 +819,28 @@ async function drawLineups(p, code, clubs, my) {
 }
 
 // ---- Player
+// the country picked on the Player page (pl-from): the player list is then everyone in the league from there, by club;
+// it lets go when the page shows a player from elsewhere or another club is picked
+let FROM = '';
+try { FROM = localStorage.getItem('pl-from') || ''; } catch (e) {}
+const setFrom = c => { FROM = c; try { if (c) localStorage.setItem('pl-from', c); else localStorage.removeItem('pl-from'); } catch (e) {} };
+const country = c => t(c + '@country');
 async function renderPlayer(code, pid, my, gid) {
-  const data = await get(`${code}.json`);
+  const [data, L] = await Promise.all([get(`${code}.json`), get('leaders.json').then(d => d.players).catch(() => [])]);
   if (stale(my)) return;
   const jersey = p => p.jersey && /^\d+$/.test(p.jersey) ? [Number(p.jersey), p.jersey.length] : [Infinity, 0];
   const ps = data.players.map(p => ({...p, s: sum(p.log)})).sort((x, y) => { const a = jersey(x), b = jersey(y); return (a[0] - b[0]) || (a[1] - b[1]) || x.name.localeCompare(y.name); });
   const p = ps.find(x => x.pid === pid) || ps[0];
+  if (FROM && (!p || p.country !== FROM)) setFrom('');
+  const n = {};
+  for (const x of L) if (x.country) n[x.country] = (n[x.country] || 0) + 1;
   $('#team').innerHTML = IDX.teams.map(x => `<option value="${x.code}"${x.code === code ? ' selected' : ''}>${esc(x.city)} ${esc(x.name)}</option>`).join('');
-  $('#player').innerHTML = ps.map(x => `<option value="${esc(x.pid)}"${x.jersey ? ` data-j="${esc(x.jersey)}"` : ''}${x === p ? ' selected' : ''}>${esc(x.name)}</option>`).join('');
-  const i = ps.indexOf(p), step = (el, k) => { if (ps.length > 1) el.href = `#${code}/${ps[(i + k + ps.length) % ps.length].pid}`; else el.removeAttribute('href'); };
+  $('#from').innerHTML = `<option value="">${t('All countries')}</option>${Object.keys(n).sort((a, b) => n[b] - n[a] || country(a).localeCompare(country(b), loc())).map(c => `<option value="${esc(c)}"${c === FROM ? ' selected' : ''}>${esc(country(c))} · ${n[c]}</option>`).join('')}`;
+  const tm = c => IDX.teams.findIndex(x => x.code === c);
+  const list = FROM ? L.filter(x => x.country === FROM).sort((x, y) => tm(x.team) - tm(y.team) || x.name.localeCompare(y.name)) : ps.map(x => ({...x, team: code}));
+  const opt = x => `<option value="${esc(x.pid)}" data-c="${esc(x.team)}"${!FROM && x.jersey ? ` data-j="${esc(x.jersey)}"` : ''}${p && x.pid === p.pid ? ' selected' : ''}>${esc(x.name)}</option>`;
+  $('#player').innerHTML = FROM ? [...new Set(list.map(x => x.team))].map(c => `<optgroup label="${esc(tname(c))}">${list.filter(x => x.team === c).map(opt).join('')}</optgroup>`).join('') : list.map(opt).join('');
+  const i = p ? list.findIndex(x => x.pid === p.pid) : -1, step = (el, k) => { if (list.length > 1) { const x = list[(i + k + list.length) % list.length]; el.href = `#${x.team}/${x.pid}`; } else el.removeAttribute('href'); };
   step($('#prev'), -1); step($('#next'), 1);
   $('#player').disabled = !p;
   const T = team(code);
@@ -847,7 +863,7 @@ async function renderPlayer(code, pid, my, gid) {
   remember(`${code}/${p.pid}`);
   leagueBadge(p.pid);
   const s = p.s, a = age(p.born);
-  hero.innerHTML = `<div class="badge">${face(p.pid, p.name, true)}</div><div class="who"><div class="tag"><a href="#team/${esc(code)}">${logo(code, 'mark')}${EN(tname(code))}</a>${p.pos ? ` · ${esc(p.pos)}` : ''}</div><h1>${EN(p.name)}</h1><div class="facts">${p.height ? `<span>${t('Height')} <b>${esc(p.height)}</b></span>` : ''}${a != null ? `<span>${t('Age')} <b>${a}</b></span>` : ''}<span>${t('Games')} <b>${s.gp}</b></span><span>${t('Minutes')} <b>${mpg(s.sec, s.gp)}</b></span></div></div>${p.jersey !== '' && p.jersey != null ? `<div class="num" aria-hidden="true">${esc(p.jersey)}</div>` : ''}${STAR_BTN(p.pid)}${SHARE_BTN('player')}`;
+  hero.innerHTML = `<div class="badge">${face(p.pid, p.name, true)}</div><div class="who"><div class="tag"><a href="#team/${esc(code)}">${logo(code, 'mark')}${EN(tname(code))}</a>${p.pos ? ` · ${esc(p.pos)}` : ''}${p.rookie ? ` · <span class="rook">${t('Rookie')}</span>` : ''}</div><h1>${EN(p.name)}</h1><div class="facts">${p.country ? `<span data-k="from">${t('From')} <b>${esc(country(p.country))}</b></span>` : ''}${p.height ? `<span>${t('Height')} <b>${esc(p.height)}</b></span>` : ''}${a != null ? `<span>${t('Age')} <b>${a}</b></span>` : ''}<span>${t('Games')} <b>${s.gp}</b></span><span>${t('Minutes')} <b>${mpg(s.sec, s.gp)}</b></span></div></div>${p.jersey !== '' && p.jersey != null ? `<div class="num" aria-hidden="true">${esc(p.jersey)}</div>` : ''}${STAR_BTN(p.pid)}${SHARE_BTN('player')}`;
   const tiles = [['PTS', avg(s.pts, s.gp)], ['REB', avg(s.reb, s.gp)], ['AST', avg(s.ast, s.gp)], ['STL', avg(s.stl, s.gp)], ['BLK', avg(s.blk, s.gp)], ['TOV', avg(s.tov, s.gp)],
     ['FG%', pct(s.fgm, s.fga)], ['3P%', pct(s.fg3m, s.fg3a)], ['FT%', pct(s.ftm, s.fta)], ['TS%', ts(s.pts, s.fga, s.fta)], ['+/-', N(signed(rdiv(s.pm, s.gp)))], ['MIN', mpg(s.sec, s.gp)]];
   // the picture: the game picked on the shot chart, as its log row shows it (and its fouls, from the box score), or the season's tiles
@@ -901,7 +917,16 @@ function drawForm(played, code) {
     + `<div class="fm-plot">${lo < 0 ? `<span class="fm-zero" style="bottom:${f(y(0))}%"></span>` : ''}<span class="fm-avg" style="bottom:${f(y(sa))}%"></span>${ten.map(bar).join('')}</div>`
     + `<div class="fm-x" aria-hidden="true">${ten.map(x => `<span>${x.home ? '' : '@'}${esc(x.opp)}</span>`).join('')}</div>`;
 }
-$('#team').addEventListener('change', e => { location.hash = e.target.value; });
+$('#team').addEventListener('change', e => { setFrom(''); location.hash = e.target.value; });
+// picking a country opens its first player, by club, unless the one shown is from there
+$('#from').addEventListener('change', async e => {
+  const c = e.target.value, pid = $('#player').value;
+  setFrom(c);
+  const L = c ? (await get('leaders.json')).players.filter(x => x.country === c) : [];
+  if (!c || L.some(x => x.pid === pid)) return route();
+  const tm = x => IDX.teams.findIndex(y => y.code === x.team), x = L.sort((a, b) => tm(a) - tm(b) || a.name.localeCompare(b.name))[0];
+  location.hash = `${x.team}/${x.pid}`;
+});
 // each section of the profile opens and closes, and stays as the reader left it
 for (const [id, key] of Object.entries({sc: 'pl-shots', lu: 'pl-lineups', 'log-sec': 'pl-log'})) {
   const d = $('#' + id);
@@ -921,7 +946,7 @@ $('#hero').addEventListener('touchend', e => {
   swipe = null;
   if (Math.abs(dx) > 60 && Math.abs(dy) < 40) stepPlayer(dx > 0);
 });
-$('#player').addEventListener('change', e => { location.hash = `${$('#team').value}/${e.target.value}`; });
+$('#player').addEventListener('change', e => { location.hash = `${e.target.selectedOptions[0].dataset.c || $('#team').value}/${e.target.value}`; });
 
 // ---- Compare: any two players, per game, from the same season totals the leaders use
 const CMP_ROWS = [{k: 'Games', v: s => s.gp, f: s => String(s.gp)}, {k: 'Minutes', v: s => s.gp && s.sec / s.gp, f: s => mpg(s.sec, s.gp)},
@@ -1466,11 +1491,19 @@ const board = (L, stat) => {
     return {p, v, rank};
   });
 };
-async function renderLeaders(stat, my) {
-  const L = (await get('leaders.json')).players;
+// the Rookies switch (#leaders/<stat>/rookies) keeps every board to players in their first NBA season, floors unchanged;
+// the season highs stay league-wide
+async function renderLeaders(stat, my, rookies) {
+  let L = (await get('leaders.json')).players;
   if (stale(my)) return;
   if (!LEAD[stat] && stat !== 'form' && stat !== 'highs') stat = 'pts';
-  $('#ld-tabs').innerHTML = [...Object.entries(LEAD), ['form', ['Trending']], ['highs', ['Season highs']]].map(([k, [l]]) => `<a href="#leaders/${k}" aria-current="${k === stat}">${t(l)}</a>`).join('');
+  rookies = rookies && stat !== 'highs';
+  if (rookies) L = L.filter(p => p.rookie);
+  $('#ld-tabs').innerHTML = [...Object.entries(LEAD), ['form', ['Trending']], ['highs', ['Season highs']]].map(([k, [l]]) => `<a href="#leaders/${k}${rookies && k !== 'highs' ? '/rookies' : ''}" aria-current="${k === stat}">${t(l)}</a>`).join('');
+  const rk = $('#ld-rook');
+  rk.parentElement.hidden = stat === 'highs';
+  rk.setAttribute('aria-pressed', String(rookies));
+  rk.dataset.stat = stat;
   $('#ld-sec').hidden = stat === 'form' || stat === 'highs';
   $('#ld-form').hidden = stat !== 'form';
   $('#ld-highs').hidden = stat !== 'highs';
@@ -1481,6 +1514,8 @@ async function renderLeaders(stat, my) {
     `<tr data-pid="${esc(p.pid)}"><td>${rank}</td><td class="l"><a href="#${esc(p.team)}/${esc(p.pid)}">${esc(p.name)}</a></td><td class="l">${logo(p.team)}${esc(p.team)}</td><td>${p.gp}</td>${extra ? `<td>${extra(p)}</td>` : ''}<td class="k">${v}</td></tr>`
   ).join('') : `<tr><td class="empty l" colspan="6">${t('No player qualifies yet.')}</td></tr>`}</tbody>`;
 }
+
+$('#ld-rook').addEventListener('click', e => { const b = e.currentTarget; location.hash = `leaders/${b.dataset.stat}${b.getAttribute('aria-pressed') === 'true' ? '' : '/rookies'}`; });
 
 // ---- Trending: the change from a player's season Game Score average to his last five games' average, both in tenths
 // as shown (gs, gs5 in leaders.json), the change their difference; ten games played, the per-game boards' floor, and
@@ -1770,7 +1805,7 @@ $('#theme').addEventListener('click', () => {
 // ---- pickers: a button in the select's place and one shared menu; the select keeps the options, the value and the change event
 const MENU = $('#menu'), VEIL = $('#veil'), Q = $('#menu input'), LIST = $('#menu ul');
 let OPEN = null;
-const icon = (sel, o) => sel.dataset.kind === 'team' ? logo(o.value) : sel.dataset.kind === 'game' ? logo(o.dataset.c) : face(o.value, o.textContent);
+const icon = (sel, o) => sel.dataset.kind === 'country' ? '' : sel.dataset.kind === 'team' ? logo(o.value) : sel.dataset.kind === 'game' ? logo(o.dataset.c) : face(o.value, o.textContent);
 // the header's search: every player in leaders.json, under his current club, in the shared menu; choosing one opens his page
 const FIND = /** @type {HTMLSelectElement} */ ($('#find')), FIND_BTN = $('#find-btn');
 const label = (sel, o) => `${icon(sel, o)}${o.dataset.j ? `<i class="j">${esc(o.dataset.j)}</i>` : ''}<span>${esc(o.textContent)}</span>${sel === FIND ? logo(o.dataset.c) : ''}`;
