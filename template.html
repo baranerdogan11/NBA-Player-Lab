@@ -177,13 +177,14 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 .menu input:focus-visible{box-shadow:3px 3px 0 var(--B)}
 .menu ul{list-style:none;margin:0;padding:6px;overflow-y:auto;overscroll-behavior:contain;outline:0}
 .menu li{display:flex;align-items:center;gap:10px;padding:7px 8px;cursor:pointer;font-weight:700;border-bottom:1px dotted var(--line)}
-.menu li>span:last-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.menu li>span:last-of-type{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .menu li.h{padding:14px 8px 5px;font:900 10.5px/1 var(--sans);text-transform:uppercase;letter-spacing:.16em;color:var(--muted);cursor:default;border-bottom:2px solid var(--ink)}
 .menu li.on{background:color-mix(in srgb,var(--riso-yellow) 45%,transparent)}
 .menu li[aria-selected="true"]{color:var(--A)}
 .menu li[aria-selected="true"]::after{content:"\2713";font-weight:900}
 .menu .empty{padding:10px}
-@media (max-width:760px){.veil{background:rgba(0,0,0,.35)}.menu{left:10px!important;right:10px;width:auto!important;top:auto!important;bottom:calc(12px + env(safe-area-inset-bottom));max-height:60vh!important}}
+.menu li>.chip{flex:none}
+@media (max-width:760px){.veil{background:rgba(0,0,0,.35)}.menu{left:10px!important;right:10px;width:auto!important;top:auto!important;bottom:calc(12px + env(safe-area-inset-bottom));max-height:60vh!important}.menu.find{top:calc(10px + env(safe-area-inset-top))!important;bottom:auto;max-height:50vh!important}}
 .tabs,.dates{display:flex;gap:10px;overflow-x:auto;padding:2px 6px 8px 2px;scrollbar-width:none}
 .tabs::-webkit-scrollbar,.dates::-webkit-scrollbar{display:none}
 .tabs button,.tabs a,.dates a{flex:none;border:2px solid var(--ink);background:var(--paper);padding:9px 14px;cursor:pointer;font:900 12px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--ink);text-decoration:none;box-shadow:3px 3px 0 var(--ink);transition:transform .1s}
@@ -472,6 +473,8 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <a id="rl-leaders" href="#leaders" data-pg="leaders" data-t="Leaders">Leaders</a>
   </nav>
   <div class="tools">
+    <button type="button" id="find-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Search players" data-ta="Search players" title="/"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="m15 15 5.5 5.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"/></svg></button>
+    <select id="find" data-kind="player" aria-label="Search players" data-ta="Search players" hidden></select>
     <a class="lg" id="lg-btn" href="#league" data-pg="league" aria-label="My league" data-ta="My league" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v4a5 5 0 0 1-10 0zM7 6H4v1a4 4 0 0 0 3.5 4M17 6h3v1a4 4 0 0 1-3.5 4M12 13v4M8 20h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
     <button type="button" data-lang="en" aria-pressed="false" aria-label="English">EN</button>
     <button type="button" data-lang="tr" aria-pressed="false" aria-label="Türkçe">TR</button>
@@ -598,6 +601,9 @@ const t = (s, vars) => {
   return out;
 };
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+// a name folded for matching, the same in every language: accents dropped, ı and İ by hand (the feed spells Şengün "Sengun"),
+// lower case without the reader's locale (a Turkish lower case turns JOKIC into jokıc)
+const fold = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ı/g, 'i').replace(/[đĐ]/g, 'd').replace(/[łŁ]/g, 'l').replace(/[øØ]/g, 'o').toLowerCase();
 // a club or player name keeps English capitals inside a Turkish page (CAVALIERS, not CAVALİERS)
 const EN = s => `<span lang="en">${esc(s)}</span>`;
 
@@ -1337,7 +1343,7 @@ document.addEventListener('click', e => {
 const SHARE_BTN = kind => `<button type="button" class="share" data-share="${kind}" aria-label="${esc(t('Share'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v11M7.5 8 12 3.5 16.5 8M8 11.5H6v9h12v-9h-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`;
 const SANS = 'system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif';
 const CW = 1080, CH = 1350, CP = 64;
-const ascii = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/ı/g, 'i').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const ascii = s => fold(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const link = hash => `${location.origin}${location.pathname}?l#${hash}`;
 // a font of the given weight, as large as fits the width but no larger than size
 const fit = (x, text, w, size, weight = 800) => { let s = size; do x.font = `${weight} ${s}px ${SANS}`; while (x.measureText(text).width > w && --s > 12); };
@@ -1800,14 +1806,19 @@ $('#theme').addEventListener('click', () => {
 const MENU = $('#menu'), VEIL = $('#veil'), Q = $('#menu input'), LIST = $('#menu ul');
 let OPEN = null;
 const icon = (sel, o) => sel.dataset.kind === 'country' ? '' : sel.dataset.kind === 'team' ? logo(o.value) : sel.dataset.kind === 'game' ? logo(o.dataset.c) : face(o.value, o.textContent);
-const label = (sel, o) => `${icon(sel, o)}${o.dataset.j ? `<i class="j">${esc(o.dataset.j)}</i>` : ''}<span>${esc(o.textContent)}</span>`;
+// the header's search: every player in leaders.json, under his current club, in the shared menu; choosing one opens his page
+const FIND = /** @type {HTMLSelectElement} */ ($('#find')), FIND_BTN = $('#find-btn');
+const label = (sel, o) => `${icon(sel, o)}${o.dataset.j ? `<i class="j">${esc(o.dataset.j)}</i>` : ''}<span>${esc(o.textContent)}</span>${sel === FIND ? logo(o.dataset.c) : ''}`;
 const item = (sel, o) => `<li role="option" id="mo-${esc(o.value)}" data-v="${esc(o.value)}" aria-selected="${o.selected}">${label(sel, o)}</li>`;
 const activate = li => { for (const x of $$('.on', LIST)) x.classList.remove('on'); if (li) { li.classList.add('on'); LIST.setAttribute('aria-activedescendant', li.id); } };
 function fillMenu(sel, q = '') {
-  const f = q.trim().toLocaleLowerCase(loc()), hit = o => !f || o.textContent.toLocaleLowerCase(loc()).includes(f);
+  // every word typed is in the name (or the club's name); names that start with it come first, then a later word that does
+  const f = fold(q).split(/\s+/).filter(Boolean), has = s => f.every(w => fold(s).includes(w));
+  const hit = o => has(o.dataset.c ? `${o.textContent} ${tname(o.dataset.c)}` : o.textContent);
+  const rank = o => { const n = fold(o.textContent); return n.startsWith(f[0]) ? 0 : n.split(/[\s-]+/).some(w => w.startsWith(f[0])) ? 1 : 2; };
   const groups = $$('optgroup', sel);
-  LIST.innerHTML = (groups.length ? groups.map(g => { const rows = $$('option', g).filter(o => hit(o) || g.label.toLocaleLowerCase(loc()).includes(f)); return rows.length ? `<li class="h">${esc(g.label)}</li>${rows.map(o => item(sel, o)).join('')}` : ''; }).join('')
-    : $$('option', sel).filter(hit).map(o => item(sel, o)).join('')) || `<li class="empty">${t('No matches')}</li>`;
+  LIST.innerHTML = (groups.length ? groups.map(g => { const rows = $$('option', g).filter(o => hit(o) || has(g.label)); return rows.length ? `<li class="h">${esc(g.label)}</li>${rows.map(o => item(sel, o)).join('')}` : ''; }).join('')
+    : $$('option', sel).filter(hit).map((o, i) => [f.length ? rank(o) : 0, i, o]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).map(([, , o]) => item(sel, o)).join('')) || `<li class="empty">${t('No matches')}</li>`;
   activate($('[aria-selected="true"]', LIST) || $('[role="option"]', LIST));
 }
 function closeMenu() {
@@ -1820,17 +1831,18 @@ function closeMenu() {
 function openMenu(sel, btn) {
   OPEN = {sel, btn};
   btn.setAttribute('aria-expanded', 'true');
-  Q.value = ''; Q.placeholder = t('Search'); Q.hidden = sel.options.length <= 12;
+  Q.value = ''; Q.placeholder = t(sel === FIND ? 'Search players' : 'Search'); Q.hidden = sel !== FIND && sel.options.length <= 12;
   fillMenu(sel);
   MENU.hidden = VEIL.hidden = false;
-  const r = btn.getBoundingClientRect(), w = Math.max(r.width, 260);
+  MENU.classList.toggle('find', sel === FIND);
+  const r = btn.getBoundingClientRect(), w = Math.max(r.width, sel === FIND ? 340 : 260);
   MENU.style.left = `${Math.max(10, Math.min(r.left, innerWidth - w - 10))}px`; MENU.style.width = `${w}px`; MENU.style.top = `${r.bottom + 6}px`;
   MENU.style.maxHeight = `${Math.max(220, Math.min(420, innerHeight - r.bottom - 16))}px`;
-  (Q.hidden || !matchMedia('(hover:hover)').matches ? LIST : Q).focus({preventScroll: true});   // no keyboard popping up over a phone's sheet
+  (Q.hidden || (sel !== FIND && !matchMedia('(hover:hover)').matches) ? LIST : Q).focus({preventScroll: true});   // no keyboard popping up over a phone's sheet, but the search wants one
   const on = $('.on', LIST); if (on) on.scrollIntoView({block: 'center'});
 }
 const choose = v => { const {sel} = OPEN; closeMenu(); if (sel.value !== v) { sel.value = v; sel.dispatchEvent(new Event('change', {bubbles: true})); } };
-for (const sel of $$('select')) {
+for (const sel of $$('select:not(#find)')) {
   const btn = document.createElement('button');
   btn.type = 'button'; btn.className = 'sel'; btn.setAttribute('aria-haspopup', 'listbox'); btn.setAttribute('aria-expanded', 'false');
   sel.after(btn); sel.hidden = true;
@@ -1839,9 +1851,27 @@ for (const sel of $$('select')) {
   sel.addEventListener('change', sync);
   btn.addEventListener('click', () => OPEN && OPEN.sel === sel ? closeMenu() : openMenu(sel, btn));
 }
+async function openFind() {
+  if (OPEN) { const was = OPEN.sel; closeMenu(); if (was === FIND) return; }
+  if (!FIND.options.length) {
+    let L;
+    try { L = (await get('leaders.json')).players; } catch (e) { return; }
+    FIND.innerHTML = [...L].sort((x, y) => x.name.localeCompare(y.name)).map(p => `<option value="${esc(p.pid)}" data-c="${esc(p.team)}">${esc(p.name)}</option>`).join('');
+  }
+  FIND.selectedIndex = -1;
+  openMenu(FIND, FIND_BTN);
+}
+FIND_BTN.addEventListener('click', openFind);
+FIND.addEventListener('change', () => { const o = FIND.selectedOptions[0]; if (o) location.hash = `${o.dataset.c}/${o.value}`; });
+document.addEventListener('keydown', e => {
+  if (e.key !== '/' || e.altKey || e.ctrlKey || e.metaKey || OPEN || e.target.closest('input,textarea,select')) return;
+  e.preventDefault(); openFind();
+});
+// the search sits at the top of a phone's screen, out of the keyboard's way, so the keyboard opening (a resize, a scroll) leaves it open
+const shut = () => { if (OPEN && OPEN.sel !== FIND) closeMenu(); };
 VEIL.addEventListener('click', closeMenu);
-window.addEventListener('resize', closeMenu);
-window.addEventListener('scroll', closeMenu, {passive: true});
+window.addEventListener('resize', shut);
+window.addEventListener('scroll', shut, {passive: true});
 Q.addEventListener('input', () => fillMenu(OPEN.sel, Q.value));
 LIST.addEventListener('click', e => { const li = e.target.closest('[role="option"]'); if (li) choose(li.dataset.v); });
 LIST.addEventListener('mousemove', e => { const li = e.target.closest('[role="option"]'); if (li && !li.classList.contains('on')) activate(li); });
