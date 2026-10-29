@@ -1,6 +1,7 @@
 // Stat definitions: the glossary page (#glossary, linked from the foot of every page) lists every entry of GLOSS, in
 // English and Turkish; #glossary/<id> opens at one. A stat's label (a tile, a heading, the Leaders tab in use) opens its
-// entry in a card above it, which a tap elsewhere, a scroll or Escape closes. Headings that sort keep sorting.
+// entry in a card above it, which a tap elsewhere, a scroll or Escape closes. Headings that sort keep sorting and open it too.
+// Every stat heading, tile and Leaders board carries a definition.
 import {test, expect} from '@playwright/test';
 import {DESKTOP, PHONE, prepare, settled, go} from './site.js';
 
@@ -70,11 +71,15 @@ for (const [name, use, lang] of [['desktop', DESKTOP, 'en'], ['phone', PHONE, 't
       await go(page, '#standings/ratings', () => document.querySelectorAll('#st-ratings tbody tr').length === 30);
       await tap('#st-ratings th[data-sort="drtg"] .sort');
       expect(await page.getAttribute('#st-ratings th[data-sort="drtg"]', 'aria-sort')).toBe('ascending');
-      expect(await card(page)).toBeNull();
-      // a box-score heading sorts and opens nothing
+      expect((await card(page)).def).toBe('drtg poss rank');
+      await page.keyboard.press('Escape');
+      // a box-score heading sorts and opens its card; again, it unsorts and closes it
       await go(page, '#game/0022600001', () => document.querySelectorAll('#gm-box table').length === 2);
       await tap('#gm-box th[data-sort="PTS"] .sort');
       expect(await page.locator('#gm-box th[aria-sort]').count()).toBe(1);
+      expect((await card(page)).def).toBe('pts');
+      await tap('#gm-box th[data-sort="PTS"] .sort');
+      expect(await page.locator('#gm-box th[aria-sort]').count()).toBe(0);
       expect(await card(page)).toBeNull();
       // Leaders: another tab opens its board; the tab in use opens its definition with the board's floor
       await go(page, '#leaders', () => document.querySelectorAll('#ld tbody tr').length > 0);
@@ -105,6 +110,41 @@ test.describe('definitions by keyboard', () => {
     await page.keyboard.press('Escape');
     expect(await card(page)).toBeNull();
     expect(await page.evaluate(() => document.activeElement.dataset.def)).toBe('pace poss');
+    expect(problems, 'the page reported errors').toEqual([]);
+  });
+});
+
+// the headings that name no stat (who, which club, when, against whom) and the periods table
+const PLAIN = new Set(['Player', 'Team', 'Date', 'Opp', 'Oyuncu', 'Takım', 'Tarih', 'Rakip', '']);
+const ROUTES = [
+  ['#BOS', () => !!document.querySelector('#tiles .tile') && !document.querySelector('#lu').hidden],
+  ['#team/BOS', () => document.querySelectorAll('#tm-ff td[data-k]').length === 8],
+  ['#compare', () => document.querySelectorAll('#cmp tr').length > 5],
+  ['#standings', () => document.querySelectorAll('#st-body tbody tr').length === 30],
+  ['#standings/ratings', () => document.querySelectorAll('#st-ratings tbody tr').length === 30],
+  ['#standings/factors', () => document.querySelectorAll('#st-factors tbody tr').length === 30],
+  ['#game/0022600001', () => document.querySelectorAll('#gm-box table').length === 2 && !document.querySelector('#gm-lu').hidden],
+  ['#game/0022600061', () => !document.querySelector('#gm-pre').hidden && document.querySelectorAll('#pv-ff [data-k]').length === 8],
+  ['#leaders/fg', () => document.querySelectorAll('#ld tbody tr').length > 0],
+  ['#leaders/form', () => document.querySelectorAll('#ld-up tbody tr').length > 0],
+  ['#leaders/highs', () => document.querySelectorAll('#ld-highs .panel a').length > 0],
+  ['#home', () => document.querySelectorAll('#hm-leaders .panel').length === 3],
+];
+test.describe('every stat has a definition', () => {
+  test.use(DESKTOP);
+  test('every stat heading, tile, Compare row and board names an entry of the glossary', async ({page}) => {
+    const problems = await prepare(page);
+    await page.goto('./?l#home');
+    await settled(page);
+    for (const [hash, probe] of ROUTES) {
+      await go(page, hash, probe);
+      const bad = await page.evaluate(words => { const plain = new Set(words);
+        const pg = document.querySelector(`#pg-${document.body.dataset.page}`), ids = new Set(Object.keys(DEF));
+        const labels = [...pg.querySelectorAll('.tbl:not(#gm-periods) thead th, .tile, .cmp td.m, .tape .lb, #ld-tabs a, .trio .panel > h2')].filter(el => !el.closest('[hidden]') && !plain.has(el.textContent.trim()));
+        return labels.filter(el => !el.dataset.def || !el.dataset.def.split(' ').every(id => ids.has(id))).map(el => el.textContent.trim());
+      }, [...PLAIN]);
+      expect(bad, `labels on ${hash} without a definition`).toEqual([]);
+    }
     expect(problems, 'the page reported errors').toEqual([]);
   });
 });
