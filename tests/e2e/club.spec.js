@@ -108,3 +108,26 @@ test('the game page\'s crests and score-by-period names open each club', async (
   await page.waitForFunction(club, g.home);
   expect(problems).toEqual([]);
 });
+
+test('its calendar link subscribes to the club\'s whole schedule: Google Calendar here, webcal on Apple devices', async ({page, browser}) => {
+  const problems = await prepare(page);
+  await page.goto(`./?l#team/${CODE}`);
+  await settled(page);
+  await page.waitForFunction(club, CODE);
+  const href = await page.getAttribute('#tm-cal', 'href');
+  expect(href).toMatch(/^https:\/\/calendar\.google\.com\/calendar\/r\?cid=/);
+  const ics = decodeURIComponent(href.split('cid=')[1]);
+  expect(ics).toMatch(new RegExp(`^webcal://.+/teams/[0-9-]+/cal/${CODE}\\.ics$`));
+  const text = await (await page.request.get(ics.replace(/^webcal:/, 'http:'))).text();
+  const G = await page.evaluate(() => get('games.json').then(d => d.games));
+  expect([...text.matchAll(/^UID:(\d+)@/gm)].map(m => m[1])).toEqual(G.filter(g => g.home === CODE || g.away === CODE).map(g => g.gid));
+  expect(problems).toEqual([]);
+
+  const apple = await browser.newPage({...DESKTOP, userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'});
+  await prepare(apple);
+  await apple.goto(new URL(`./?l#team/${CODE}`, page.url()).href);
+  await settled(apple);
+  await apple.waitForFunction(club, CODE);
+  expect(await apple.getAttribute('#tm-cal', 'href')).toBe(ics);
+  await apple.close();
+});

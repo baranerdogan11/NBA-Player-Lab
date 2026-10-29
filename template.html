@@ -353,7 +353,7 @@ html[data-theme="dark"] .intro{--A:#0078b4}
 .intro .badge i{width:80%;height:80%;border-radius:50%;background:var(--fluoro-pink);mix-blend-mode:multiply;box-shadow:10px 8px 0 var(--riso-blue);background-image:linear-gradient(90deg,transparent 48.5%,rgba(26,26,26,.6) 48.5% 51.5%,transparent 51.5%),radial-gradient(circle at 50% -40%,transparent 62%,rgba(26,26,26,.6) 62% 64.5%,transparent 64.5%),radial-gradient(circle at 50% 140%,transparent 62%,rgba(26,26,26,.6) 62% 64.5%,transparent 64.5%)}
 @media (max-width:760px){.intro .badge{width:110px;height:110px}}
 .sec-h.on-floor{padding:30px 0 10px;border-bottom:4px solid var(--ink)}
-.sec-h .more{margin-left:auto;font:italic 400 16px/1 var(--serif);text-transform:none;letter-spacing:0;text-decoration:underline;text-underline-offset:3px}
+.sec-h .more,.panel>h2 .more{margin-left:auto;font:italic 400 16px/1 var(--serif);text-transform:none;letter-spacing:0;text-decoration:underline;text-underline-offset:3px}
 .trio{display:grid;gap:12px 32px;grid-template-columns:repeat(3,minmax(0,1fr))}
 .trio>.panel{margin-top:18px}
 @media (max-width:900px){.trio{grid-template-columns:minmax(0,1fr)}}
@@ -545,7 +545,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <div class="hero" id="tm-hero"></div>
     <div class="pick"><select id="tm-pick" data-kind="team" aria-label="Team" data-ta="Team"></select></div>
     <div class="tiles" id="tm-tiles"></div>
-    <section class="panel"><h2 data-t="Up next">Up next</h2><div class="cards" id="tm-next"></div></section>
+    <section class="panel"><h2><span data-t="Up next">Up next</span><a class="more" id="tm-cal" data-t="Add to calendar">Add to calendar</a></h2><div class="cards" id="tm-next"></div></section>
     <section class="panel"><h2 data-t="Roster">Roster</h2><div class="scroll"><table class="tbl" id="tm-roster"></table></div></section>
     <section class="panel"><h2 data-t="Ratings">Ratings</h2><div class="scroll"><table class="tbl rt" id="tm-rt"></table></div></section>
     <section class="panel"><h2 data-t="Four Factors">Four Factors</h2><div class="scroll"><table class="tbl rt" id="tm-ff"></table></div></section>
@@ -1071,7 +1071,8 @@ $('#st-body').addEventListener('click', e => {
   body.append(...rows);
 });
 
-// ---- Club: its record as Standings counts it, its next five games with the rest before each (as the preview has it),
+// ---- Club: its record as Standings counts it, its next five games with the rest before each (as the preview has it)
+// and its whole schedule to subscribe to (cal/<CODE>.ics: webcal on Apple devices, Google Calendar elsewhere),
 // the roster's per-game averages from the same season totals as the Player page, and its ratings and Four Factors with
 // their league ranks (teamVals and rankBy, as on Standings)
 let CLUB = '';
@@ -1093,6 +1094,8 @@ async function renderTeam(code, my) {
   const tiles = [['W', String(r.w)], ['L', String(r.l)], ['PCT', winPct(r.w, gp)], ['PPG', avg(r.pf, gp)], ['OPP PPG', avg(r.pa, gp)], ['DIFF', N(d)]];
   $('#tm-tiles').innerHTML = tiles.map(([k, v], i) => `<div class="tile${i === 0 ? ' lead' : ''}" data-k="${k}"><b>${v}</b><span>${t(k + '@stat')}</span></div>`).join('');
   const next = G.filter(g => g.hs == null && (g.home === code || g.away === code)).slice(0, 5);
+  const ics = new URL(`${META.base}cal/${code}.ics`, location.href).href.replace(/^https?:/, 'webcal:'), apple = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
+  Object.assign($('#tm-cal'), apple ? {href: ics, target: '', rel: ''} : {href: `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(ics)}`, target: '_blank', rel: 'noopener'});
   $('#tm-next').innerHTML = next.length ? next.map(g => `<div class="up" data-gid="${esc(g.gid)}"><div class="up-h"><span>${tipDay(g)}</span>${restTag(restDays(G, g, code))}</div>${gameCard(g)}</div>`).join('') : `<p class="empty">${t('No games to come.')}</p>`;
   const ps = data.players.map(p => ({...p, s: sum(p.log)})).sort((x, y) => (+(y.s.gp > 0) - +(x.s.gp > 0)) || (y.s.pts * x.s.gp - x.s.pts * y.s.gp) || x.name.localeCompare(y.name));
   const head = ['Player', 'GP', 'MIN', 'PTS', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'FG%', '3P%', 'FT%', '+/-'];

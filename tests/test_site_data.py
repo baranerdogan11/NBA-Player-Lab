@@ -121,6 +121,40 @@ checks["the season highs gate fails when a better line is left off"] = not highs
 checks["Game Score is Hollinger's, in tenths"] = game_score(
     {"pts": 30, "fgm": 11, "fga": 20, "fta": 8, "ftm": 6, "oreb": 2, "dreb": 8, "stl": 2, "ast": 7, "blk": 1, "pf": 3, "tov": 4}) == 258
 
+
+def calendar(code):
+    """cal/<CODE>.ics unfolded into its events, each a dict of its properties; None unless every line ends in CRLF and
+    is at most 75 octets."""
+    raw = open(os.path.join(out, "cal", f"{code}.ics"), "rb").read()
+    if not raw.endswith(b"\r\n") or any(len(x) > 75 or x.endswith(b"\r") or b"\n" in x for x in raw.split(b"\r\n")):
+        return None
+    lines = raw.decode().replace("\r\n ", "").split("\r\n")[:-1]
+    if lines[0] != "BEGIN:VCALENDAR" or lines[-1] != "END:VCALENDAR":
+        return None
+    evs = []
+    for x in lines:
+        k, _, v = x.partition(":")
+        if x == "BEGIN:VEVENT":
+            evs.append({})
+        elif evs and x != "END:VEVENT":
+            evs[-1][k] = v
+    return evs
+
+
+cals = {t["code"]: calendar(t["code"]) for t in idx["teams"]}
+checks["every club's calendar is well-formed iCalendar (CRLF, folded at 75 octets)"] = all(c is not None for c in cals.values())
+checks["each calendar has one event per game of that club, in the schedule's order, UID by gid"] = all(
+    [e["UID"] for e in cals[c]] == [f"{g['gid']}@nba-player-lab" for g in sched if c in (g["home"], g["away"])] for c in cals)
+team_name = {t["code"]: t["name"] for t in idx["teams"]}
+by_uid = {f"{g['gid']}@nba-player-lab": g for g in sched}
+checks["each event starts at the game's tip-off in UTC and is titled away @ home"] = all(
+    e["DTSTART"] == by_uid[e["UID"]]["time"].replace("-", "").replace(":", "") and e["DTSTART"].endswith("Z")
+    and e["SUMMARY"] == f"{team_name[by_uid[e['UID']]['away']]} @ {team_name[by_uid[e['UID']]['home']]}" for c in cals for e in cals[c])
+checks["a final's event carries its score and every event links its game page"] = all(
+    e["URL"].endswith(f"?l#game/{by_uid[e['UID']]['gid']}")
+    and (by_uid[e["UID"]]["hs"] is None or f"{by_uid[e['UID']]['as']}\\, " in e["DESCRIPTION"] and e["DESCRIPTION"].startswith("Final: "))
+    for c in cals for e in cals[c])
+
 for name, passed in checks.items():
     print(("PASS " if passed else "FAIL ") + name)
 sys.exit(0 if all(checks.values()) else 1)
