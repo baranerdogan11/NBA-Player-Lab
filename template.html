@@ -458,6 +458,25 @@ html[data-theme="dark"] .intro{--A:#0078b4}
 .pg.in :is(.tbl tbody tr,.tile,.cards>.card,.list a):nth-child(n+7){animation-delay:.24s}
 html.swap,html.swap *{transition:background-color .3s,color .3s}
 
+/* definitions: a label that explains itself, the card it opens, and the glossary page */
+[data-def]{cursor:help}
+[data-def]:focus-visible{outline:2px solid var(--A);outline-offset:2px}
+@media (hover:hover){:is(th,.tile>span,.lb,td.m,.fm-h>span)[data-def]:hover,.tile[data-def]:hover>span{text-decoration:underline dotted 2px;text-underline-offset:3px}}
+.def{position:fixed;z-index:60;width:min(320px,calc(100vw - 20px));padding:12px 14px 10px;background:var(--paper);color:var(--ink);border:2px solid var(--ink);box-shadow:4px 4px 0 var(--B);font:15px/1.4 var(--serif);text-transform:none;letter-spacing:0;white-space:normal;text-align:left}
+.def::after{content:"";position:absolute;left:calc(var(--x,50%) - 7px);bottom:-9px;width:12px;height:12px;background:var(--paper);border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:rotate(45deg)}
+.def.below::after{bottom:auto;top:-9px;transform:rotate(-135deg)}
+.def p{margin:0}
+.def p+p{margin-top:6px}
+.def .def-h,.gl dt{font:900 11px/1.3 var(--sans);text-transform:uppercase;letter-spacing:.12em}
+.def .def-h b,.gl dt b{color:var(--A);margin-right:4px}
+.def code,.gl code{display:block;margin-top:6px;font:700 12.5px/1.45 ui-monospace,"SF Mono",Menlo,Consolas,monospace;overflow-wrap:anywhere}
+.def .def-x{color:var(--ink2)}
+.def a{display:inline-block;margin-top:8px;font:900 10.5px/1 var(--sans);text-transform:uppercase;letter-spacing:.14em}
+.gl{margin:0;padding:0 0 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:0 28px}
+.gl>div{padding:12px 0 12px;border-bottom:1px dashed var(--line);scroll-margin-top:90px}
+.gl>div.hit{box-shadow:inset 4px 0 0 var(--B);padding-left:12px;background:color-mix(in srgb,var(--riso-yellow) 30%,transparent)}
+.gl dd{margin:6px 0 0;font:16px/1.45 var(--serif)}
+
 /* accessibility: gentler motion, stronger rules */
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}a:active,button:active,.card:active{transform:none!important}}
 @media (prefers-contrast:more){:root{--line:rgba(26,26,26,.6)}html[data-theme="dark"]{--line:rgba(239,233,219,.6)}}
@@ -574,14 +593,16 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
       <p><span data-t="Questions and removal requests:">Questions and removal requests:</span> <a href="https://github.com/baranerdogan11/NBA-Player-Lab/issues">github.com/baranerdogan11/NBA-Player-Lab</a></p>
     </div></section>
   </section>
+  <section class="pg" id="pg-glossary" hidden><div id="gl"></div></section>
   <section class="pg" id="pg-league" hidden>
     <nav class="tabs" id="lg-tabs" aria-label="My league" data-ta="My league"></nav>
     <div id="lg-body"></div>
     <p class="credit"><span lang="en">Fantasy data provided by <a href="https://sports.yahoo.com/fantasy/" target="_blank" rel="noopener">Yahoo Fantasy</a></span><a class="more" id="lg-pick" href="#league/pick" data-t="Change team">Change team</a></p>
   </section>
 </main>
-<footer class="foot"><span id="foot"></span> · <a href="#privacy" data-t="Privacy">Privacy</a></footer>
+<footer class="foot"><span id="foot"></span> · <a href="#glossary" data-t="Glossary">Glossary</a> · <a href="#privacy" data-t="Privacy">Privacy</a></footer>
 <div class="veil" id="veil" hidden></div>
+<div class="def" id="def" role="dialog" hidden></div>
 <div class="menu" id="menu" hidden><input type="search" autocomplete="off" aria-label="Search" data-ta="Search"><ul role="listbox" tabindex="-1"></ul></div>
 <script>
 const META = /*META*/;
@@ -658,7 +679,7 @@ let LAST = '';
 try { LAST = localStorage.getItem('pl-last') || ''; } catch (e) {}
 const remember = h => { LAST = h; try { localStorage.setItem('pl-last', h); } catch (e) {} $('#tb-player').href = $('#rl-player').href = `#${h}`; };
 
-// ---- routing: the opening page on no hash (or #home), #player (the remembered player), #CODE[/pid[/gid]] (gid: his shot chart at that game), #compare[/a/b], #standings[/east|west|league], #games[/date], #game/gid, #leaders[/stat], #privacy,
+// ---- routing: the opening page on no hash (or #home), #player (the remembered player), #CODE[/pid[/gid]] (gid: his shot chart at that game), #compare[/a/b], #standings[/east|west|league], #games[/date], #game/gid, #leaders[/stat], #privacy, #glossary[/id],
 // #league[/roster|board|pick|team/<t>] (and the invite link #league/<id>/<key>)
 // ---- the site opens on Home: every fresh open (the home-screen icon, a new or restored tab, a relaunched phone browser)
 // starts there, whatever address it carries, and so does a tab brought back after half an hour in the background. A shared
@@ -680,7 +701,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) seen();
   else if (IDX && away() && location.hash) { history.replaceState(null, '', location.pathname + location.search); scrollTo(0, 0); route(); }
 });
-const PAGES = ['home', 'player', 'compare', 'standings', 'games', 'game', 'team', 'leaders', 'privacy', 'league'];
+const PAGES = ['home', 'player', 'compare', 'standings', 'games', 'game', 'team', 'leaders', 'privacy', 'glossary', 'league'];
 let seq = 0;
 async function route() {
   const [a = '', b, c] = decodeURIComponent(location.hash.slice(1)).split('/');
@@ -688,6 +709,7 @@ async function route() {
   const page = a === '' ? 'home' : PAGES.includes(a) && a !== 'player' ? a : 'player';
   $('#wipe').classList.add('on');
   $('#fail').hidden = true;
+  closeDef();
   if (page !== 'player' && page !== 'team') document.body.removeAttribute('style');
   try {
     if (page === 'home') await renderHome(my);
@@ -698,6 +720,7 @@ async function route() {
     else if (page === 'team') await renderTeam(b, my);
     else if (page === 'leaders') await renderLeaders(b, my, c === 'rookies');
     else if (page === 'privacy') document.title = `${t('Privacy')} · NBA Player Lab`;
+    else if (page === 'glossary') renderGlossary();
     else if (page === 'league') await renderLeague(b, c, my);
     else {
       let [code, pid, gid] = team(a) ? [a, b, c] : LAST.split('/');
@@ -712,6 +735,7 @@ async function route() {
     seen();
     const pg = $(`#pg-${page}`);
     pg.classList.remove('in'); void pg.offsetWidth; pg.classList.add('in');
+    if (page === 'glossary') glossaryAt(b);
   } catch (e) {
     if (my !== seq) return;
     console.warn(e);
@@ -765,7 +789,7 @@ const drawShots = () => {
   const k = scPick();
   $('#sc-court').innerHTML = court(k.code, k.shots, k.heat);
   $('#sc-zones').hidden = !k.lg;
-  $('#sc-zones').innerHTML = k.lg ? `<table class="tbl" style="${tc(k.code)}"><thead><tr><th class="l">${t('Zone')}</th><th>${t('FG@stat')}</th><th>${t('FG%@stat')}</th><th>${t('League')}</th></tr></thead><tbody>${k.zf.map(([m, n], z) =>
+  $('#sc-zones').innerHTML = k.lg ? `<table class="tbl" style="${tc(k.code)}"><thead><tr><th class="l"${def('zones heat')}>${t('Zone')}</th><th${def('fg')}>${t('FG@stat')}</th><th${def('fgp')}>${t('FG%@stat')}</th><th${def('league')}>${t('League')}</th></tr></thead><tbody>${k.zf.map(([m, n], z) =>
     `<tr data-z="${z}"><td class="l"><i class="${k.heat[z] || ''}"></i>${t(ZN[z])}</td><td>${m}-${n}</td><td class="k">${n ? pct(m, n) : '–'}</td><td>${pct(...k.lg[z])}</td></tr>`).join('')}</tbody></table>` : '';
 };
 $('#sc-game').addEventListener('change', () => { drawShots(); prime('player'); });
@@ -806,13 +830,13 @@ async function drawLineups(p, code, clubs, my) {
   const ro = rates(on), rf = rates(off), dif = ro.map((x, k) => x != null && rf[k] != null ? x - rf[k] : null);
   const name = pid => names[pid] || pid;
   $('#onoff').setAttribute('style', tc(code));
-  $('#onoff').innerHTML = `<thead><tr><th class="l"></th><th>${t('+/-@stat')}</th><th>${t('ORtg@stat')}</th><th>${t('DRtg@stat')}</th><th>${t('Net@stat')}</th></tr></thead><tbody>`
+  $('#onoff').innerHTML = `<thead><tr><th class="l"></th><th${def('pm')}>${t('+/-@stat')}</th><th${def('ortg poss')}>${t('ORtg@stat')}</th><th${def('drtg poss')}>${t('DRtg@stat')}</th><th${def('net')}>${t('Net@stat')}</th></tr></thead><tbody>`
     + `<tr data-k="on"><td class="l">${t('On court')}</td><td>${N(signed(String(on.pts - on.opp)))}</td><td>${tenths(ro[0])}</td><td>${tenths(ro[1])}</td><td class="k">${tenths(ro[2], 1)}</td></tr>`
     + `<tr data-k="off"><td class="l">${t('Off court')}</td><td>${off.ds ? N(signed(String(off.pts - off.opp))) : '–'}</td><td>${tenths(rf[0])}</td><td>${tenths(rf[1])}</td><td class="k">${tenths(rf[2], 1)}</td></tr>`
-    + `<tr class="tot" data-k="diff"><td class="l">${t('On − off')}</td><td></td><td>${tenths(dif[0], 1)}</td><td>${tenths(dif[1], 1)}</td><td class="k">${tenths(dif[2], 1)}</td></tr></tbody>`;
+    + `<tr class="tot" data-k="diff"><td class="l"${def('onoff')}>${t('On − off')}</td><td></td><td>${tenths(dif[0], 1)}</td><td>${tenths(dif[1], 1)}</td><td class="k">${tenths(dif[2], 1)}</td></tr></tbody>`;
   const top = units.sort((a, b) => b.u.ds - a.u.ds).slice(0, 5);
   $('#fives').setAttribute('style', tc(code));
-  $('#fives').innerHTML = `<thead><tr><th class="l">${t('With@stat')}</th><th>${t('MIN@stat')}</th><th>${t('+/-@stat')}</th><th class="x">${t('ORtg@stat')}</th><th class="x">${t('DRtg@stat')}</th><th>${t('Net@stat')}</th></tr></thead><tbody>${top.map(({code: c, pids, u}) => {
+  $('#fives').innerHTML = `<thead><tr><th class="l">${t('With@stat')}</th><th${def('min')}>${t('MIN@stat')}</th><th${def('pm')}>${t('+/-@stat')}</th><th class="x"${def('ortg poss')}>${t('ORtg@stat')}</th><th class="x"${def('drtg poss')}>${t('DRtg@stat')}</th><th${def('net')}>${t('Net@stat')}</th></tr></thead><tbody>${top.map(({code: c, pids, u}) => {
     const [o, d, n] = rates(u);
     return `<tr data-five="${esc(pids.join(','))}">${fiveCell(c, pids, name)}<td>${N(rdiv(u.ds, 600, 0))}</td><td>${N(signed(String(u.pts - u.opp)))}</td><td class="x">${tenths(o)}</td><td class="x">${tenths(d)}</td><td class="k">${tenths(n, 1)}</td></tr>`;
   }).join('')}</tbody>`;
@@ -876,7 +900,7 @@ async function renderPlayer(code, pid, my, gid) {
       tiles: tl.map(([k, v]) => [t(k + '@stat'), v]), courts: SC.pid === p.pid ? [shotsSvg()] : [],
       link: link(`${code}/${p.pid}`), title: `${p.name} · NBA Player Lab`, file: `${ascii(p.name)}-${x ? x.date : META.season}.png`};
   };
-  $('#tiles').innerHTML = tiles.map(([k, v], i) => `<div class="tile${i === 0 ? ' lead' : ''}" data-k="${k}"><b>${v}</b><span>${t(k + '@stat')}</span></div>`).join('');
+  $('#tiles').innerHTML = tiles.map(([k, v], i) => `<div class="tile${i === 0 ? ' lead' : ''}" data-k="${k}"${def(TILE_DEF[k])}><b>${v}</b><span>${t(k + '@stat')}</span></div>`).join('');
   const log = [...p.log].reverse();
   // his season highs: the games where a stat is at its most over his games played, marked once he has played two
   const top = {}, games = log.filter(x => x.sec > 0);
@@ -913,7 +937,7 @@ function drawForm(played, code) {
     return `<a href="#game/${esc(x.gid)}" data-gid="${esc(x.gid)}" aria-label="${esc(`${fmtDate(x.date)} ${x.home ? t('vs') : '@'} ${x.opp} · ${t('GmSc@stat')} ${N(v)}`)}"><i class="${x.gs >= sa ? 'hi' : 'lo'}" style="bottom:${f(bot)}%;height:${f(top - bot)}%"></i><b style="${x.gs < 0 ? `top:${f(100 - bot)}%;margin-top:3px` : `bottom:${f(top)}%;margin-bottom:3px`}">${N(v)}</b></a>`;
   };
   el.setAttribute('style', tc(code));
-  el.innerHTML = `<div class="fm-h"><span>${t('Form')} · ${t('GmSc@stat')}</span><span>${t('Season')} <b id="form-avg">${N(fq(sa))}</b></span></div>`
+  el.innerHTML = `<div class="fm-h"><span${def('form gs')}>${t('Form')} · ${t('GmSc@stat')}</span><span>${t('Season')} <b id="form-avg">${N(fq(sa))}</b></span></div>`
     + `<div class="fm-plot">${lo < 0 ? `<span class="fm-zero" style="bottom:${f(y(0))}%"></span>` : ''}<span class="fm-avg" style="bottom:${f(y(sa))}%"></span>${ten.map(bar).join('')}</div>`
     + `<div class="fm-x" aria-hidden="true">${ten.map(x => `<span>${x.home ? '' : '@'}${esc(x.opp)}</span>`).join('')}</div>`;
 }
@@ -956,6 +980,7 @@ const CMP_ROWS = [{k: 'Games', v: s => s.gp, f: s => String(s.gp)}, {k: 'Minutes
   {k: 'FG%', v: s => s.fga && s.fgm / s.fga, f: s => pct(s.fgm, s.fga)}, {k: '3P%', v: s => s.fg3a && s.fg3m / s.fg3a, f: s => pct(s.fg3m, s.fg3a)},
   {k: 'FT%', v: s => s.fta && s.ftm / s.fta, f: s => pct(s.ftm, s.fta)}, {k: 'TS%', v: s => (s.fga + s.fta) && s.pts / (s.fga + 0.44 * s.fta), f: s => ts(s.pts, s.fga, s.fta)},
   {k: '+/-', v: s => s.gp && s.pm / s.gp, f: s => N(signed(rdiv(s.pm, s.gp)))}];
+const CMP_DEF = {Games: 'avg', Minutes: 'min', Points: 'pts', Rebounds: 'reb', Assists: 'ast', Steals: 'stl', Blocks: 'blk', Turnovers: 'tov', 'FG%': 'fgp', '3P%': 'fg3p', 'FT%': 'ftp', 'TS%': 'ts', '+/-': 'pm'};
 async function renderCompare(a, b, my) {
   const L = (await get('leaders.json')).players;
   if (stale(my)) return;
@@ -969,7 +994,7 @@ async function renderCompare(a, b, my) {
   $('#cmp-vs').innerHTML = card(A) + card(B);
   $('#cmp').innerHTML = `<tbody>${CMP_ROWS.map(({k, v, f}) => {
     const va = v(A), vb = v(B), better = k === 'Games' ? 0 : va > vb ? 1 : vb > va ? 2 : 0;
-    return `<tr><td class="${better === 1 ? 'best' : ''}">${f(A)}</td><td class="m">${t(k)}</td><td class="${better === 2 ? 'best' : ''}">${f(B)}</td></tr>`;
+    return `<tr><td class="${better === 1 ? 'best' : ''}">${f(A)}</td><td class="m"${CMP_DEF[k] ? def(CMP_DEF[k]) : ''}>${t(k)}</td><td class="${better === 2 ? 'best' : ''}">${f(B)}</td></tr>`;
   }).join('')}</tbody>`;
   if (location.hash !== `#compare/${A.pid}/${B.pid}`) history.replaceState(null, '', `#compare/${A.pid}/${B.pid}`);
 }
@@ -1005,7 +1030,7 @@ async function renderStandings(view, my) {
   const table = (title, rows) => {
     const lead = rows[0];
     const gb = r => { const v = (lead.w - r.w) + (r.l - lead.l); return v === 0 ? '–' : N(rdiv(v, 2)); };
-    return `<section class="panel">${title ? `<h2>${title}</h2>` : ''}<div class="scroll"><table class="tbl"><thead><tr><th>#</th><th class="l">${t('Team')}</th><th>${t('W@stat')}</th><th>${t('L@stat')}</th><th>${t('PCT@stat')}</th><th>${t('GB@stat')}</th><th>${t('Home')}</th><th>${t('Away')}</th><th>${t('L10@stat')}</th><th>${t('STRK@stat')}</th><th>${t('PPG@stat')}</th><th>${t('OPP PPG@stat')}</th><th>${t('DIFF@stat')}</th></tr></thead><tbody>${rows.map((r, i) => {
+    return `<section class="panel">${title ? `<h2>${title}</h2>` : ''}<div class="scroll"><table class="tbl"><thead><tr><th${def('order')}>#</th><th class="l">${t('Team')}</th><th${def('w')}>${t('W@stat')}</th><th${def('l')}>${t('L@stat')}</th><th${def('pct')}>${t('PCT@stat')}</th><th${def('gb')}>${t('GB@stat')}</th><th${def('home')}>${t('Home')}</th><th${def('away')}>${t('Away')}</th><th${def('l10')}>${t('L10@stat')}</th><th${def('strk')}>${t('STRK@stat')}</th><th${def('ppg')}>${t('PPG@stat')}</th><th${def('oppg')}>${t('OPP PPG@stat')}</th><th${def('diff')}>${t('DIFF@stat')}</th></tr></thead><tbody>${rows.map((r, i) => {
       const gp = r.w + r.l, d = signed(rdiv(r.pf - r.pa, gp));
       return `<tr data-team="${r.code}"><td>${i + 1}</td><td class="l"><a href="#team/${r.code}">${logo(r.code)}${EN(tname(r.code))}</a></td><td class="k">${r.w}</td><td>${r.l}</td><td>${winPct(r.w, gp)}</td><td>${gb(r)}</td><td>${r.hw}-${r.hl}</td><td>${r.aw}-${r.al}</td><td>${l10(r.seq)}${dots(r.seq)}</td><td>${streak(r.seq)}</td><td>${avg(r.pf, gp)}</td><td>${avg(r.pa, gp)}</td><td class="${d[0] === '+' ? 'w' : d[0] === '−' ? 'lo' : ''}">${N(d)}</td></tr>`;
     }).join('')}</tbody></table></div></section>`;
@@ -1028,6 +1053,7 @@ async function renderStandings(view, my) {
 // by rq, net is the difference of the shown tenths, and a rank (1 the best of 30) is the place of the shown value, ties
 // sharing it. The default order is net rating, then the standings
 const P100 = x => 100 * (x.fga - x.oreb + x.tov) + 44 * x.fta;
+const RT_DEF = {ortg: 'ortg poss rank', drtg: 'drtg poss rank', net: 'net rank', pace: 'pace poss', efg: 'efg rank', tov: 'tovp rank', orb: 'orbp rank', ftr: 'ftr rank'};
 const RT_COLS = {
   ratings: [['ortg', 'ORtg', 1], ['drtg', 'DRtg', -1], ['net', 'Net', 1], ['pace', 'Pace', 1]],
   factors: [['efg', 'eFG%', 1], ['tov', 'TOV%', -1], ['orb', 'ORB%', 1], ['ftr', 'FT/FGA', 1], ['oefg', 'eFG%', -1], ['otov', 'TOV%', 1], ['oorb', 'ORB%', -1], ['oftr', 'FT/FGA', -1]],
@@ -1091,7 +1117,7 @@ async function renderTeam(code, my) {
   $('#tm-hero').setAttribute('style', colours(code));
   $('#tm-hero').innerHTML = `<div class="badge">${logo(code, 'crest')}</div><div class="who"><div class="tag">${logo(code, 'mark')}<span>${EN(T.city)} · ${t(T.conf === 'E' ? 'Eastern Conference' : 'Western Conference')}</span></div><h1>${EN(T.name)}</h1><div class="facts"><span>${t('Home')} <b>${r.hw}-${r.hl}</b></span><span>${t('Away')} <b>${r.aw}-${r.al}</b></span><span>${t('L10@stat')} <b>${l10(r.seq)}</b>${dots(r.seq)}</span><span>${t('STRK@stat')} <b>${streak(r.seq)}</b></span></div></div>`;
   const tiles = [['W', String(r.w)], ['L', String(r.l)], ['PCT', winPct(r.w, gp)], ['PPG', avg(r.pf, gp)], ['OPP PPG', avg(r.pa, gp)], ['DIFF', N(d)]];
-  $('#tm-tiles').innerHTML = tiles.map(([k, v], i) => `<div class="tile${i === 0 ? ' lead' : ''}" data-k="${k}"><b>${v}</b><span>${t(k + '@stat')}</span></div>`).join('');
+  $('#tm-tiles').innerHTML = tiles.map(([k, v], i) => `<div class="tile${i === 0 ? ' lead' : ''}" data-k="${k}"${def(TILE_DEF[k])}><b>${v}</b><span>${t(k + '@stat')}</span></div>`).join('');
   const next = G.filter(g => g.hs == null && (g.home === code || g.away === code)).slice(0, 5);
   $('#tm-next').innerHTML = next.length ? next.map(g => `<div class="up" data-gid="${esc(g.gid)}"><div class="up-h"><span>${tipDay(g)}</span>${restTag(restDays(G, g, code))}</div>${gameCard(g)}</div>`).join('') : `<p class="empty">${t('No games to come.')}</p>`;
   const ps = data.players.map(p => ({...p, s: sum(p.log)})).sort((x, y) => (+(y.s.gp > 0) - +(x.s.gp > 0)) || (y.s.pts * x.s.gp - x.s.pts * y.s.gp) || x.name.localeCompare(y.name));
@@ -1102,12 +1128,12 @@ async function renderTeam(code, my) {
     : `<tr><td class="empty l" colspan="${head.length}">${t('No players yet.')}</td></tr>`}</tbody>`;
   const vals = Object.fromEntries(rt.teams.map(c => [c.code, teamVals(c)])), mine = vals[code] || {};
   const cell = ([k, , dir]) => { const v = mine[k] ?? null; return rtCell(k, v, rankBy(Object.values(vals).map(x => x[k]), dir)(v)); };
-  const th = l => `<th>${t(l + '@stat')}</th>`, club = `<td class="l">${logo(code)}${esc(code)}</td>`;
+  const th = ([k, l]) => `<th${def(RT_DEF[k])}>${t(l + '@stat')}</th>`, club = `<td class="l">${logo(code)}${esc(code)}</td>`;
   $('#tm-rt').setAttribute('style', tc(code));
-  $('#tm-rt').innerHTML = `<thead><tr><th class="l">${t('Team')}</th>${RT_COLS.ratings.map(c => th(c[1])).join('')}</tr></thead><tbody><tr>${club}${RT_COLS.ratings.map(cell).join('')}</tr></tbody>`;
+  $('#tm-rt').innerHTML = `<thead><tr><th class="l">${t('Team')}</th>${RT_COLS.ratings.map(th).join('')}</tr></thead><tbody><tr>${club}${RT_COLS.ratings.map(cell).join('')}</tr></tbody>`;
   $('#tm-ff').setAttribute('style', tc(code));
-  $('#tm-ff').innerHTML = `<thead><tr><th class="l"></th>${RT_COLS.factors.slice(0, 4).map(c => th(c[1])).join('')}</tr></thead><tbody>${['Offense', 'Defense'].map((l, i) =>
-    `<tr data-side="${l.toLowerCase()}"><td class="l">${t(l)}</td>${RT_COLS.factors.slice(4 * i, 4 * i + 4).map(cell).join('')}</tr>`).join('')}</tbody>`;
+  $('#tm-ff').innerHTML = `<thead><tr><th class="l"></th>${RT_COLS.factors.slice(0, 4).map(th).join('')}</tr></thead><tbody>${['Offense', 'Defense'].map((l, i) =>
+    `<tr data-side="${l.toLowerCase()}"><td class="l"${i ? def('opp') : ''}>${t(l)}</td>${RT_COLS.factors.slice(4 * i, 4 * i + 4).map(cell).join('')}</tr>`).join('')}</tbody>`;
   document.title = `${tname(code)} · NBA Player Lab`;
 }
 
@@ -1164,8 +1190,8 @@ function drawFlow(g) {
     + `<span class="fl-t h">${logo(g.home)}${esc(g.home)}</span><span class="fl-t a">${logo(g.away)}${esc(g.away)}</span><i class="fl-cur" hidden></i><div class="fl-tip" hidden aria-live="polite"></div>`;
   $('#gm-flow-q').innerHTML = g.periods.map((_, i) => `<span style="left:${(x((PSTART(i + 1) + PSTART(i + 2)) / 2) / 10).toFixed(2)}%">${perName(i, n)}</span>`).join('');
   const s = flowStats(pts);
-  $('#gm-flow-sum').innerHTML = `<div class="tile" data-k="lc"><b>${s.lc}</b><span>${t('Lead changes')}</span></div><div class="tile" data-k="tied"><b>${s.tied}</b><span>${t('Times tied')}</span></div>`
-    + [[g.away, s.a], [g.home, s.h]].map(([c, v]) => `<div class="tile" data-k="lead" data-team="${esc(c)}" style="${tc(c)}"><b>${v}</b><span>${t('Biggest lead')} · ${esc(c)}</span></div>`).join('');
+  $('#gm-flow-sum').innerHTML = `<div class="tile" data-k="lc"${def('lc')}><b>${s.lc}</b><span>${t('Lead changes')}</span></div><div class="tile" data-k="tied"${def('tied')}><b>${s.tied}</b><span>${t('Times tied')}</span></div>`
+    + [[g.away, s.a], [g.home, s.h]].map(([c, v]) => `<div class="tile" data-k="lead" data-team="${esc(c)}" style="${tc(c)}"${def('lead')}><b>${v}</b><span>${t('Biggest lead')} · ${esc(c)}</span></div>`).join('');
 }
 // the scoring play nearest a point of the chart: the score after it, its period and the time left on the clock
 function flowAt(i) {
@@ -1309,7 +1335,7 @@ async function renderPreview(g, G, my) {
     const a = at(g.away), h = at(g.home);
     const v = (x, code) => `<span class="v" data-team="${esc(code)}"${x.r ? ` data-r="${x.r}"` : ''}>${code === g.home ? `<small class="rk">${x.r || ''}</small>` : ''}${rtShow(k, x.v)}${code === g.away ? `<small class="rk">${x.r || ''}</small>` : ''}</span>`;
     const bar = (x, code, cls) => `<span class="bar ${cls}"><i style="${tc(code)};width:${x.w.toFixed(1)}%"></i></span>`;
-    return `<div data-k="${k}">${v(a, g.away)}${bar(a, g.away, 'a')}<span class="lb">${t(l + '@stat')}</span>${bar(h, g.home, 'h')}${v(h, g.home)}</div>`;
+    return `<div data-k="${k}">${v(a, g.away)}${bar(a, g.away, 'a')}<span class="lb"${def(RT_DEF[k.replace(/^o(?=efg|tov|orb|ftr)/, '')])}>${t(l + '@stat')}</span>${bar(h, g.home, 'h')}${v(h, g.home)}</div>`;
   }).join('');
   const grp = l => `<div class="grp"><span></span><span></span><span>${t(l)}</span><span></span><span></span></div>`;
   $('#pv-rt').innerHTML = hd + rows(RT_COLS.ratings);
@@ -1499,7 +1525,7 @@ async function renderLeaders(stat, my, rookies) {
   if (!LEAD[stat] && stat !== 'form' && stat !== 'highs') stat = 'pts';
   rookies = rookies && stat !== 'highs';
   if (rookies) L = L.filter(p => p.rookie);
-  $('#ld-tabs').innerHTML = [...Object.entries(LEAD), ['form', ['Trending']], ['highs', ['Season highs']]].map(([k, [l]]) => `<a href="#leaders/${k}${rookies && k !== 'highs' ? '/rookies' : ''}" aria-current="${k === stat}">${t(l)}</a>`).join('');
+  $('#ld-tabs').innerHTML = [...Object.entries(LEAD), ['form', ['Trending']], ['highs', ['Season highs']]].map(([k, [l]]) => `<a href="#leaders/${k}${rookies && k !== 'highs' ? '/rookies' : ''}" aria-current="${k === stat}" data-def="${LEAD_DEF[k]}">${t(l)}</a>`).join('');
   const rk = $('#ld-rook');
   rk.parentElement.hidden = stat === 'highs';
   rk.setAttribute('aria-pressed', String(rookies));
@@ -1510,7 +1536,7 @@ async function renderLeaders(stat, my, rookies) {
   if (stat === 'form') return drawTrend(L);
   if (stat === 'highs') return drawHighs(await get('highs.json').catch(() => ({stats: {}})), my);
   const extra = LEAD[stat][4], rows = board(L, stat);
-  $('#ld').innerHTML = `<thead><tr><th>#</th><th class="l">${t('Player')}</th><th class="l">${t('Team')}</th><th>${t('GP@stat')}</th>${extra ? `<th>${t(stat === 'ts' ? 'PTS@stat' : 'M-A@stat')}</th>` : ''}<th>${t(LEAD[stat][0])}</th></tr></thead><tbody>${rows.length ? rows.map(({p, v, rank}) =>
+  $('#ld').innerHTML = `<thead><tr><th>#</th><th class="l">${t('Player')}</th><th class="l">${t('Team')}</th><th>${t('GP@stat')}</th>${extra ? `<th>${t(stat === 'ts' ? 'PTS@stat' : 'M-A@stat')}</th>` : ''}<th${def(LEAD_DEF[stat])}>${t(LEAD[stat][0])}</th></tr></thead><tbody>${rows.length ? rows.map(({p, v, rank}) =>
     `<tr data-pid="${esc(p.pid)}"><td>${rank}</td><td class="l"><a href="#${esc(p.team)}/${esc(p.pid)}">${esc(p.name)}</a></td><td class="l">${logo(p.team)}${esc(p.team)}</td><td>${p.gp}</td>${extra ? `<td>${extra(p)}</td>` : ''}<td class="k">${v}</td></tr>`
   ).join('') : `<tr><td class="empty l" colspan="6">${t('No player qualifies yet.')}</td></tr>`}</tbody>`;
 }
@@ -1524,7 +1550,7 @@ const FORM_GP = 10;
 const trendRows = L => L.filter(s => s.gs5 != null && s.gp >= FORM_GP && busy(s, team(s.team) ? team(s.team).gp : 0) && s.sec5 >= 900 * 5)
   .map(s => { const sa = rq(s.gs, 10 * s.gp), l5 = rq(s.gs5, 50); return {p: s, sa, l5, d: l5 - sa}; });
 function drawTrend(L) {
-  const all = trendRows(L), head = `<thead><tr><th>#</th><th class="l">${t('Player')}</th><th>${t('L5 MIN@stat')}</th><th>${t('Season')}</th><th>${t('Last 5')}</th><th>${t('Change')}</th></tr></thead>`;
+  const all = trendRows(L), head = `<thead><tr><th>#</th><th class="l">${t('Player')}</th><th${def('l5min')}>${t('L5 MIN@stat')}</th><th${def('gs')}>${t('Season')}</th><th${def('gs')}>${t('Last 5')}</th><th${def('trend floor-trend')}>${t('Change')}</th></tr></thead>`;
   const table = (rows, cls) => {
     let rank = 0, prev = null;
     return head + `<tbody>${rows.length ? rows.slice(0, 10).map((r, i) => {
@@ -1776,6 +1802,167 @@ $('#lg-body').addEventListener('submit', e => {
   input.setCustomValidity(m ? '' : t('That is not a league invite link.'));
   if (m) location.hash = `league/${m[1]}/${m[2]}`; else input.reportValidity();
 });
+
+// ---- Definitions: every stat the site shows, in one table (id, its abbreviation, its name, one line and the formula as
+// the code computes it). The glossary page (#glossary[/id]) prints the table; a stat's label (a tile, a heading, the
+// Leaders tab in use) opens its entry in a small card above it. Box-score and Standings ratings headings sort when tapped,
+// so their entries live on the glossary page only
+const GLOSS = /** @type {[string, string[][]][]} */ ([
+  ['Box score', [
+    ['avg', '', 'Averages and rounding', 'Averages are over games played (any time on the court). Every number is rounded once from the exact value, half up, so it reads the same on every page.', ''],
+    ['min', 'MIN@stat', 'Minutes', 'Time on the court; on a season line, minutes per game played.', ''],
+    ['pts', 'PTS@stat', 'Points', 'Points scored; on a season line, per game played.', ''],
+    ['reb', 'REB@stat', 'Rebounds', 'Offensive and defensive rebounds together.', 'OREB + DREB'],
+    ['oreb', 'OREB@stat', 'Offensive rebounds', 'Rebounds of the club’s own missed shots.', ''],
+    ['dreb', 'DREB@stat', 'Defensive rebounds', 'Rebounds of the opponent’s missed shots.', ''],
+    ['ast', 'AST@stat', 'Assists', 'Passes that lead straight to a made basket.', ''],
+    ['stl', 'STL@stat', 'Steals', 'Times the ball is taken from the opponent.', ''],
+    ['blk', 'BLK@stat', 'Blocks', 'Opponent shots blocked.', ''],
+    ['tov', 'TOV@stat', 'Turnovers', 'Possessions lost without a shot: a bad pass, a travel, an offensive foul.', ''],
+    ['pf', 'PF@stat', 'Personal fouls', 'Fouls called on the player.', ''],
+    ['fg', 'FG@stat', 'Field goals', 'Twos and threes, made-attempted.', ''],
+    ['fg3', '3P@stat', '3-pointers', 'Threes, made-attempted.', ''],
+    ['ft', 'FT@stat', 'Free throws', 'Free throws, made-attempted.', ''],
+    ['pm', '+/-@stat', 'Plus-minus', 'The club’s points less the opponent’s while the player is on the court; on a season line, per game played.', ''],
+  ]],
+  ['Shooting', [
+    ['fgp', 'FG%@stat', 'Field goal percentage', 'Share of field goals made.', 'FGM ÷ FGA'],
+    ['fg3p', '3P%@stat', 'Three-point percentage', 'Share of threes made.', '3PM ÷ 3PA'],
+    ['ftp', 'FT%@stat', 'Free throw percentage', 'Share of free throws made.', 'FTM ÷ FTA'],
+    ['ts', 'TS%@stat', 'True shooting percentage', 'Scoring efficiency that counts threes and free throws: points per two shooting chances.', 'PTS ÷ (2 × (FGA + 0.44 × FTA))'],
+  ]],
+  ['Player value', [
+    ['gs', 'GmSc@stat', 'Game Score', 'John Hollinger’s one-number summary of a box-score line; a season figure is the average per game played.', 'PTS + 0.4 FGM − 0.7 FGA − 0.4 (FTA − FTM) + 0.7 OREB + 0.3 DREB + STL + 0.7 AST + 0.7 BLK − 0.4 PF − TOV'],
+    ['usg', 'USG%', 'Usage rate', 'Share of the club’s plays the player finishes with a shot, free throws or a turnover while on the court, over the games played.', '100 × (FGA + 0.44 FTA + TOV) × (club minutes ÷ 5) ÷ (minutes × (club FGA + 0.44 club FTA + club TOV))'],
+    ['rapm', 'RAPM', 'Regularized adjusted plus-minus', 'Points per 100 possessions the player adds, holding the other nine on the court fixed: a ridge regression on every lineup stint, weighted by possessions and pulled toward last season’s RAPM (zero for a newcomer).', 'O-RAPM + D-RAPM'],
+    ['orapm', 'O-RAPM', 'Offensive RAPM', 'The offensive half of RAPM: points per 100 possessions added to the club’s scoring.', ''],
+    ['drapm', 'D-RAPM', 'Defensive RAPM', 'The defensive half of RAPM: points per 100 possessions taken off the opponent’s scoring, so positive is good.', ''],
+  ]],
+  ['Ratings and lineups', [
+    ['poss', '', 'Possessions', 'Times a club has the ball, estimated from the box score, the same way everywhere on the site. A club’s turnovers include team turnovers.', 'FGA − OREB + TOV + 0.44 × FTA'],
+    ['ortg', 'ORtg@stat', 'Offensive rating', 'Points scored per 100 possessions.', '100 × PTS ÷ possessions'],
+    ['drtg', 'DRtg@stat', 'Defensive rating', 'Points allowed per 100 opponent possessions.', '100 × opponent PTS ÷ opponent possessions'],
+    ['net', 'Net@stat', 'Net rating', 'Offensive less defensive rating, each as shown.', 'ORtg − DRtg'],
+    ['pace', 'Pace@stat', 'Pace', 'Possessions per 48 minutes, the club’s and its opponents’ averaged.', '(possessions + opponent possessions) ÷ 2 × 48 ÷ (club minutes ÷ 5)'],
+    ['onoff', '', 'On and off court', 'The club’s ratings with the player on the court, with the player off it, and the difference.', 'On − off'],
+    ['rank', '', 'Rank', 'The small number beside a rating is the club’s place among the 30, 1 the best; equal values share a place.', ''],
+  ]],
+  ['Four Factors', [
+    ['efg', 'eFG%@stat', 'Effective field goal percentage', 'Field goal percentage with a made three worth one and a half twos.', '(FGM + 0.5 × 3PM) ÷ FGA'],
+    ['tovp', 'TOV%@stat', 'Turnover percentage', 'Turnovers per play.', 'TOV ÷ (FGA + 0.44 × FTA + TOV)'],
+    ['orbp', 'ORB%@stat', 'Offensive rebound percentage', 'Share of the club’s missed shots it rebounds.', 'OREB ÷ (OREB + opponent DREB)'],
+    ['ftr', 'FT/FGA@stat', 'Free throw rate', 'Free throws made per field goal attempted.', 'FTM ÷ FGA'],
+    ['opp', '', 'Defense', 'The Defense columns are the opponents’ figures: a lower eFG%, ORB% and FT/FGA and a higher TOV% are better.', ''],
+  ]],
+  ['Standings', [
+    ['w', 'W@stat', 'Wins', 'Games won.', ''],
+    ['l', 'L@stat', 'Losses', 'Games lost.', ''],
+    ['pct', 'PCT@stat', 'Win percentage', 'Wins over games played, to three decimals.', 'W ÷ (W + L)'],
+    ['gb', 'GB@stat', 'Games behind', 'How far a club trails the leader of its table.', '((leader W − W) + (L − leader L)) ÷ 2'],
+    ['home', '', 'Home', 'Wins and losses at home.', ''],
+    ['away', '', 'Away', 'Wins and losses on the road.', ''],
+    ['l10', 'L10@stat', 'Last ten games', 'Wins and losses over the last ten games; the squares run oldest first.', ''],
+    ['strk', 'STRK@stat', 'Streak', 'The current run of wins or losses.', ''],
+    ['ppg', 'PPG@stat', 'Points per game', 'Points scored per game.', ''],
+    ['oppg', 'OPP PPG@stat', 'Opponent points per game', 'Points allowed per game.', ''],
+    ['diff', 'DIFF@stat', 'Point differential', 'The average margin per game.', 'PPG − OPP PPG'],
+    ['order', '', 'Standings order', 'Clubs are ordered by win percentage, then wins, then point differential.', ''],
+  ]],
+  ['Shot chart', [
+    ['dots', '', 'Dots and crosses', 'Every field-goal attempt at its spot: a dot is a make, a cross a miss.', ''],
+    ['zones', '', 'Zones', 'Each attempt falls in one of five zones: restricted area (within 4 feet of the rim), paint, mid-range, corner three and above-the-break three. The two three-point zones add up to the box score’s threes.', ''],
+    ['heat', '', 'Hot and cold zones', 'From five attempts in a zone, it prints pink when the player’s FG% there beats the league’s and blue when it trails.', ''],
+    ['league', '', 'League', 'The whole league’s FG% in the zone over the season.', ''],
+  ]],
+  ['Form and trends', [
+    ['form', '', 'Form', 'The last ten games played as Game Score bars, oldest first, over a dashed line at the season average; a filled bar is at or above it.', ''],
+    ['trend', '', 'Trending', 'The Game Score average of the last five games played less the season’s.', 'Last 5 − Season'],
+    ['l5min', 'L5 MIN@stat', 'Minutes over the last five', 'Minutes per game over the last five games played.', ''],
+    ['highs', '', 'Season highs', 'Each stat’s ten best single games of the season; equal values share a place. The game log marks a player’s own highs once two games are in.', ''],
+  ]],
+  ['Game flow', [
+    ['lc', '', 'Lead changes', 'Times the lead passed from one club to the other.', ''],
+    ['tied', '', 'Times tied', 'Times the score was level again after a lead.', ''],
+    ['lead', '', 'Biggest lead', 'Each club’s largest lead, in points.', ''],
+  ]],
+  ['Leader boards', [
+    ['floor-pg', '', 'Per-game boards', 'A player needs to have played in at least 70% of the club’s games.', ''],
+    ['floor-fg', '', 'FG% and TS% boards', 'Also 300 made field goals over 82 games, in proportion to the club’s games so far.', ''],
+    ['floor-fg3', '', '3P% board', 'Also 82 made threes over 82 games, in proportion to the club’s games so far.', ''],
+    ['floor-ft', '', 'FT% board', 'Also 125 made free throws over 82 games, in proportion to the club’s games so far.', ''],
+    ['floor-busy', '', 'Usage and RAPM boards', 'Also 15 minutes a game.', ''],
+    ['floor-trend', '', 'Trending board', 'Ten games played, 70% of the club’s games and 15 minutes a game, over the season and over the last five.', ''],
+    ['rookies', '', 'Rookies', 'The Rookies switch keeps every board to players in their first NBA season; the floors stay the same.', ''],
+  ]],
+]);
+const DEF = Object.fromEntries(GLOSS.flatMap(([, rows]) => rows.map(r => [r[0], r])));
+// the attributes that make a label open its definitions (ids separated by spaces, the first one named in full)
+const def = ids => ` data-def="${ids}" tabindex="0"`;
+// a stat's abbreviation and name, the abbreviation left out when the reader's language spells it as the name
+const defName = r => { const ab = r[1] ? t(r[1]) : '', nm = t(r[2]); return ab && ab !== nm ? `<b>${esc(ab)}</b> ${esc(nm)}` : `<b>${esc(nm)}</b>`; };
+const defBody = r => `<span>${esc(t(r[3]))}</span>${r[4] ? `<code>${esc(t(r[4]))}</code>` : ''}`;
+// the Leaders boards: each one's stat and its floor
+const LEAD_DEF = {pts: 'pts floor-pg', reb: 'reb floor-pg', ast: 'ast floor-pg', stl: 'stl floor-pg', blk: 'blk floor-pg', fg3m: 'fg3 floor-pg', min: 'min floor-pg',
+  fg: 'fgp floor-pg floor-fg', fg3: 'fg3p floor-pg floor-fg3', ft: 'ftp floor-pg floor-ft', ts: 'ts floor-pg floor-fg', usg: 'usg floor-pg floor-busy',
+  rapm: 'rapm floor-pg floor-busy', orapm: 'orapm floor-pg floor-busy', drapm: 'drapm floor-pg floor-busy', form: 'trend floor-trend', highs: 'highs'};
+const TILE_DEF = {PTS: 'pts', REB: 'reb', AST: 'ast', STL: 'stl', BLK: 'blk', TOV: 'tov', 'FG%': 'fgp', '3P%': 'fg3p', 'FT%': 'ftp', 'TS%': 'ts', '+/-': 'pm', MIN: 'min',
+  W: 'w', L: 'l', PCT: 'pct', PPG: 'ppg', 'OPP PPG': 'oppg', DIFF: 'diff'};
+
+// the card: above the label, or below it when the label is near the top; a tap elsewhere, a scroll, Escape or a new page closes it
+const DEF_BOX = $('#def');
+let DEF_AT = null, DEF_POS = [0, 0];
+// where the page and the label's table stood when the card opened: a scroll that moves either closes it (bringing the label
+// into view as it is tapped or focused moves neither by the time the scroll event arrives)
+const defPos = () => { const sc = DEF_AT && DEF_AT.closest('.scroll, .tabs'); return [scrollY, sc ? sc.scrollLeft : 0]; };
+function closeDef(focus) {
+  if (!DEF_AT) return;
+  DEF_BOX.hidden = true;
+  if (focus) DEF_AT.focus({preventScroll: true});
+  DEF_AT = null;
+}
+function openDef(el) {
+  const ids = el.dataset.def.split(' ').filter(id => DEF[id]);
+  if (!ids.length) return;
+  const [first, ...more] = ids.map(id => DEF[id]);
+  DEF_BOX.innerHTML = `<p class="def-h">${defName(first)}</p><p>${defBody(first)}</p>${more.map(r => `<p class="def-x">${esc(t(r[3]))}</p>`).join('')}<a href="#glossary/${first[0]}">${t('Glossary')}</a>`;
+  DEF_BOX.setAttribute('aria-label', t(first[2]));
+  DEF_BOX.hidden = false;
+  DEF_AT = el;
+  DEF_POS = defPos();
+  const r = el.getBoundingClientRect(), w = DEF_BOX.offsetWidth, h = DEF_BOX.offsetHeight, top = $('.top').getBoundingClientRect().bottom;
+  const left = Math.max(10, Math.min(r.left + r.width / 2 - w / 2, innerWidth - w - 10)), up = r.top - h - 10 >= top + 4;
+  DEF_BOX.classList.toggle('below', !up);
+  DEF_BOX.style.left = `${left}px`;
+  DEF_BOX.style.top = `${up ? r.top - h - 10 : r.bottom + 10}px`;
+  DEF_BOX.style.setProperty('--x', `${Math.max(14, Math.min(w - 14, r.left + r.width / 2 - left))}px`);
+}
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-def]');
+  // a link opens its definition only when it is the page already shown (the Leaders tab in use)
+  if (el && (el.tagName !== 'A' || el.getAttribute('aria-current') === 'true')) {
+    e.preventDefault();
+    if (DEF_AT === el) closeDef(); else openDef(el);
+  } else if (!e.target.closest('#def')) closeDef();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && DEF_AT) { closeDef(true); return; }
+  const el = e.target.closest && e.target.closest('[data-def]');
+  if (el && el.tagName !== 'A' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); if (DEF_AT === el) closeDef(); else openDef(el); }
+});
+document.addEventListener('scroll', () => { if (DEF_AT && defPos().some((v, i) => Math.abs(v - DEF_POS[i]) > 4)) closeDef(); }, {capture: true, passive: true});
+window.addEventListener('resize', () => closeDef());
+
+// ---- Glossary: the table above, a panel per group; #glossary/<id> opens at that entry
+function renderGlossary() {
+  $('#gl').innerHTML = GLOSS.map(([group, rows]) => `<section class="panel"><h2>${t(group)}</h2><dl class="gl">${rows.map(r =>
+    `<div id="gl-${r[0]}" data-id="${r[0]}"><dt>${defName(r)}</dt><dd>${defBody(r)}</dd></div>`).join('')}</dl></section>`).join('');
+  document.title = `${t('Glossary')} · NBA Player Lab`;
+}
+const glossaryAt = id => {
+  for (const x of $$('#gl .hit')) x.classList.remove('hit');
+  const el = id && DEF[id] ? $(`#gl-${id}`) : null;
+  if (el) { el.classList.add('hit'); el.scrollIntoView({block: 'start'}); } else scrollTo(0, 0);
+};
 
 // ---- language and theme
 function applyLang() {
