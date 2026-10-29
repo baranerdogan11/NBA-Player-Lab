@@ -1,0 +1,809 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//NBA Player Lab//Schedule//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Utah Jazz
+X-PUBLISHED-TTL:PT6H
+REFRESH-INTERVAL;VALUE=DURATION:PT6H
+BEGIN:VEVENT
+UID:0022600089@nba-player-lab
+DTSTAMP:20261022T000000Z
+DTSTART:20261022T000000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Grizzlies
+DESCRIPTION:Final: Jazz 103\, Grizzlies 123\nhttps://baranerdogan11.github
+ .io/NBA-Player-Lab/?l#game/0022600089
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600089
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600100@nba-player-lab
+DTSTAMP:20261024T013000Z
+DTSTART:20261024T013000Z
+DURATION:PT2H30M
+SUMMARY:Pelicans @ Jazz
+DESCRIPTION:Final: Pelicans 119\, Jazz 120\nhttps://baranerdogan11.github.
+ io/NBA-Player-Lab/?l#game/0022600100
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600100
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600112@nba-player-lab
+DTSTAMP:20261025T210000Z
+DTSTART:20261025T210000Z
+DURATION:PT2H30M
+SUMMARY:Lakers @ Jazz
+DESCRIPTION:Final: Lakers 132\, Jazz 123\nhttps://baranerdogan11.github.io
+ /NBA-Player-Lab/?l#game/0022600112
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600112
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600126@nba-player-lab
+DTSTAMP:20261027T010000Z
+DTSTART:20261027T010000Z
+DURATION:PT2H30M
+SUMMARY:Grizzlies @ Jazz
+DESCRIPTION:Final: Grizzlies 110\, Jazz 105\nhttps://baranerdogan11.github
+ .io/NBA-Player-Lab/?l#game/0022600126
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600126
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600141@nba-player-lab
+DTSTAMP:20261029T010000Z
+DTSTART:20261029T010000Z
+DURATION:PT2H30M
+SUMMARY:Spurs @ Jazz
+DESCRIPTION:Final: Spurs 117\, Jazz 111\nhttps://baranerdogan11.github.io/
+ NBA-Player-Lab/?l#game/0022600141
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600141
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600147@nba-player-lab
+DTSTAMP:20261031T190000Z
+DTSTART:20261031T190000Z
+DURATION:PT2H30M
+SUMMARY:Trail Blazers @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0147
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600147
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600168@nba-player-lab
+DTSTAMP:20261103T013000Z
+DTSTART:20261103T013000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Spurs
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0168
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600168
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600179@nba-player-lab
+DTSTAMP:20261105T010000Z
+DTSTART:20261105T010000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Pelicans
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0179
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600179
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600028@nba-player-lab
+DTSTAMP:20261107T010000Z
+DTSTART:20261107T010000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Mavericks
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0028
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600028
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600198@nba-player-lab
+DTSTAMP:20261109T000000Z
+DTSTART:20261109T000000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Timberwolves
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0198
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600198
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600214@nba-player-lab
+DTSTAMP:20261111T020000Z
+DTSTART:20261111T020000Z
+DURATION:PT2H30M
+SUMMARY:Heat @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0214
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600214
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600224@nba-player-lab
+DTSTAMP:20261112T020000Z
+DTSTART:20261112T020000Z
+DURATION:PT2H30M
+SUMMARY:Magic @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0224
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600224
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600039@nba-player-lab
+DTSTAMP:20261114T013000Z
+DTSTART:20261114T013000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Rockets
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0039
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600039
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600239@nba-player-lab
+DTSTAMP:20261115T220000Z
+DTSTART:20261115T220000Z
+DURATION:PT2H30M
+SUMMARY:Spurs @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0239
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600239
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600257@nba-player-lab
+DTSTAMP:20261118T040000Z
+DTSTART:20261118T040000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Clippers
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0257
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600257
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600268@nba-player-lab
+DTSTAMP:20261119T030000Z
+DTSTART:20261119T030000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Lakers
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0268
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600268
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600049@nba-player-lab
+DTSTAMP:20261121T023000Z
+DTSTART:20261121T023000Z
+DURATION:PT2H30M
+SUMMARY:Suns @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0049
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600049
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600284@nba-player-lab
+DTSTAMP:20261123T000000Z
+DTSTART:20261123T000000Z
+DURATION:PT2H30M
+SUMMARY:Mavericks @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0284
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600284
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600295@nba-player-lab
+DTSTAMP:20261124T030000Z
+DTSTART:20261124T030000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Lakers
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0295
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600295
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600072@nba-player-lab
+DTSTAMP:20261128T023000Z
+DTSTART:20261128T023000Z
+DURATION:PT2H30M
+SUMMARY:Nuggets @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0072
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600072
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600304@nba-player-lab
+DTSTAMP:20261129T220000Z
+DTSTART:20261129T220000Z
+DURATION:PT2H30M
+SUMMARY:Suns @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0304
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600304
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600326@nba-player-lab
+DTSTAMP:20261202T040000Z
+DTSTART:20261202T040000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0326
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600326
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600340@nba-player-lab
+DTSTAMP:20261204T030000Z
+DTSTART:20261204T030000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Trail Blazers
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0340
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600340
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600347@nba-player-lab
+DTSTAMP:20261213T023000Z
+DTSTART:20261213T023000Z
+DURATION:PT2H30M
+SUMMARY:Nuggets @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0347
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600347
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600364@nba-player-lab
+DTSTAMP:20261215T020000Z
+DTSTART:20261215T020000Z
+DURATION:PT2H30M
+SUMMARY:Timberwolves @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0364
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600364
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600375@nba-player-lab
+DTSTAMP:20261217T010000Z
+DTSTART:20261217T010000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Bulls
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0375
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600375
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600387@nba-player-lab
+DTSTAMP:20261219T003000Z
+DTSTART:20261219T003000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Celtics
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0387
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600387
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600403@nba-player-lab
+DTSTAMP:20261220T230000Z
+DTSTART:20261220T230000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Cavaliers
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0403
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600403
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600429@nba-player-lab
+DTSTAMP:20261224T003000Z
+DTSTART:20261224T003000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Knicks
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0429
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600429
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600440@nba-player-lab
+DTSTAMP:20261226T220000Z
+DTSTART:20261226T220000Z
+DURATION:PT2H30M
+SUMMARY:Pacers @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0440
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600440
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600451@nba-player-lab
+DTSTAMP:20261227T230000Z
+DTSTART:20261227T230000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Kings
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0451
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600451
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600475@nba-player-lab
+DTSTAMP:20261231T020000Z
+DTSTART:20261231T020000Z
+DURATION:PT2H30M
+SUMMARY:Knicks @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0475
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600475
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600491@nba-player-lab
+DTSTAMP:20270102T023000Z
+DTSTART:20270102T023000Z
+DURATION:PT2H30M
+SUMMARY:Celtics @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0491
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600491
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600498@nba-player-lab
+DTSTAMP:20270103T010000Z
+DTSTART:20270103T010000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Thunder
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0498
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600498
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600514@nba-player-lab
+DTSTAMP:20270105T020000Z
+DTSTART:20270105T020000Z
+DURATION:PT2H30M
+SUMMARY:Nets @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0514
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600514
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600525@nba-player-lab
+DTSTAMP:20270107T003000Z
+DTSTART:20270107T003000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Nets
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0525
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600525
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600544@nba-player-lab
+DTSTAMP:20270109T003000Z
+DTSTART:20270109T003000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Raptors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0544
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600544
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600557@nba-player-lab
+DTSTAMP:20270110T230000Z
+DTSTART:20270110T230000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Pistons
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0557
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600557
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600575@nba-player-lab
+DTSTAMP:20270113T020000Z
+DTSTART:20270113T020000Z
+DURATION:PT2H30M
+SUMMARY:Bulls @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0575
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600575
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600590@nba-player-lab
+DTSTAMP:20270115T020000Z
+DTSTART:20270115T020000Z
+DURATION:PT2H30M
+SUMMARY:Hornets @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0590
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600590
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600597@nba-player-lab
+DTSTAMP:20270116T010000Z
+DTSTART:20270116T010000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Thunder
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0597
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600597
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600610@nba-player-lab
+DTSTAMP:20270117T220000Z
+DTSTART:20270117T220000Z
+DURATION:PT2H30M
+SUMMARY:Kings @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0610
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600610
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600622@nba-player-lab
+DTSTAMP:20270120T030000Z
+DTSTART:20270120T030000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Nuggets
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0622
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600622
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600631@nba-player-lab
+DTSTAMP:20270121T020000Z
+DTSTART:20270121T020000Z
+DURATION:PT2H30M
+SUMMARY:Clippers @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0631
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600631
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600644@nba-player-lab
+DTSTAMP:20270123T020000Z
+DTSTART:20270123T020000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Suns
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0644
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600644
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600656@nba-player-lab
+DTSTAMP:20270124T210000Z
+DTSTART:20270124T210000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Suns
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0656
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600656
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600674@nba-player-lab
+DTSTAMP:20270127T020000Z
+DTSTART:20270127T020000Z
+DURATION:PT2H30M
+SUMMARY:Bucks @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0674
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600674
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600692@nba-player-lab
+DTSTAMP:20270129T020000Z
+DTSTART:20270129T020000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0692
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600692
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600707@nba-player-lab
+DTSTAMP:20270131T023000Z
+DTSTART:20270131T023000Z
+DURATION:PT2H30M
+SUMMARY:Grizzlies @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0707
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600707
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600721@nba-player-lab
+DTSTAMP:20270202T020000Z
+DTSTART:20270202T020000Z
+DURATION:PT2H30M
+SUMMARY:Cavaliers @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0721
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600721
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600735@nba-player-lab
+DTSTAMP:20270204T023000Z
+DTSTART:20270204T023000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Rockets
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0735
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600735
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600753@nba-player-lab
+DTSTAMP:20270206T200000Z
+DTSTART:20270206T200000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Mavericks
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0753
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600753
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600764@nba-player-lab
+DTSTAMP:20270207T203000Z
+DTSTART:20270207T203000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Timberwolves
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0764
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600764
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600785@nba-player-lab
+DTSTAMP:20270210T030000Z
+DTSTART:20270210T030000Z
+DURATION:PT2H30M
+SUMMARY:Rockets @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0785
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600785
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600795@nba-player-lab
+DTSTAMP:20270212T000000Z
+DTSTART:20270212T000000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Pacers
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0795
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600795
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600826@nba-player-lab
+DTSTAMP:20270216T020000Z
+DTSTART:20270216T020000Z
+DURATION:PT2H30M
+SUMMARY:Pistons @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0826
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600826
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600840@nba-player-lab
+DTSTAMP:20270218T020000Z
+DTSTART:20270218T020000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Nuggets
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0840
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600840
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600858@nba-player-lab
+DTSTAMP:20270226T033000Z
+DTSTART:20270226T033000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Clippers
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0858
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600858
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600866@nba-player-lab
+DTSTAMP:20270227T200000Z
+DTSTART:20270227T200000Z
+DURATION:PT2H30M
+SUMMARY:Wizards @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0866
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600866
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600883@nba-player-lab
+DTSTAMP:20270302T010000Z
+DTSTART:20270302T010000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Pelicans
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0883
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600883
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600899@nba-player-lab
+DTSTAMP:20270304T010000Z
+DTSTART:20270304T010000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Bucks
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0899
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600899
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600912@nba-player-lab
+DTSTAMP:20270306T000000Z
+DTSTART:20270306T000000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Magic
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0912
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600912
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600920@nba-player-lab
+DTSTAMP:20270307T000000Z
+DTSTART:20270307T000000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Wizards
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0920
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600920
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600931@nba-player-lab
+DTSTAMP:20270309T000000Z
+DTSTART:20270309T000000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ 76ers
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0931
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600931
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600948@nba-player-lab
+DTSTAMP:20270311T020000Z
+DTSTART:20270311T020000Z
+DURATION:PT2H30M
+SUMMARY:Rockets @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0948
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600948
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600965@nba-player-lab
+DTSTAMP:20270313T023000Z
+DTSTART:20270313T023000Z
+DURATION:PT2H30M
+SUMMARY:Kings @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0965
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600965
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601002@nba-player-lab
+DTSTAMP:20270318T010000Z
+DTSTART:20270318T010000Z
+DURATION:PT2H30M
+SUMMARY:Hawks @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1002
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601002
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601013@nba-player-lab
+DTSTAMP:20270319T010000Z
+DTSTART:20270319T010000Z
+DURATION:PT2H30M
+SUMMARY:Timberwolves @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1013
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601013
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601030@nba-player-lab
+DTSTAMP:20270321T210000Z
+DTSTART:20270321T210000Z
+DURATION:PT2H30M
+SUMMARY:Raptors @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1030
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601030
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601046@nba-player-lab
+DTSTAMP:20270324T010000Z
+DTSTART:20270324T010000Z
+DURATION:PT2H30M
+SUMMARY:76ers @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1046
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601046
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601064@nba-player-lab
+DTSTAMP:20270325T233000Z
+DTSTART:20270325T233000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Heat
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1064
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601064
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601074@nba-player-lab
+DTSTAMP:20270327T230000Z
+DTSTART:20270327T230000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Hawks
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1074
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601074
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601083@nba-player-lab
+DTSTAMP:20270328T220000Z
+DTSTART:20270328T220000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Hornets
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1083
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601083
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601101@nba-player-lab
+DTSTAMP:20270331T010000Z
+DTSTART:20270331T010000Z
+DURATION:PT2H30M
+SUMMARY:Thunder @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1101
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601101
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601127@nba-player-lab
+DTSTAMP:20270403T020000Z
+DTSTART:20270403T020000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Trail Blazers
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1127
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601127
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601140@nba-player-lab
+DTSTAMP:20270404T210000Z
+DTSTART:20270404T210000Z
+DURATION:PT2H30M
+SUMMARY:Trail Blazers @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1140
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601140
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601154@nba-player-lab
+DTSTAMP:20270407T010000Z
+DTSTART:20270407T010000Z
+DURATION:PT2H30M
+SUMMARY:Thunder @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1154
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601154
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601170@nba-player-lab
+DTSTAMP:20270409T010000Z
+DTSTART:20270409T010000Z
+DURATION:PT2H30M
+SUMMARY:Pelicans @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1170
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601170
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601182@nba-player-lab
+DTSTAMP:20270410T013000Z
+DTSTART:20270410T013000Z
+DURATION:PT2H30M
+SUMMARY:Clippers @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1182
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601182
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601198@nba-player-lab
+DTSTAMP:20270412T003000Z
+DTSTART:20270412T003000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1198
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601198
+END:VEVENT
+END:VCALENDAR

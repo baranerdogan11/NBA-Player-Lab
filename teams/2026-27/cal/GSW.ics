@@ -1,0 +1,809 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//NBA Player Lab//Schedule//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Golden State Warriors
+X-PUBLISHED-TTL:PT6H
+REFRESH-INTERVAL;VALUE=DURATION:PT6H
+BEGIN:VEVENT
+UID:0022600005@nba-player-lab
+DTSTAMP:20261022T020000Z
+DTSTART:20261022T020000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Lakers
+DESCRIPTION:Final: Warriors 105\, Lakers 127\nhttps://baranerdogan11.githu
+ b.io/NBA-Player-Lab/?l#game/0022600005
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600005
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600101@nba-player-lab
+DTSTAMP:20261024T020000Z
+DTSTART:20261024T020000Z
+DURATION:PT2H30M
+SUMMARY:Grizzlies @ Warriors
+DESCRIPTION:Final: Grizzlies 111\, Warriors 108\nhttps://baranerdogan11.gi
+ thub.io/NBA-Player-Lab/?l#game/0022600101
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600101
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600111@nba-player-lab
+DTSTAMP:20261025T020000Z
+DTSTART:20261025T020000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Suns
+DESCRIPTION:Final: Warriors 122\, Suns 131\nhttps://baranerdogan11.github.
+ io/NBA-Player-Lab/?l#game/0022600111
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600111
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600127@nba-player-lab
+DTSTAMP:20261027T020000Z
+DTSTART:20261027T020000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Nuggets
+DESCRIPTION:Final: Warriors 134\, Nuggets 114\nhttps://baranerdogan11.gith
+ ub.io/NBA-Player-Lab/?l#game/0022600127
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600127
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600139@nba-player-lab
+DTSTAMP:20261029T000000Z
+DTSTART:20261029T000000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Timberwolves
+DESCRIPTION:Final: Warriors 119\, Timberwolves 114\nhttps://baranerdogan11
+ .github.io/NBA-Player-Lab/?l#game/0022600139
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600139
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600023@nba-player-lab
+DTSTAMP:20261031T020000Z
+DTSTART:20261031T020000Z
+DURATION:PT2H30M
+SUMMARY:Lakers @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0023
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600023
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600156@nba-player-lab
+DTSTAMP:20261102T013000Z
+DTSTART:20261102T013000Z
+DURATION:PT2H30M
+SUMMARY:Clippers @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0156
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600156
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600170@nba-player-lab
+DTSTAMP:20261103T030000Z
+DTSTART:20261103T030000Z
+DURATION:PT2H30M
+SUMMARY:Suns @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0170
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600170
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600188@nba-player-lab
+DTSTAMP:20261106T030000Z
+DTSTART:20261106T030000Z
+DURATION:PT2H30M
+SUMMARY:Heat @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0188
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600188
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600193@nba-player-lab
+DTSTAMP:20261108T013000Z
+DTSTART:20261108T013000Z
+DURATION:PT2H30M
+SUMMARY:Magic @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0193
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600193
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600210@nba-player-lab
+DTSTAMP:20261110T030000Z
+DTSTART:20261110T030000Z
+DURATION:PT2H30M
+SUMMARY:Pelicans @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0210
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600210
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600225@nba-player-lab
+DTSTAMP:20261112T023000Z
+DTSTART:20261112T023000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Rockets
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0225
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600225
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600040@nba-player-lab
+DTSTAMP:20261114T023000Z
+DTSTART:20261114T023000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Spurs
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0040
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600040
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600251@nba-player-lab
+DTSTAMP:20261117T010000Z
+DTSTART:20261117T010000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Pelicans
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0251
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600251
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600267@nba-player-lab
+DTSTAMP:20261119T023000Z
+DTSTART:20261119T023000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Mavericks
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0267
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600267
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600270@nba-player-lab
+DTSTAMP:20261120T010000Z
+DTSTART:20261120T010000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Grizzlies
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0270
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600270
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600286@nba-player-lab
+DTSTAMP:20261123T013000Z
+DTSTART:20261123T013000Z
+DURATION:PT2H30M
+SUMMARY:Celtics @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0286
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600286
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600062@nba-player-lab
+DTSTAMP:20261126T030000Z
+DTSTART:20261126T030000Z
+DURATION:PT2H30M
+SUMMARY:Kings @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0062
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600062
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600074@nba-player-lab
+DTSTAMP:20261128T023000Z
+DTSTART:20261128T023000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Trail Blazers
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0074
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600074
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600310@nba-player-lab
+DTSTAMP:20261130T013000Z
+DTSTART:20261130T013000Z
+DURATION:PT2H30M
+SUMMARY:Clippers @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0310
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600310
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600326@nba-player-lab
+DTSTAMP:20261202T040000Z
+DTSTART:20261202T040000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0326
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600326
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600344@nba-player-lab
+DTSTAMP:20261213T010000Z
+DTSTART:20261213T010000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Cavaliers
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0344
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600344
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600361@nba-player-lab
+DTSTAMP:20261215T010000Z
+DTSTART:20261215T010000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Grizzlies
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0361
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600361
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600371@nba-player-lab
+DTSTAMP:20261217T000000Z
+DTSTART:20261217T000000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Pacers
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0371
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600371
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600390@nba-player-lab
+DTSTAMP:20261219T003000Z
+DTSTART:20261219T003000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Raptors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0390
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600390
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600408@nba-player-lab
+DTSTAMP:20261221T010000Z
+DTSTART:20261221T010000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Bucks
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0408
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600408
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600422@nba-player-lab
+DTSTAMP:20261223T033000Z
+DTSTART:20261223T033000Z
+DURATION:PT2H30M
+SUMMARY:Mavericks @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0422
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600422
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600437@nba-player-lab
+DTSTAMP:20261224T033000Z
+DTSTART:20261224T033000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Clippers
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0437
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600437
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600014@nba-player-lab
+DTSTAMP:20261226T033000Z
+DTSTART:20261226T033000Z
+DURATION:PT2H30M
+SUMMARY:Nuggets @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0014
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600014
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600455@nba-player-lab
+DTSTAMP:20261228T013000Z
+DTSTART:20261228T013000Z
+DURATION:PT2H30M
+SUMMARY:Timberwolves @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0455
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600455
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600460@nba-player-lab
+DTSTAMP:20261229T020000Z
+DTSTART:20261229T020000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Suns
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0460
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600460
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600476@nba-player-lab
+DTSTAMP:20261231T030000Z
+DTSTART:20261231T030000Z
+DURATION:PT2H30M
+SUMMARY:Rockets @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0476
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600476
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600499@nba-player-lab
+DTSTAMP:20270103T013000Z
+DTSTART:20270103T013000Z
+DURATION:PT2H30M
+SUMMARY:Nets @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0499
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600499
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600529@nba-player-lab
+DTSTAMP:20270107T030000Z
+DTSTART:20270107T030000Z
+DURATION:PT2H30M
+SUMMARY:Knicks @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0529
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600529
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600539@nba-player-lab
+DTSTAMP:20270108T030000Z
+DTSTART:20270108T030000Z
+DURATION:PT2H30M
+SUMMARY:Pistons @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0539
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600539
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600553@nba-player-lab
+DTSTAMP:20270110T013000Z
+DTSTART:20270110T013000Z
+DURATION:PT2H30M
+SUMMARY:Bulls @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0553
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600553
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600577@nba-player-lab
+DTSTAMP:20270113T040000Z
+DTSTART:20270113T040000Z
+DURATION:PT2H30M
+SUMMARY:Kings @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0577
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600577
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600583@nba-player-lab
+DTSTAMP:20270114T030000Z
+DTSTART:20270114T030000Z
+DURATION:PT2H30M
+SUMMARY:Hornets @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0583
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600583
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600593@nba-player-lab
+DTSTAMP:20270116T000000Z
+DTSTART:20270116T000000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Hawks
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0593
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600593
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600611@nba-player-lab
+DTSTAMP:20270117T230000Z
+DTSTART:20270117T230000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Heat
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0611
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600611
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600617@nba-player-lab
+DTSTAMP:20270120T000000Z
+DTSTART:20270120T000000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Magic
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0617
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600617
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600637@nba-player-lab
+DTSTAMP:20270122T030000Z
+DTSTART:20270122T030000Z
+DURATION:PT2H30M
+SUMMARY:Lakers @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0637
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600637
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600646@nba-player-lab
+DTSTAMP:20270123T030000Z
+DTSTART:20270123T030000Z
+DURATION:PT2H30M
+SUMMARY:Bucks @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0646
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600646
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600661@nba-player-lab
+DTSTAMP:20270125T013000Z
+DTSTART:20270125T013000Z
+DURATION:PT2H30M
+SUMMARY:Thunder @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0661
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600661
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600685@nba-player-lab
+DTSTAMP:20270128T030000Z
+DTSTART:20270128T030000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Trail Blazers
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0685
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600685
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600692@nba-player-lab
+DTSTAMP:20270129T020000Z
+DTSTART:20270129T020000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0692
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600692
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600702@nba-player-lab
+DTSTAMP:20270130T223000Z
+DTSTART:20270130T223000Z
+DURATION:PT2H30M
+SUMMARY:Spurs @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0702
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600702
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600722@nba-player-lab
+DTSTAMP:20270202T030000Z
+DTSTART:20270202T030000Z
+DURATION:PT2H30M
+SUMMARY:Spurs @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0722
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600722
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600736@nba-player-lab
+DTSTAMP:20270204T033000Z
+DTSTART:20270204T033000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Clippers
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0736
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600736
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600748@nba-player-lab
+DTSTAMP:20270206T000000Z
+DTSTART:20270206T000000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Hornets
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0748
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600748
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600763@nba-player-lab
+DTSTAMP:20270207T200000Z
+DTSTART:20270207T200000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Pistons
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0763
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600763
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600781@nba-player-lab
+DTSTAMP:20270210T010000Z
+DTSTART:20270210T010000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Bulls
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0781
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600781
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600790@nba-player-lab
+DTSTAMP:20270211T003000Z
+DTSTART:20270211T003000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Celtics
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0790
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600790
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600815@nba-player-lab
+DTSTAMP:20270214T013000Z
+DTSTART:20270214T013000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Knicks
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0815
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600815
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600084@nba-player-lab
+DTSTAMP:20270216T003000Z
+DTSTART:20270216T003000Z
+DURATION:PT2H30M
+SUMMARY:Pacers @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0084
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600084
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600842@nba-player-lab
+DTSTAMP:20270218T030000Z
+DTSTART:20270218T030000Z
+DURATION:PT2H30M
+SUMMARY:Pelicans @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0842
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600842
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600857@nba-player-lab
+DTSTAMP:20270226T030000Z
+DTSTART:20270226T030000Z
+DURATION:PT2H30M
+SUMMARY:Mavericks @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0857
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600857
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600884@nba-player-lab
+DTSTAMP:20270302T013000Z
+DTSTART:20270302T013000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Rockets
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0884
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600884
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600891@nba-player-lab
+DTSTAMP:20270303T010000Z
+DTSTART:20270303T010000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Mavericks
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0891
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600891
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600908@nba-player-lab
+DTSTAMP:20270305T030000Z
+DTSTART:20270305T030000Z
+DURATION:PT2H30M
+SUMMARY:Wizards @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0908
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600908
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600928@nba-player-lab
+DTSTAMP:20270308T030000Z
+DTSTART:20270308T030000Z
+DURATION:PT2H30M
+SUMMARY:Rockets @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0928
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600928
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600944@nba-player-lab
+DTSTAMP:20270310T040000Z
+DTSTART:20270310T040000Z
+DURATION:PT2H30M
+SUMMARY:Trail Blazers @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0944
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600944
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600951@nba-player-lab
+DTSTAMP:20270311T030000Z
+DTSTART:20270311T030000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Kings
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0951
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600951
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600966@nba-player-lab
+DTSTAMP:20270313T030000Z
+DTSTART:20270313T030000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Nuggets
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0966
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600966
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600982@nba-player-lab
+DTSTAMP:20270315T020000Z
+DTSTART:20270315T020000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Lakers
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0982
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600982
+END:VEVENT
+BEGIN:VEVENT
+UID:0022600995@nba-player-lab
+DTSTAMP:20270317T020000Z
+DTSTART:20270317T020000Z
+DURATION:PT2H30M
+SUMMARY:Cavaliers @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 0995
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600995
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601003@nba-player-lab
+DTSTAMP:20270318T020000Z
+DTSTART:20270318T020000Z
+DURATION:PT2H30M
+SUMMARY:Grizzlies @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1003
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601003
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601018@nba-player-lab
+DTSTAMP:20270320T020000Z
+DTSTART:20270320T020000Z
+DURATION:PT2H30M
+SUMMARY:Trail Blazers @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1018
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601018
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601041@nba-player-lab
+DTSTAMP:20270323T020000Z
+DTSTART:20270323T020000Z
+DURATION:PT2H30M
+SUMMARY:Hawks @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1041
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601041
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601056@nba-player-lab
+DTSTAMP:20270325T020000Z
+DTSTART:20270325T020000Z
+DURATION:PT2H30M
+SUMMARY:76ers @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1056
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601056
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601066@nba-player-lab
+DTSTAMP:20270326T020000Z
+DTSTART:20270326T020000Z
+DURATION:PT2H30M
+SUMMARY:Raptors @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1066
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601066
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601075@nba-player-lab
+DTSTAMP:20270327T230000Z
+DTSTART:20270327T230000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Wizards
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1075
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601075
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601092@nba-player-lab
+DTSTAMP:20270329T233000Z
+DTSTART:20270329T233000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Nets
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1092
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601092
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601105@nba-player-lab
+DTSTAMP:20270331T230000Z
+DTSTART:20270331T230000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ 76ers
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1105
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601105
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601120@nba-player-lab
+DTSTAMP:20270402T233000Z
+DTSTART:20270402T233000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Timberwolves
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1120
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601120
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601141@nba-player-lab
+DTSTAMP:20270404T220000Z
+DTSTART:20270404T220000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Kings
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1141
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601141
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601157@nba-player-lab
+DTSTAMP:20270407T030000Z
+DTSTART:20270407T030000Z
+DURATION:PT2H30M
+SUMMARY:Suns @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1157
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601157
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601171@nba-player-lab
+DTSTAMP:20270409T013000Z
+DTSTART:20270409T013000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Thunder
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1171
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601171
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601179@nba-player-lab
+DTSTAMP:20270410T000000Z
+DTSTART:20270410T000000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Thunder
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1179
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601179
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601198@nba-player-lab
+DTSTAMP:20270412T003000Z
+DTSTART:20270412T003000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Warriors
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1198
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601198
+END:VEVENT
+END:VCALENDAR
