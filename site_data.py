@@ -30,6 +30,8 @@ Files under <out>/ (out is teams/<season>/):
   leaders.json      every player's season totals, under his current club, his clubs' totals over the same games
                     (tm_fga, tm_fta, tm_tov, tm_sec, for usage), his country and rookie flag, his RAPM, O-RAPM and D-RAPM (null without one), and
                     for form his Game Score total gs and gs5 and sec5 over his last five games played
+  cal/<CODE>.ics    the club's schedule as an iCalendar feed (write_calendars()): one event per game, tip-off in UTC, a
+                    UID per gid so a moved game moves in subscribed calendars, the final score once there is one
 
 from_warehouse() turns the warehouse tables (warehouse/<season>/*.parquet, see warehouse.py) into those rows: regular
 season games only, and box lines of every player who was active (a coach's decision is a line with 0 seconds; inactive
@@ -44,6 +46,7 @@ from rounding import rnd
 STATS = ["pts", "oreb", "dreb", "reb", "ast", "stl", "blk", "tov", "pf",
          "fgm", "fga", "fg3m", "fg3a", "ftm", "fta", "pm"]
 HERE = os.path.dirname(os.path.abspath(__file__))
+SITE = "https://baranerdogan11.github.io/NBA-Player-Lab/"
 
 
 def load_teams():
@@ -178,6 +181,35 @@ def write_site(out, season, label, built, teams, players, games, lines):
         for x in sorted((x for x in played if x[k] > 0), key=lambda x: (-x[k], final[x["gid"]]["time"], x["gid"], name[x["pid"]], x["pid"]))[:10]]
         for k in HIGHS}})
     check_highs(out, final)
+    write_calendars(out, teams, games)
+
+
+def _ics(s):   # TEXT escaping (RFC 5545 3.3.11)
+    return s.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
+
+
+def write_calendars(out, teams, games):
+    """cal/<CODE>.ics for every club: its games in tip-off order, each two and a half hours long. The files change only
+    when the schedule or a score does (DTSTAMP is the tip-off), so a data update leaves them alone."""
+    names = {t["code"]: t["name"] for t in teams}
+    for t in teams:
+        ev = []
+        for g in sorted(games, key=lambda g: (g["time"], g["gid"])):
+            if t["code"] not in (g["home"], g["away"]):
+                continue
+            at = g["time"].replace("-", "").replace(":", "")
+            a, h = names[g["away"]], names[g["home"]]
+            url = f"{SITE}?l#game/{g['gid']}"
+            note = f"Final: {a} {g['as']}, {h} {g['hs']}\n{url}" if g["final"] else url
+            ev += ["BEGIN:VEVENT", f"UID:{g['gid']}@nba-player-lab", f"DTSTAMP:{at}", f"DTSTART:{at}", "DURATION:PT2H30M",
+                   f"SUMMARY:{_ics(f'{a} @ {h}')}", f"DESCRIPTION:{_ics(note)}", f"URL:{url}", "END:VEVENT"]
+        lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//NBA Player Lab//Schedule//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+                 f"X-WR-CALNAME:{_ics(t['city'] + ' ' + t['name'])}", "X-PUBLISHED-TTL:PT6H", "REFRESH-INTERVAL;VALUE=DURATION:PT6H",
+                 *ev, "END:VCALENDAR"]
+        path = os.path.join(out, "cal", f"{t['code']}.ics")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", newline="") as f:
+            f.write("".join("\r\n ".join(x[i:i + 74] for i in range(0, len(x), 74)) + "\r\n" for x in lines))   # folded at 75 octets
 
 
 HIGHS = ("pts", "reb", "ast", "stl", "blk", "fg3m", "gs")
