@@ -15,6 +15,7 @@ const ROUTES = [
   ['leaders-highs', '#leaders/highs', () => document.body.dataset.page === 'leaders' && document.querySelectorAll('#ld-highs .panel a').length > 0],
   ['home', '#home', () => document.body.dataset.page === 'home' && document.querySelectorAll('#hm-leaders .panel').length === 3],
   ['privacy', '#privacy', () => document.body.dataset.page === 'privacy' && document.querySelectorAll('#pg-privacy .panel').length === 3],
+  ['glossary', '#glossary', () => document.body.dataset.page === 'glossary' && document.querySelectorAll('#gl .panel').length > 5],
   ['standings-ratings', '#standings/ratings', () => document.body.dataset.page === 'standings' && document.querySelectorAll('#st-ratings tbody tr').length === 30],
   ['game-preview', '#game/0022600061', () => document.body.dataset.page === 'game' && !document.querySelector('#gm-pre').hidden && document.querySelectorAll('#pv-ff [data-k]').length === 8],
   ['standings-factors', '#standings/factors', () => document.body.dataset.page === 'standings' && document.querySelectorAll('#st-factors tbody tr').length === 30],  ['team', '#team/BOS', () => document.body.dataset.page === 'team' && document.querySelectorAll('#tm-roster tbody tr').length > 0 && document.querySelectorAll('#tm-ff td[data-k]').length === 8],
