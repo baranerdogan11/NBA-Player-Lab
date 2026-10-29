@@ -65,6 +65,8 @@ con = duckdb.connect()
 night = con.execute(f"select game from read_parquet('{src}/games.parquet') where final and game_type = 'regular' "
                     f"and date = (select max(date) from read_parquet('{src}/games.parquet') where final) order by game").fetchall()
 night = [g for (g,) in night]
+season = [g for (g,) in con.execute(f"select game from read_parquet('{src}/games.parquet') where final "
+                                    "and game_type = 'regular' order by date desc, game").fetchall()]
 
 
 def gate(script):
@@ -139,11 +141,13 @@ checks["a wrong box score: the game reads as not final"] = con.execute(
     f"select final from {quarantine.games_sql(W)} where game = '{bad}'").fetchone() == (False,)
 restore()
 
-# systemic: more than a quarter of the night's finals fail
-k = int(len(night) * quarantine.SHARE) + 1
-rewrite("box", f"select * replace (case when game in ({', '.join(repr(g) for g in night[:max(k, 2)])}) then pts + 1 else pts end as pts) from {{t}}")
+# systemic: more than a quarter of the night's finals fail; a night of one final (the first update of an evening) can't
+# be systemic on its own, so then more than a quarter of the season's
+pool, label = (night, "night's") if len(night) > 1 else (season, "season's")
+k = max(int(len(pool) * quarantine.SHARE) + 1, 2)
+rewrite("box", f"select * replace (case when game in ({', '.join(repr(g) for g in pool[:k])}) then pts + 1 else pts end as pts) from {{t}}")
 code, out = gate("warehouse_tests.py")
-checks[f"{max(k, 2)} of the night's {len(night)} finals failing fails the run"] = code == 1 and "systemic" in out
+checks[f"{k} of the {label} {len(pool)} finals failing fails the run"] = code == 1 and "systemic" in out
 restore()
 code, out = gate("warehouse_tests.py")
 checks["and the run passes again once they are right"] = code == 0 and held() == set()
