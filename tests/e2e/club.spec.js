@@ -131,3 +131,54 @@ test('its calendar link subscribes to the club\'s whole schedule: Google Calenda
   expect(await apple.getAttribute('#tm-cal', 'href')).toBe(ics);
   await apple.close();
 });
+
+// Quarter by quarter: the points by quarter and the records at half-time and after three quarters are what the game
+// pages' score by period adds up to; the margins and their ranks are the Standings ones
+test('quarter by quarter is the game pages\' score by period, and Standings shows the same margins and ranks', async ({page}) => {
+  test.setTimeout(90_000);
+  const problems = await prepare(page);
+  await page.goto(`./?l#team/${CODE}`);
+  await settled(page);
+  await page.waitForFunction(c => document.title === `${tname(c)} · NBA Player Lab` && document.querySelectorAll('#tm-q td[data-k]').length === 4, CODE);
+  const want = await page.evaluate(async c => {
+    const finals = (await get('games.json')).games.filter(g => g.hs != null && (g.home === c || g.away === c));
+    const f = [0, 0, 0, 0], a = [0, 0, 0, 0], rec = {half: {lead: [0, 0], trail: [0, 0], tied: [0, 0]}, three: {lead: [0, 0], trail: [0, 0], tied: [0, 0]}};
+    for (const g of finals) {
+      const b = await get(`games/${g.gid}.json`), me = b.home === c ? 0 : 1, won = me ? b.as > b.hs : b.hs > b.as;
+      let m = 0;
+      b.periods.slice(0, 4).forEach((p, i) => {
+        f[i] += p[me]; a[i] += p[1 - me]; m += p[me] - p[1 - me];
+        const k = i === 1 ? 'half' : i === 2 ? 'three' : null;
+        if (k) rec[k][m > 0 ? 'lead' : m < 0 ? 'trail' : 'tied'][won ? 0 : 1]++;
+      });
+    }
+    return {gp: finals.length, f, a, rec};
+  }, CODE);
+  expect(want.gp).toBeGreaterThan(0);
+  const q = (n, d) => { const v = Math.floor((2 * n * 10 + d) / (2 * d)), s = String(Math.abs(v)).padStart(2, '0'); return `${v < 0 ? '−' : v > 0 ? '+' : ''}${s.slice(0, -1)}.${s.slice(-1)}`; };
+  const shown = await page.evaluate(() => ({
+    rows: Object.fromEntries([...document.querySelectorAll('#tm-q tbody tr')].map(tr => [tr.dataset.side, [...tr.cells].slice(1).map(td => (td.querySelector('.v') || td).textContent)])),
+    ranks: [...document.querySelectorAll('#tm-q td[data-k]')].map(td => td.dataset.r || null),
+    rec: Object.fromEntries([...document.querySelectorAll('#tm-qrec tbody tr')].map(tr => [tr.dataset.at, [...tr.querySelectorAll('td[data-rec]')].map(td => td.textContent)])),
+  }));
+  const avg = (n, d) => { const v = Math.floor((2 * n * 10 + d) / (2 * d)), s = String(v).padStart(2, '0'); return `${s.slice(0, -1)}.${s.slice(-1)}`; };
+  expect(shown.rows.for).toEqual(want.f.map(x => avg(x, want.gp)));
+  expect(shown.rows.against).toEqual(want.a.map(x => avg(x, want.gp)));
+  expect(shown.rows.margin).toEqual(want.f.map((x, i) => q(x - want.a[i], want.gp)));
+  for (const s of ['lead', 'trail', 'tied']) expect(shown.rec[s]).toEqual(['half', 'three'].map(k => want.rec[k][s].join('-')));
+  const games = want.rec.half.lead[0] + want.rec.half.lead[1] + want.rec.half.trail[0] + want.rec.half.trail[1] + want.rec.half.tied[0] + want.rec.half.tied[1];
+  expect(games).toBe(want.gp);
+  await go(page, '#standings/quarters', () => document.querySelectorAll('#st-quarters tbody tr').length === 30);
+  const st = await page.evaluate(c => {
+    const tr = document.querySelector(`#st-quarters tr[data-team="${c}"]`);
+    return {m: [...tr.querySelectorAll('td[data-k]')].map(td => td.querySelector('.v').textContent), r: [...tr.querySelectorAll('td[data-k]')].map(td => td.dataset.r || null),
+      rec: [...tr.querySelectorAll('td[data-rec]')].map(td => td.textContent)};
+  }, CODE);
+  expect(st.m).toEqual(shown.rows.margin);
+  expect(st.r).toEqual(shown.ranks);
+  expect(st.rec).toEqual(shown.rec.lead);
+  await page.click('#st-quarters th[data-sort="q3"] button');
+  const ranks = await page.$$eval('#st-quarters tbody td[data-k="q3"]', tds => tds.map(td => +td.dataset.r || Infinity));
+  expect(ranks).toEqual([...ranks].sort((x, y) => x - y));
+  expect(problems).toEqual([]);
+});

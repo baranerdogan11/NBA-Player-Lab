@@ -568,6 +568,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <section class="panel"><h2 data-t="Roster">Roster</h2><div class="scroll"><table class="tbl" id="tm-roster"></table></div></section>
     <section class="panel"><h2 data-t="Ratings">Ratings</h2><div class="scroll"><table class="tbl rt" id="tm-rt"></table></div></section>
     <section class="panel"><h2 data-t="Four Factors">Four Factors</h2><div class="scroll"><table class="tbl rt" id="tm-ff"></table></div></section>
+    <section class="panel"><h2 data-t="Quarter by quarter">Quarter by quarter</h2><div class="scroll"><table class="tbl rt" id="tm-q"></table></div><div class="scroll"><table class="tbl rt" id="tm-qrec"></table></div></section>
   </section>
   <section class="pg" id="pg-leaders" hidden>
     <div class="tabs" id="ld-tabs" role="group" aria-label="Stat" data-ta="Stat"></div>
@@ -1024,7 +1025,7 @@ const dots = s => s.length ? `<i class="form">${s.slice(-10).map(w => `<b class=
 async function renderStandings(view, my) {
   const G = (await get('games.json')).games;
   if (stale(my)) return;
-  view = ['east', 'west', 'league', 'ratings', 'factors'].includes(view) ? view : 'conf';
+  view = ['east', 'west', 'league', 'ratings', 'factors', 'quarters'].includes(view) ? view : 'conf';
   const R = records(G);
   const order = (x, y) => (y.w * (x.w + x.l) - x.w * (y.w + y.l)) || (y.w - x.w) || ((y.pf - y.pa) - (x.pf - x.pa)) || x.code.localeCompare(y.code);
   const table = (title, rows) => {
@@ -1036,12 +1037,16 @@ async function renderStandings(view, my) {
     }).join('')}</tbody></table></div></section>`;
   };
   const all = Object.values(R).sort(order);
-  const views = [['conf', 'Conferences'], ['east', 'East'], ['west', 'West'], ['league', 'League'], ['ratings', 'Ratings'], ['factors', 'Four Factors']];
+  const views = [['conf', 'Conferences'], ['east', 'East'], ['west', 'West'], ['league', 'League'], ['ratings', 'Ratings'], ['factors', 'Four Factors'], ['quarters', 'Quarter by quarter']];
   $('#st-tabs').innerHTML = views.map(([k, l]) => `<a href="#standings/${k}" aria-current="${k === view}">${t(l)}</a>`).join('');
   if (view === 'ratings' || view === 'factors') {
     const rt = await get('ratings.json');
     if (stale(my)) return;
     $('#st-body').innerHTML = teamRatings(view, rt.teams, all);
+    return;
+  }
+  if (view === 'quarters') {
+    $('#st-body').innerHTML = teamQuarters(quarters(G), all);
     return;
   }
   const east = all.filter(r => r.conf === 'E'), west = all.filter(r => r.conf === 'W');
@@ -1062,8 +1067,9 @@ const ff = (x, o) => ({efg: x.fga ? rq(100 * (2 * x.fgm + x.fg3m), 2 * x.fga) : 
   orb: x.oreb + o.dreb ? rq(100 * x.oreb, x.oreb + o.dreb) : null, ftr: x.fga ? rq(x.ftm, x.fga, 3) : null});
 // the rank of a value among the shown ones (1 the best, dir -1 when less is better), ties sharing it
 const rankBy = (vals, dir) => { const shown = vals.filter(v => v != null); return v => v == null ? null : 1 + shown.filter(x => dir * (x - v) > 0).length; };
-const rtShow = (k, q) => q == null ? '–' : k === 'net' ? N(signed(fq(q))) : /ftr$/.test(k) ? N(fq(q, 3).replace(/^0/, '')) : N(fq(q));
-const rtCell = (k, v, r) => `<td data-k="${k}"${r ? ` data-r="${r}"` : ''}${k === 'net' && v ? ` class="${v > 0 ? 'w' : 'lo'}"` : ''}><span class="v">${rtShow(k, v)}</span><small class="rk">${r || ''}</small></td>`;
+const signedK = k => k === 'net' || /^q\d$/.test(k);
+const rtShow = (k, q) => q == null ? '–' : signedK(k) ? N(signed(fq(q))) : /ftr$/.test(k) ? N(fq(q, 3).replace(/^0/, '')) : N(fq(q));
+const rtCell = (k, v, r) => `<td data-k="${k}"${r ? ` data-r="${r}"` : ''}${signedK(k) && v ? ` class="${v > 0 ? 'w' : 'lo'}"` : ''}><span class="v">${rtShow(k, v)}</span><small class="rk">${r || ''}</small></td>`;
 const teamVals = c => {
   const f = c.for, a = c.against, po = P100(f), pd = P100(a), ortg = po >= 100 ? rq(10000 * f.pts, po) : null, drtg = pd >= 100 ? rq(10000 * a.pts, pd) : null;
   const o = ff(f, a), d = ff(a, f);
@@ -1083,6 +1089,39 @@ function teamRatings(view, clubs, standing) {
     ? `<tr>${team}<th class="grp" colspan="4"${def('own')}>${t('Offense')}</th><th class="grp" colspan="4"${def('opp')}>${t('Defense')}</th></tr><tr>${cols.map(th).join('')}</tr>`
     : `<tr>${team}${cols.map(th).join('')}</tr>`;
   return `<section class="panel"><div class="scroll"><table class="tbl rt" id="st-${view}"><thead>${head}</thead><tbody>${rows.map((r, i) => `<tr data-team="${r.code}" data-i="${i}"><td class="l"><a href="#team/${r.code}">${logo(r.code)}<span class="full">${EN(tname(r.code))}</span><span class="abbr">${esc(r.code)}</span></a></td>${cols.map(([k]) => cell(k, r.v[k])).join('')}</tr>`).join('')}</tbody></table></div></section>`;
+}
+// ---- Quarter by quarter, from the score by period of every final in games.json (the box score's, as on the game page):
+// each club's points for and against in each of the four quarters, its margin per game in each (rounded once by rq,
+// ranked like a rating), and its record when leading, trailing or level at half-time and after three quarters.
+// Overtime stays out of the quarter columns
+const Q_SPLITS = [['half', 1, 'At half', 'Led at half'], ['three', 2, 'After 3Q', 'Led after 3Q']];
+function quarters(G) {
+  const rec = () => ({lead: [0, 0], trail: [0, 0], tied: [0, 0]});
+  const Q = Object.fromEntries(IDX.teams.map(T => [T.code, {code: T.code, gp: 0, f: [0, 0, 0, 0], a: [0, 0, 0, 0], half: rec(), three: rec()}]));
+  for (const g of G) {
+    if (g.hs == null || !g.periods || g.periods.length < 4) continue;
+    for (const [c, me] of [[g.home, 0], [g.away, 1]]) {
+      const q = Q[c];
+      if (!q) continue;
+      const won = me ? g.as > g.hs : g.hs > g.as;
+      let m = 0;
+      q.gp++;
+      g.periods.slice(0, 4).forEach((p, i) => {
+        q.f[i] += p[me]; q.a[i] += p[1 - me]; m += p[me] - p[1 - me];
+        for (const [k, at] of Q_SPLITS) if (i === at) q[k][m > 0 ? 'lead' : m < 0 ? 'trail' : 'tied'][won ? 0 : 1]++;
+      });
+    }
+  }
+  return Q;
+}
+const qMargins = q => Object.fromEntries([0, 1, 2, 3].map(i => [`q${i + 1}`, q.gp ? rq(q.f[i] - q.a[i], q.gp) : null]));
+const wl = ([w, l]) => `${w}-${l}`;
+function teamQuarters(Q, standing) {
+  const rows = standing.map((r, i) => ({code: r.code, i, v: qMargins(Q[r.code]), q: Q[r.code]}));
+  const rank = Object.fromEntries([1, 2, 3, 4].map(n => [`q${n}`, rankBy(rows.map(r => r.v[`q${n}`]), 1)]));
+  const th = n => `<th data-sort="q${n}"${defSort('qm rank')}><button type="button" class="sort">${perName(n - 1, 4)}</button></th>`;
+  const head = `<tr><th class="l" data-sort=""><button type="button" class="sort">${t('Team')}</button></th>${[1, 2, 3, 4].map(th).join('')}${Q_SPLITS.map(([k, , , l]) => `<th${def(k)}>${t(l)}</th>`).join('')}</tr>`;
+  return `<section class="panel"><div class="scroll"><table class="tbl rt" id="st-quarters"><thead>${head}</thead><tbody>${rows.map(r => `<tr data-team="${r.code}" data-i="${r.i}"><td class="l"><a href="#team/${r.code}">${logo(r.code)}<span class="full">${EN(tname(r.code))}</span><span class="abbr">${esc(r.code)}</span></a></td>${[1, 2, 3, 4].map(n => rtCell(`q${n}`, r.v[`q${n}`], rank[`q${n}`](r.v[`q${n}`]))).join('')}${Q_SPLITS.map(([k]) => `<td data-rec="${k}">${wl(r.q[k].lead)}</td>`).join('')}</tr>`).join('')}</tbody></table></div></section>`;
 }
 // a heading puts the clubs in its rank order, the best first (no value last); the same heading again, or Team, brings
 // the default order back
@@ -1137,6 +1176,18 @@ async function renderTeam(code, my) {
   $('#tm-ff').setAttribute('style', tc(code));
   $('#tm-ff').innerHTML = `<thead><tr><th class="l"></th>${RT_COLS.factors.slice(0, 4).map(th).join('')}</tr></thead><tbody>${['Offense', 'Defense'].map((l, i) =>
     `<tr data-side="${l.toLowerCase()}"><td class="l"${def(i ? 'opp' : 'own')}>${t(l)}</td>${RT_COLS.factors.slice(4 * i, 4 * i + 4).map(cell).join('')}</tr>`).join('')}</tbody>`;
+  // quarter by quarter: points for and against per game, the margin with its rank (as Standings has it), and the record
+  // by the score at half-time and after three quarters
+  const Q = quarters(G), qa = Q[code], qv = Object.fromEntries(Object.values(Q).map(x => [x.code, qMargins(x)]));
+  const qs = [0, 1, 2, 3];
+  $('#tm-q').setAttribute('style', tc(code));
+  $('#tm-q').innerHTML = `<thead><tr><th class="l"></th>${qs.map(i => `<th${def('qpts')}>${perName(i, 4)}</th>`).join('')}</tr></thead><tbody>`
+    + `<tr data-side="for"><td class="l"${def('qpts')}>${t('Scored')}</td>${qs.map(i => `<td>${avg(qa.f[i], qa.gp)}</td>`).join('')}</tr>`
+    + `<tr data-side="against"><td class="l"${def('qpts')}>${t('Allowed')}</td>${qs.map(i => `<td>${avg(qa.a[i], qa.gp)}</td>`).join('')}</tr>`
+    + `<tr data-side="margin"><td class="l"${def('qm rank')}>${t('Margin')}</td>${qs.map(i => { const k = `q${i + 1}`, v = qv[code][k]; return rtCell(k, v, rankBy(Object.values(qv).map(x => x[k]), 1)(v)); }).join('')}</tr></tbody>`;
+  $('#tm-qrec').setAttribute('style', tc(code));
+  $('#tm-qrec').innerHTML = `<thead><tr><th class="l"></th>${Q_SPLITS.map(([k, , l]) => `<th${def(k)}>${t(l)}</th>`).join('')}</tr></thead><tbody>${[['lead', 'Leading'], ['trail', 'Trailing'], ['tied', 'Level']].map(([s, l]) =>
+    `<tr data-at="${s}"><td class="l">${t(l)}</td>${Q_SPLITS.map(([k]) => `<td data-rec="${k}">${wl(qa[k][s])}</td>`).join('')}</tr>`).join('')}</tbody>`;
   document.title = `${tname(code)} · NBA Player Lab`;
 }
 
@@ -1876,6 +1927,12 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['diff', 'DIFF@stat', 'Point differential', 'The average margin per game.', 'PPG − OPP PPG'],
     ['rest', '', 'Rest', 'Days between a club’s previous game and this one; a back-to-back has none.', ''],
     ['order', '', 'Standings order', 'Clubs are ordered by win percentage, then wins, then point differential.', ''],
+  ]],
+  ['Quarter by quarter', [
+    ['qpts', '', 'Points by quarter', 'Points scored and allowed in each quarter, per game, from the score by period of the box score.', ''],
+    ['qm', '', 'Quarter margin', 'The club’s points less the opponent’s in that quarter, per game. Overtime is left out.', 'Points − opponent points'],
+    ['half', '', 'At half-time', 'Wins and losses by the score after two quarters: leading, trailing or level.', ''],
+    ['three', '', 'After three quarters', 'Wins and losses by the score after three quarters: leading, trailing or level.', ''],
   ]],
   ['Shot chart', [
     ['dots', '', 'Dots and crosses', 'Every field-goal attempt at its spot: a dot is a make, a cross a miss.', ''],
