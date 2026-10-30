@@ -7,7 +7,7 @@ RAPM (rapm.py), a model's estimate rather than a ratio of totals, written alread
 
 Files under <out>/ (out is teams/<season>/):
   index.json        season, label, build time, the 30 clubs with colours and games played
-  games.json        every game of the schedule: date, tip time, clubs, and the score once final
+  games.json        every game of the schedule: date, tip time, clubs, and the score (and its periods) once final
   <CODE>.json       the club's players, each with a log of his box-score lines (any club, newest last), each line with
                     its Game Score gs in tenths (game_score())
   games/<gid>.json  one final: score by period, both box scores and, from the play-by-play, its flow: [[ds, home, away],
@@ -119,7 +119,8 @@ def write_site(out, season, label, built, teams, players, games, lines):
         "teams": [{**{k: t[k] for k in ("code", "id", "city", "name", "conf", "div", "colors")}, "gp": gp[t["code"]]} for t in teams]})
     _dump(os.path.join(out, "games.json"), {"games": [
         {"gid": g["gid"], "date": g["date"], "time": g["time"], "home": g["home"], "away": g["away"],
-         "hs": g["hs"] if g["final"] else None, "as": g["as"] if g["final"] else None} for g in sorted(games, key=lambda g: (g["time"], g["gid"]))]})
+         "hs": g["hs"] if g["final"] else None, "as": g["as"] if g["final"] else None,
+         **({"periods": g["periods"]} if g["final"] else {})} for g in sorted(games, key=lambda g: (g["time"], g["gid"]))]})
 
     by_game = {}
     for r in lines:

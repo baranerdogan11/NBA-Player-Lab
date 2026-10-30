@@ -118,11 +118,12 @@ test.describe('definitions by keyboard', () => {
 const PLAIN = new Set(['Player', 'Team', 'Date', 'Opp', 'Oyuncu', 'Takım', 'Tarih', 'Rakip', '']);
 const ROUTES = [
   ['#BOS', () => !!document.querySelector('#tiles .tile') && !document.querySelector('#lu').hidden],
-  ['#team/BOS', () => document.querySelectorAll('#tm-ff td[data-k]').length === 8],
+  ['#team/BOS', () => document.querySelectorAll('#tm-ff td[data-k]').length === 8 && document.querySelectorAll('#tm-q td[data-k]').length === 4],
   ['#compare', () => document.querySelectorAll('#cmp tr').length > 5],
   ['#standings', () => document.querySelectorAll('#st-body tbody tr').length === 30],
   ['#standings/ratings', () => document.querySelectorAll('#st-ratings tbody tr').length === 30],
   ['#standings/factors', () => document.querySelectorAll('#st-factors tbody tr').length === 30],
+  ['#standings/quarters', () => document.querySelectorAll('#st-quarters tbody tr').length === 30],
   ['#game/0022600001', () => document.querySelectorAll('#gm-box table').length === 2 && !document.querySelector('#gm-lu').hidden],
   ['#game/0022600061', () => !document.querySelector('#gm-pre').hidden && document.querySelectorAll('#pv-ff [data-k]').length === 8],
   ['#leaders/fg', () => document.querySelectorAll('#ld tbody tr').length > 0],
