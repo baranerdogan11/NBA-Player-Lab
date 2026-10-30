@@ -5,7 +5,7 @@ name: Update data
 # fetched again on every run, and released once its feed passes, while the rest of the night publishes. Only a
 # systemic failure (the fetch, a gate that names no game, more than a quarter of the night's games held, the build or
 # the smoke test) stops the run before anything is committed, so the last good build stays live. A game held for more
-# than 12 hours turns the quarantine job red without holding the deploy. The season comes from config.json.
+# than 12 hours opens one issue for it (GitHub emails it once) without holding the deploy. The season comes from config.json.
 
 on:
   schedule:
@@ -174,18 +174,29 @@ jobs:
           retention-days: 14
 
   quarantine:
-    # a game the gates have held for more than 12 hours shows red here; the deploy does not wait for this job
+    # a game the gates have held for more than 12 hours gets one issue, opened once and never again for that game even
+    # after it is closed (a feed the NBA never corrects would otherwise fail every run); the deploy does not wait for this job
     needs: update
     if: needs.update.result == 'success'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ needs.update.outputs.sha || github.sha }}
 
-      - name: No game quarantined for more than 12 hours
-        run: python3 quarantine.py --check
+      - name: An issue for each game quarantined for more than 12 hours
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 quarantine.py --stale | while IFS=$'\t' read -r title body; do
+            if [ -z "$(gh issue list --state all --search "\"$title\" in:title" --json number --jq '.[].number')" ]; then
+              gh issue create --title "$title" --body "$body"
+            fi
+          done
 
   deploy:
     # the commit just pushed passed every gate above; a push made with GITHUB_TOKEN does not start test.yml, so the

@@ -15,7 +15,8 @@ gate holds it.
 The run fails only when the failure is systemic, not one game's: more than a quarter of the latest night's finals or of
 the season's are held, and at least two (a gate that fails without naming a game fails the run itself).
 
-usage: python quarantine.py --check [2026-27]   exits 1 if a game has been held for more than STALE_HOURS
+usage: python quarantine.py --stale [2026-27]   one line per game held for more than STALE_HOURS: an issue title, a tab and
+       its body (update.yml opens that issue once, so a feed that never gets corrected alerts once, not on every run)
 """
 import json
 import os
@@ -106,13 +107,20 @@ def stale(entries, now=None, hours=STALE_HOURS):
     return [e for e in entries if now - datetime.fromisoformat(e["first_seen"].replace("Z", "+00:00")) > timedelta(hours=hours)]
 
 
+def issues(entries, now=None):
+    """[(title, body)] for each game held for more than STALE_HOURS, its gates' reasons in the body."""
+    by = {}
+    for e in stale(entries, now):
+        by.setdefault(e["game"], []).append(e)
+    return [(f"Game {g} quarantined for more than {STALE_HOURS} hours",
+             f"Held since {es[0]['first_seen']}. " + " ".join(f"{e['gate']} ({e['scope']}): {e['reason']}." for e in es))
+            for g, es in sorted(by.items())]
+
+
 if __name__ == "__main__":
     from season import ROOT, season
     w = os.path.join(ROOT, "warehouse", season())
-    if "--check" not in sys.argv:
+    if "--stale" not in sys.argv:
         raise SystemExit(__doc__)
-    old = stale(load(w))
-    for e in old:
-        print(f"::error::{e['game']} quarantined since {e['first_seen']} by {e['gate']} ({e['scope']}): {e['reason']}")
-    print(f"{len(load(w))} game entries quarantined, {len(old)} for more than {STALE_HOURS} h")
-    sys.exit(1 if old else 0)
+    for title, body in issues(load(w)):
+        print(f"{title}\t{body}".replace("\n", " "))

@@ -42,6 +42,9 @@ checks["a gate's run replaces only its own entries"] = [(e["game"], e["gate"]) f
 late = datetime(2026, 10, 26, 13, 30, tzinfo=timezone.utc)
 checks["held for more than 12 hours is stale"] = (len(quarantine.stale(quarantine.load(w), late)) == 1
                                                  and not quarantine.stale(quarantine.load(w), datetime(2026, 10, 26, 12, 30, tzinfo=timezone.utc)))
+quarantine.record(w, "b", {"g1": ("lineups", "y")}, at="2026-10-26T02:00:00Z")
+checks["one issue per stale game, every gate's reason in it"] = [(t, "a (pbp): x." in b and "b (lineups): y." in b)
+                                                                 for t, b in quarantine.issues(quarantine.load(w), late)] == [("Game g1 quarantined for more than 12 hours", True)]
 
 # ---- due.py: a held game runs the update every 30 minutes, for a day
 st = {"games": 9, "checked_at": "2026-10-26T03:00:00Z"}
