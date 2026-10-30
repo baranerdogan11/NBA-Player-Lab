@@ -92,12 +92,15 @@ def stint_games():
 
 
 # the committed warehouse can hold a game itself (the update job runs these tests before it fetches): what it holds is
-# the baseline, and the game broken here is another one
+# the baseline, and the game broken here is another one, from the busiest night so that one more held game stays
+# under the systemic share (a night of 3 finals with one already held would trip it)
 code, out = gate("warehouse_tests.py")
 gate("lineups.py")
 base = {(e["game"], e["gate"], e["scope"]) for e in quarantine.load(W)}
 everyone = stint_games()
-bad = next(g for g in night if g not in {b[0] for b in base})
+busiest = [g for (g,) in con.execute(f"select game from read_parquet('{src}/games.parquet') where final and game_type = 'regular' "
+                                     "order by count(*) over (partition by date) desc, date desc, game").fetchall()]
+bad = next(g for g in busiest if g not in {b[0] for b in base})
 checks["the committed warehouse passes"] = code == 0
 
 
