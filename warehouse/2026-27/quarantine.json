@@ -6,6 +6,13 @@
    "scope": "lineups",
    "reason": "14 problems: game 0022600142: 519: 1629023 subbed out while on the bench; game 0022600142: 520: [6, 5] on the floor; game 0022600142: 522: [6, 5] on the floor",
    "first_seen": "2026-10-29T09:52:57Z"
+  },
+  {
+   "game": "0022600146",
+   "gate": "warehouse_tests",
+   "scope": "pbp",
+   "reason": "play-by-play dreb per player per game equals the box score: 2 lines differ, e.g. ('0022600146', 1643409, 'MEM', 9, 10); play-by-play reb per player per game equals the box score: 2 lines differ, e.g. ('0022600146', 1643409, 'MEM', 11, 12)",
+   "first_seen": "2026-10-30T04:26:33Z"
   }
  ]
 }
