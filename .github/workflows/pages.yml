@@ -2,7 +2,9 @@ name: Deploy site
 
 # Publishes one commit of main to GitHub Pages, then checks the public site serves it. Called only after that commit has
 # passed its checks: by test.yml for code changes and by update.yml for data updates. Needs Settings, Pages, Source set
-# to "GitHub Actions".
+# to "GitHub Actions". A commit that is no longer the tip of main is not published: when a code push and a data update
+# land together, the later deploy must not put back a site without the newer commit (31 Oct: the merge's test run
+# deployed after the update run and took the night's games off the site).
 
 on:
   workflow_call:
@@ -34,7 +36,15 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
 
+      - name: Still the newest commit of main (else the newer commit's own run deploys it)
+        id: newest
+        run: |
+          TIP=$(git ls-remote origin refs/heads/main | cut -f1)
+          if [ "$TIP" = "$(git rev-parse HEAD)" ]; then echo "ok=true" >> "$GITHUB_OUTPUT"
+          else echo "::notice::main is at $TIP now, newer than $(git rev-parse HEAD): not deployed"; fi
+
       - name: Stage the site (the repository without dotfiles, version.txt naming the commit, index.html rebuilt)
+        if: steps.newest.outputs.ok == 'true'
         run: |
           mkdir -p "$RUNNER_TEMP/site"
           rsync -a --exclude='.*' --exclude='cache/' --exclude='node_modules/' ./ "$RUNNER_TEMP/site/"
@@ -44,6 +54,7 @@ jobs:
 
       # the private league file (fantasy.yml): this run's, else the newest successful run's while under 23 hours old
       - name: League file from this run
+        if: steps.newest.outputs.ok == 'true'
         id: league
         uses: actions/download-artifact@v8
         continue-on-error: true
@@ -52,7 +63,7 @@ jobs:
           path: ${{ runner.temp }}/site
 
       - name: League file from the last league run
-        if: steps.league.outcome != 'success'
+        if: steps.newest.outputs.ok == 'true' && steps.league.outcome != 'success'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -62,15 +73,19 @@ jobs:
           echo "league files: $(find "$RUNNER_TEMP/site/fantasy" -name '*.enc' 2>/dev/null | wc -l)"
 
       - uses: actions/configure-pages@v6
+        if: steps.newest.outputs.ok == 'true'
 
       - uses: actions/upload-pages-artifact@v5
+        if: steps.newest.outputs.ok == 'true'
         with:
           path: ${{ runner.temp }}/site
 
       - id: deployment
+        if: steps.newest.outputs.ok == 'true'
         uses: actions/deploy-pages@v5
 
       - name: Live check (the public site serves this commit)
+        if: steps.newest.outputs.ok == 'true'
         env:
           SITE: ${{ steps.deployment.outputs.page_url }}
         run: SHA=$(git rev-parse HEAD) python live.py
