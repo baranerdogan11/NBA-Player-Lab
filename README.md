@@ -35,7 +35,8 @@ A port of [Euroleague Player Lab](https://github.com/baranerdogan11/Euroleague-P
 - `assists.py`: writes `teams/<season>/assists/<CODE>.json`, the club's assist pairs per final (passer, scorer, assists
   and the points those baskets made) from the play-by-play's assist credits; a game where a player's credits differ from
   his box-score AST (a post-game stat correction) is left out of the pairs, and more of them than one per thousand box
-  lines quarantines those games
+  lines quarantines those games. The Game page lists each club's top five pairs (Duos); the Player page the three
+  team-mates who assisted him most this season and the three he assisted most
 - `tests/fixtures/site_fixture.py`: a made-up, self-consistent league the browser tests run against
 - `tests/`: Python self-tests (`tests/run_all.py` runs every `tests/test_*.py`), the Playwright browser tests
   (`tests/e2e/`) and the lint and type-check setup for the page's script (`tests/lint/`)

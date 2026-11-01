@@ -468,5 +468,11 @@
  "After three quarters": "Üç çeyrek sonunda",
  "Wins and losses by the score after three quarters: leading, trailing or level.": "Üç çeyrek sonundaki skora göre galibiyet ve mağlubiyetler: önde, geride veya berabere.",
  "Who played when": "Kim ne zaman oynadı",
- "Each player’s stretches on the court through the game, the quarters ruled; a bar gives its start and end on the clock, its minutes and the club’s +/- over it. A player’s stretches add up to his box-score minutes, to the second, and his +/-.": "Her oyuncunun maç boyunca sahada kaldığı bölümler, çeyrekler çizgiyle ayrılmış; bir çubuk, başladığı ve bittiği saati, süresini ve o sürede takımın +/- değerini verir. Bir oyuncunun bölümleri, kutu skordaki süresine saniyesine kadar ve +/- değerine eşittir."
+ "Each player’s stretches on the court through the game, the quarters ruled; a bar gives its start and end on the clock, its minutes and the club’s +/- over it. A player’s stretches add up to his box-score minutes, to the second, and his +/-.": "Her oyuncunun maç boyunca sahada kaldığı bölümler, çeyrekler çizgiyle ayrılmış; bir çubuk, başladığı ve bittiği saati, süresini ve o sürede takımın +/- değerini verir. Bir oyuncunun bölümleri, kutu skordaki süresine saniyesine kadar ve +/- değerine eşittir.",
+ "Duos": "İkililer",
+ "Assisted by": "Asist aldığı",
+ "Assists to": "Asist yaptığı",
+ "A passer and the team-mate whose baskets he assisted: the assists between them and the points those baskets made, from the play-by-play. A passer’s duos in a game add up to his AST; a game whose assists the league corrected after the final is left out.": "Bir pasör ve sayılarına asist yaptığı takım arkadaşı: aralarındaki asistler ve bu basketlerden gelen sayılar, oyun akışından. Bir pasörün maçtaki ikilileri asist sayısını verir; ligin maçtan sonra asistlerini düzelttiği maç dışarıda bırakılır.",
+ "The team-mates who assisted the player’s baskets most this season, and the points those baskets made.": "Bu sezon oyuncunun basketlerine en çok asist yapan takım arkadaşları ve bu basketlerden gelen sayılar.",
+ "The team-mates whose baskets the player assisted most this season, and the points those baskets made.": "Bu sezon oyuncunun en çok asist yaptığı takım arkadaşları ve bu basketlerden gelen sayılar."
 }

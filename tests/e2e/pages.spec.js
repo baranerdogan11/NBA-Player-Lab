@@ -188,7 +188,7 @@ test.describe('roster', () => {
 
 test.describe('profile sections', () => {
   test.use(DESKTOP);
-  for (const [id, body, key] of [['sc', '#sc-court', 'pl-shots'], ['lu', '#onoff', 'pl-lineups'], ['log-sec', '#log', 'pl-log']]) {
+  for (const [id, body, key] of [['sc', '#sc-court', 'pl-shots'], ['lu', '#onoff', 'pl-lineups'], ['duo', '#duo-cols', 'pl-duos'], ['log-sec', '#log', 'pl-log']]) {
     test(`the ${id} heading closes and opens its section, and the choice is kept across visits`, async ({page}) => {
       const problems = await prepare(page);
       await page.goto('./?l#BOS');
@@ -230,6 +230,27 @@ test.describe('game box scores', () => {
     await page.focus('#gm-box details[data-side="home"] > summary');
     await page.keyboard.press('Enter');
     expect(await open()).toEqual([true, true]);
+    expect(problems, 'the page reported errors').toEqual([]);
+  });
+
+  test('the Duos heading folds the section, and the choice is kept across games and visits', async ({page}) => {
+    const problems = await prepare(page);
+    await page.goto('./?l#game/0022600001');
+    await settled(page);
+    await page.waitForFunction(() => !document.querySelector('#gm-duo').hidden);
+    const isOpen = () => page.evaluate(() => document.querySelector('#gm-duo').open);
+    expect(await isOpen()).toBe(true);
+    await page.click('#gm-duo summary');
+    expect(await isOpen()).toBe(false);
+    expect(await page.locator('#gm-duos').isVisible()).toBe(false);
+    await page.waitForFunction(() => localStorage.getItem('pl-gm-duos') === 'closed');   // the toggle event is queued
+    await page.goto('./?l#game/0022600002');
+    await settled(page);
+    await page.waitForFunction(() => !document.querySelector('#gm-duo').hidden);
+    expect(await isOpen()).toBe(false);
+    await page.focus('#gm-duo summary');
+    await page.keyboard.press('Enter');
+    expect(await isOpen()).toBe(true);
     expect(problems, 'the page reported errors').toEqual([]);
   });
 
