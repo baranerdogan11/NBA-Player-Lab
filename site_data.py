@@ -12,7 +12,10 @@ Files under <out>/ (out is teams/<season>/):
                     its Game Score gs in tenths (game_score())
   games/<gid>.json  one final: score by period, both box scores and, from the play-by-play, its flow: [[ds, home, away],
                     ...], the score after every change, ds the tenths of a second of game time played; it ends on the
-                    final and passes through every period's score
+                    final and passes through every period's score; and its rotation: {pid: [[from, to, pm], ...]}, the
+                    stretches each player was on the floor (from the lineup stints, lineups.py), from and to in the same
+                    tenths of game time, pm the score margin while he was out there; a player stays on across a period's
+                    end until he is subbed out, as lineups.py carries the five over
   lineups/<CODE>.json  the club's fives (lineups.py): {"code", "games": [gid, ...], "fives": [[pid x 5], ...], "rows":
                     [[g, f, ds, pts, opp_pts, fga, oreb, tov, fta, opp_fga, opp_oreb, opp_tov, opp_fta], ...]}, one row
                     per five per game: g indexes games (tip-off order), f fives, ds is tenths of a second; the page sums
@@ -95,6 +98,58 @@ def check_flow(g):
         raise ValueError(f"game {g['gid']}: play-by-play ends at {f[-1][1:] if f else [0, 0]}, final is {[g['hs'], g['as']]}")
 
 
+def played(periods):
+    """The number of periods played: an overtime the feed lists with no score is its game-end marker in a period of its
+    own (PHX-GSW, 24 Oct), not five minutes nobody scored in, as lineups.plays() reads it."""
+    n = len(periods)
+    while n > 4 and periods[n - 1] == [0, 0]:
+        n -= 1
+    return n
+
+
+def rotation(stints):
+    """stints: one club's stints of one game in order, (players, sec, pts, opp_pts). {pid: [[from, to, pm], ...]}, the
+    player's stretches on the floor in tenths of game time, back-to-back stints joined. A stretch of no time is kept
+    only when the score moved in it (subbed in at a stoppage for a free throw the other side made)."""
+    out, t, prev = {}, 0.0, set()
+    for players, sec, pts, opp in stints:
+        a, t = round(10 * t), t + sec
+        b = round(10 * t)
+        for p in players:
+            k = str(p)
+            if p in prev:
+                out[k][-1][1] = b
+                out[k][-1][2] += pts - opp
+            else:
+                out.setdefault(k, []).append([a, b, pts - opp])
+        prev = set(players)
+    return {k: [x for x in r if x[0] < x[1] or x[2]] for k, r in out.items()}
+
+
+def check_rotation(g):
+    """Raises unless each player's stretches add up to his box-score seconds within one second (the box score keeps
+    whole seconds and the play-by-play clock tenths: 1668.8 s on the floor can be 1668 or 1669 in the box score) and
+    to his box plus-minus, nobody is on the floor twice at once, and every club has
+    five on the floor for the whole game."""
+    end = period_start(played(g["periods"]) + 1)
+    for c in (g["home"], g["away"]):
+        lines = {x["pid"]: x for x in g["box"][c]}
+        rot = {p: r for p, r in g["rotation"].items() if p in lines}
+        if sum(b - a for r in rot.values() for a, b, _ in r) != 5 * end:
+            raise ValueError(f"game {g['gid']}: {c} rotation covers {sum(b - a for r in rot.values() for a, b, _ in r)} ds, five players' game is {5 * end}")
+        for p, x in lines.items():
+            r = rot.get(p, [])
+            ds = sum(b - a for a, b, _ in r)
+            if abs(ds - 10 * x["sec"]) > 10:
+                raise ValueError(f"game {g['gid']}: {p} on the floor {ds / 10} s by the rotation, box {x['sec']} s")
+            if sum(m for *_, m in r) != x["pm"]:
+                raise ValueError(f"game {g['gid']}: {p} rotation +/- {sum(m for *_, m in r)}, box {x['pm']}")
+            if any(a > b or a < 0 or b > end for a, b, _ in r) or any(r[i][1] > r[i + 1][0] for i in range(len(r) - 1)):
+                raise ValueError(f"game {g['gid']}: {p} rotation out of order {r}")
+    if set(g["rotation"]) - {x["pid"] for c in (g["home"], g["away"]) for x in g["box"][c]}:
+        raise ValueError(f"game {g['gid']}: rotation names players without a box line")
+
+
 def game_score(x):
     """Hollinger's Game Score in tenths, an integer: PTS + 0.4 FG - 0.7 FGA - 0.4 (FTA - FT) + 0.7 ORB + 0.3 DRB + STL
     + 0.7 AST + 0.7 BLK - 0.4 PF - TOV, times ten."""
@@ -107,7 +162,7 @@ def write_site(out, season, label, built, teams, players, games, lines):
     NBA season is this one), and optionally
     o_rapm, d_rapm (unrounded, from rapm.py).
     games: gid, date, time (UTC ISO), home, away, final, hs, as, periods ([[home, away], ...]) and optionally flow
-    (game_flow()) for finals.
+    (game_flow()) and rotation (rotation(), both clubs' together) for finals.
     lines: one per player per final: gid, team, pid, name, start, sec and every key in STATS."""
     final = {g["gid"]: g for g in games if g["final"]}
     gp = {t["code"]: 0 for t in teams}
@@ -133,9 +188,11 @@ def write_site(out, season, label, built, teams, players, games, lines):
                 raise ValueError(f"game {gid}: {c} box score adds up to {sum(x['pts'] for x in box[c])}, final says {g[side]}")
         if "flow" in g:
             check_flow(g)
+        if "rotation" in g:
+            check_rotation({**g, "box": box})
         _dump(os.path.join(out, "games", f"{gid}.json"), {
             "gid": gid, "date": g["date"], "home": g["home"], "away": g["away"], "hs": g["hs"], "as": g["as"],
-            "periods": g["periods"], "box": box, **({"flow": g["flow"]} if "flow" in g else {})})
+            "periods": g["periods"], "box": box, **{k: g[k] for k in ("flow", "rotation") if k in g}})
 
     logs = {}
     for r in sorted(lines, key=lambda r: (final[r["gid"]]["time"], r["gid"])):
@@ -303,7 +360,8 @@ def write_lineups(out, teams, rows):
 
 def from_warehouse(wh):
     """players, games, lines for write_site() from the Parquet tables in the directory wh. A game whose box score is
-    quarantined (quarantine.py) is read as not final yet; one held out of the game flow has no flow."""
+    quarantined (quarantine.py) is read as not final yet; one held out of the game flow has no flow, and one held out of
+    the lineups or the rotation has no rotation."""
     import duckdb
     import quarantine
     con = duckdb.connect()
@@ -311,6 +369,7 @@ def from_warehouse(wh):
         con.execute(f"create view {t} as select * from read_parquet('{os.path.join(wh, t + '.parquet')}')")
     con.execute(f"create view games as select * from {quarantine.games_sql(wh)}")
     no_flow = quarantine.held(wh, "flow", gate="flow")
+    no_rot = quarantine.held(wh, "rotation", gate="rotation")
     if os.path.exists(os.path.join(wh, "roster.parquet")):
         con.execute(f"create view roster as select * from read_parquet('{os.path.join(wh, 'roster.parquet')}')")
     else:   # an earlier season, or a warehouse built before rosters were fetched: players come from box scores only
@@ -332,8 +391,16 @@ def from_warehouse(wh):
         for r in con.execute(f"select e.game, e.period, e.clock, e.score_home, e.score_away from read_parquet('{os.path.join(wh, 'events.parquet')}') e "
                              "join games g using (game) where g.game_type = 'regular' and g.final order by e.game, e.order_no").fetchall():
             flows.setdefault(r[0], []).append(r[1:])
+    rots = {}
+    if os.path.exists(os.path.join(wh, "stints.parquet")):   # lineups.py writes only the games that pass its gates
+        cur = {}
+        for r in con.execute(f"select game, team, players, sec, pts, opp_pts from read_parquet('{os.path.join(wh, 'stints.parquet')}') "
+                             "order by game, team, stint").fetchall():
+            cur.setdefault(r[0], {}).setdefault(r[1], []).append(r[2:])
+        rots = {gid: {p: r for st in clubs.values() for p, r in rotation(st).items()} for gid, clubs in cur.items() if gid not in no_rot}
     games = [{**g, "final": bool(g["final"]), **({"periods": qtr.get(g["gid"], [])} if g["final"] else {}),
-              **({"flow": game_flow(flows[g["gid"]])} if g["gid"] in flows and g["gid"] not in no_flow else {})}
+              **({"flow": game_flow(flows[g["gid"]])} if g["gid"] in flows and g["gid"] not in no_flow else {}),
+              **({"rotation": rots[g["gid"]]} if g["gid"] in rots and g["final"] else {})}
              for g in rows("select game as gid, strftime(date, '%Y-%m-%d') as \"date\", strftime(tipoff_utc, '%Y-%m-%dT%H:%M:%SZ') as \"time\", "
                            "home, away, final, home_score as hs, away_score as \"as\" from games where game_type = 'regular'")]
     stat = ", ".join(f"coalesce(b.{'plus_minus' if k == 'pm' else k}, 0) as {k}" for k in STATS)
@@ -381,15 +448,24 @@ if __name__ == "__main__":
     import quarantine
     teams = load_teams()
     players, games, lines = from_warehouse(wh)
-    bad = {}
-    for g in games:   # a game whose flow fails its check is quarantined and drawn without one
+    bad, bad_rot, box = {}, {}, {}
+    for r in lines:
+        box.setdefault(r["gid"], {}).setdefault(r["team"], []).append(r)
+    for g in games:   # a game whose flow or rotation fails its check is quarantined and drawn without one
         try:
             if "flow" in g:
                 check_flow(g)
         except ValueError as e:
             bad[g["gid"]] = ("flow", str(e))
             del g["flow"]
+        try:
+            if "rotation" in g:
+                check_rotation({**g, "box": {c: box.get(g["gid"], {}).get(c, []) for c in (g["home"], g["away"])}})
+        except ValueError as e:
+            bad_rot[g["gid"]] = ("rotation", str(e))
+            del g["rotation"]
     quarantine.record(wh, "flow", bad)
+    quarantine.record(wh, "rotation", bad_rot)
     write_site(out, SEASON, SEASON, built, teams, players, games, lines)
     rows = team_lines(wh)
     write_ratings(out, teams, rows)
