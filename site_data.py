@@ -109,15 +109,16 @@ def played(periods):
 
 def rotation(stints):
     """stints: one club's stints of one game in order, (players, sec, pts, opp_pts). {pid: [[from, to, pm], ...]}, the
-    player's stretches on the floor in tenths of game time, back-to-back stints joined. A stretch of no time is kept
-    only when the score moved in it (subbed in at a stoppage for a free throw the other side made)."""
+    player's stretches on the floor in tenths of game time, back-to-back stints joined (also when he went out and came
+    back at the same moment, as at a period's break). A stretch of no time is kept only when the score moved in it
+    (subbed in at a stoppage for a free throw the other side made)."""
     out, t, prev = {}, 0.0, set()
     for players, sec, pts, opp in stints:
         a, t = round(10 * t), t + sec
         b = round(10 * t)
         for p in players:
             k = str(p)
-            if p in prev:
+            if p in prev or (k in out and out[k][-1][1] == a):
                 out[k][-1][1] = b
                 out[k][-1][2] += pts - opp
             else:
