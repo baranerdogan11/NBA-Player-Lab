@@ -3,10 +3,11 @@
 warehouse/<season>/quarantine.json: {"games": [{"game", "gate", "scope", "reason", "first_seen"}, ...]}, one entry per
 game per gate. The scope says what the game is held out of:
   box      its box score failed (warehouse_tests.py): the whole game, which the site shows as not final yet
-  pbp      its play-by-play failed (warehouse_tests.py): lineups, on/off, RAPM, the shot chart and the game flow; the box
+  pbp      its play-by-play failed (warehouse_tests.py): lineups, on/off, RAPM, the shot chart, the assist pairs and the game flow; the box
            score, which passed its own gates, still publishes
   lineups  lineups.py: lineups, on/off and RAPM
   shots    shots.py: the shot chart
+  assists  assists.py: the assist pairs
   flow     site_data.py: the game flow
 Each gate replaces its own entries on every run, and fetch_season.py fetches every quarantined game's box score and
 play-by-play again on every run, so a corrected feed clears the game by itself. A game keeps its first_seen while any
@@ -26,8 +27,8 @@ from datetime import datetime, timedelta, timezone
 FILE = "quarantine.json"
 STALE_HOURS = 12
 SHARE = 0.25
-HOLDS = {"box": {"box", "pbp", "lineups", "shots", "flow"}, "pbp": {"pbp", "lineups", "shots", "flow"},
-         "lineups": {"lineups"}, "shots": {"shots"}, "flow": {"flow"}}   # scope -> the outputs it holds the game out of
+HOLDS = {"box": {"box", "pbp", "lineups", "shots", "assists", "flow"}, "pbp": {"pbp", "lineups", "shots", "assists", "flow"},
+         "lineups": {"lineups"}, "shots": {"shots"}, "assists": {"assists"}, "flow": {"flow"}}   # scope -> the outputs it holds the game out of
 
 
 def now_iso():
@@ -40,7 +41,7 @@ def load(w):
 
 
 def held(w, output, gate=None):
-    """The ids of the games held out of one output (a key of HOLDS: box, pbp, lineups, shots or flow), by any gate but
+    """The ids of the games held out of one output (a key of HOLDS: box, pbp, lineups, shots, assists or flow), by any gate but
     gate: a gate checks the games it holds itself again, so it can clear them."""
     return {e["game"] for e in load(w) if output in HOLDS[e["scope"]] and e["gate"] != gate}
 
