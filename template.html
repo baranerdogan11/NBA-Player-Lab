@@ -560,7 +560,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <section class="panel"><h2 data-t="Shot charts">Shot charts</h2><div class="courts two" id="gm-shots"></div></section>
     <div id="gm-box"></div>
     <section class="panel" id="gm-lu" hidden><h2 data-t="Lineups">Lineups</h2><div class="fives" id="gm-fives"></div></section>
-    <section class="panel" id="gm-duo" hidden><h2><span data-t="Duos" data-def="duo" tabindex="0">Duos</span></h2><div class="fives" id="gm-duos"></div></section>
+    <details class="panel" id="gm-duo" open hidden><summary><h2 data-t="Duos">Duos</h2></summary><div class="fives" id="gm-duos"></div></details>
     </div>
   </section>
   <section class="pg" id="pg-team" hidden>
@@ -985,8 +985,8 @@ $('#from').addEventListener('change', async e => {
   const tm = x => IDX.teams.findIndex(y => y.code === x.team), x = L.sort((a, b) => tm(a) - tm(b) || a.name.localeCompare(b.name))[0];
   location.hash = `${x.team}/${x.pid}`;
 });
-// each section of the profile opens and closes, and stays as the reader left it
-for (const [id, key] of Object.entries({sc: 'pl-shots', lu: 'pl-lineups', duo: 'pl-duos', 'log-sec': 'pl-log'})) {
+// each section of the profile, and the Game page's Duos, opens and closes, and stays as the reader left it
+for (const [id, key] of Object.entries({sc: 'pl-shots', lu: 'pl-lineups', duo: 'pl-duos', 'log-sec': 'pl-log', 'gm-duo': 'pl-gm-duos'})) {
   const d = $('#' + id);
   try { if (localStorage.getItem(key) === 'closed') d.open = false; } catch (e) {}
   d.addEventListener('toggle', () => { try { localStorage.setItem(key, d.open ? 'open' : 'closed'); } catch (e) {} });
