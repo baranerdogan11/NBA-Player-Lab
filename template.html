@@ -271,6 +271,22 @@ html[data-theme="dark"] .board .score span{color:var(--ink)}
 .board .mid small{display:inline-block;margin-top:14px;padding:4px 9px;background:var(--ink);color:var(--paper);transform:skewX(-6deg);font:900 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase}
 @media (max-width:760px){.board{padding:18px 0;gap:8px}.board .side small,.board .full{display:none}.board .abbr{display:inline}.board .side b{font-size:16px}.board .side .crest{width:52px;height:52px;font-size:12px}.board .score{font-size:56px;gap:16px}}
 /* game flow: the margin after every change of score, the home club's ink above the line and the away club's below */
+/* who played when: a row per player across the game, a bar per stretch on the court in the club's inks, the quarters ruled */
+.rot{margin:14px 0 2px}
+.rot h3{margin:0 0 8px;font:900 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase}
+.rot-r{display:grid;grid-template-columns:minmax(0,150px) 1fr;align-items:center;gap:10px;height:18px}
+.rot-n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:700 11.5px/1 var(--sans);text-transform:uppercase;letter-spacing:.02em}
+.rot-t{position:relative;height:100%;border-bottom:1px solid var(--line)}
+.rot-q{position:absolute;top:0;bottom:0;width:0;border-left:1px dashed color-mix(in srgb,var(--ink) 45%,transparent);pointer-events:none}
+.rot-b{position:absolute;top:3px;bottom:3px;min-width:3px;padding:0;border:0;border-radius:0;background:var(--A);box-shadow:2px 1px 0 var(--B);mix-blend-mode:var(--blend);cursor:pointer}
+.rot-b[aria-pressed="true"]{outline:2px solid var(--ink);outline-offset:1px}
+.rot-b:focus-visible{outline:3px solid var(--A);outline-offset:2px}
+.rot-x{position:relative;height:14px;font:900 9.5px/14px var(--sans);letter-spacing:.1em;color:var(--muted)}
+.rot-x span{position:absolute;transform:translateX(-50%)}
+.rot-tip{min-height:18px;margin-top:6px;font:700 12px/1.4 var(--sans)}
+.rot-tip b{font-weight:900}
+.rot-n .rs{display:none}
+@media (max-width:600px){.rot-r{grid-template-columns:84px 1fr;gap:6px}.rot-n{font-size:10.5px}.rot-n .rf{display:none}.rot-n .rs{display:inline}}
 /* form: the last ten Game Scores as bars printed in the club's inks over the season average, each bar its game */
 .gform{position:relative;margin:2px 0 14px;padding:0 0 4px}
 .fm-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font:900 10.5px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px}
@@ -1212,6 +1228,8 @@ const perName = (i, n) => i < 4 ? `${t('Q')}${i + 1}` : n === 5 ? t('OT') : `${t
 // ---- Game flow (site_data.game_flow): the margin after every change of score on a clock of game time, in tenths of a
 // second; the home club's colour above the line, the away club's below. Tap, drag or the arrow keys read a scoring play
 const PSTART = p => p <= 5 ? 7200 * (p - 1) : 28800 + 3000 * (p - 5);
+// the periods played: a scoreless overtime last in the list is the feed's game-end marker (site_data.played)
+const played = periods => { let n = periods.length; while (n > 4 && !periods[n - 1][0] && !periods[n - 1][1]) n--; return n; };
 const near = (a, b) => [1, 3, 5].reduce((d, i) => d + Math.abs(parseInt(a.slice(i, i + 2), 16) - parseInt(b.slice(i, i + 2), 16)), 0) < 90;
 let FL = null;
 const flowStats = pts => {
@@ -1230,7 +1248,7 @@ function drawFlow(g) {
   const box = $('#gm-flow'), sec = $('#gm-flow-sec');
   sec.hidden = !g.flow || !g.flow.length;
   if (sec.hidden) { FL = null; return; }
-  const n = g.periods.length, end = PSTART(n + 1), pts = [[0, 0, 0], ...g.flow];
+  const n = played(g.periods), end = PSTART(n + 1), pts = [[0, 0, 0], ...g.flow];
   const top = Math.max(5, ...pts.map(p => Math.abs(p[1] - p[2]))), x = ds => 1000 * ds / end, y = m => 80 - 72 * m / top;
   const ch = team(g.home) ? team(g.home).colors[0] : '#555555', ca0 = team(g.away) ? team(g.away).colors : ['#999999', '#999999'];
   const ca = near(ch, ca0[0]) ? ca0[1] : ca0[0];
@@ -1242,7 +1260,7 @@ function drawFlow(g) {
     + `<path d="${ticks}" class="qt" vector-effect="non-scaling-stroke"/><path d="${step}" fill="${ch}" clip-path="url(#fl-up)" data-team="${esc(g.home)}"/><path d="${step}" fill="${ca}" clip-path="url(#fl-dn)" data-team="${esc(g.away)}"/>`
     + `<path d="M0 80H1000" class="zero" vector-effect="non-scaling-stroke"/></svg>`
     + `<span class="fl-t h">${logo(g.home)}${esc(g.home)}</span><span class="fl-t a">${logo(g.away)}${esc(g.away)}</span><i class="fl-cur" hidden></i><div class="fl-tip" hidden aria-live="polite"></div>`;
-  $('#gm-flow-q').innerHTML = g.periods.map((_, i) => `<span style="left:${(x((PSTART(i + 1) + PSTART(i + 2)) / 2) / 10).toFixed(2)}%">${perName(i, n)}</span>`).join('');
+  $('#gm-flow-q').innerHTML = g.periods.slice(0, n).map((_, i) => `<span style="left:${(x((PSTART(i + 1) + PSTART(i + 2)) / 2) / 10).toFixed(2)}%">${perName(i, n)}</span>`).join('');
   const s = flowStats(pts);
   $('#gm-flow-sum').innerHTML = `<div class="tile" data-k="lc"${def('lc')}><b>${s.lc}</b><span>${t('Lead changes')}</span></div><div class="tile" data-k="tied"${def('tied')}><b>${s.tied}</b><span>${t('Times tied')}</span></div>`
     + [[g.away, s.a], [g.home, s.h]].map(([c, v]) => `<div class="tile" data-k="lead" data-team="${esc(c)}" style="${tc(c)}"${def('lead')}><b>${v}</b><span>${t('Biggest lead')} · ${esc(c)}</span></div>`).join('');
@@ -1279,6 +1297,33 @@ $('#gm-flow').addEventListener('keydown', e => {
   if (go == null) return;
   e.preventDefault();
   flowAt(go === -Infinity ? 0 : go === Infinity ? FL.pts.length - 1 : FL.i == null ? (go > 0 ? 0 : FL.pts.length - 1) : FL.i + go);
+});
+
+// ---- Who played when (site_data.rotation): each player's stretches on the court as bars on the game flow's clock, under
+// his club's box score; a bar opens its clock times, its minutes and the club's +/- over it
+const rotAt = (ds, n, start) => {
+  let p = 1;
+  while (p < n && (start ? ds >= PSTART(p + 1) : ds > PSTART(p + 1))) p++;
+  const left = PSTART(p + 1) - ds;
+  return `${perName(p - 1, n)} ${left >= 600 || !left ? clock(Math.ceil(left / 10)) : N((left / 10).toFixed(1))}`;
+};
+let ROT = null;
+const rotation = (g, code) => {
+  const rows = (g.box[code] || []).filter(x => x.sec > 0 && g.rotation[x.pid]);
+  if (!rows.length) return '';
+  const n = played(g.periods), end = PSTART(n + 1), pc = ds => `${(100 * ds / end).toFixed(3)}%`;
+  const q = Array.from({length: n - 1}, (_, i) => `<i class="rot-q" style="left:${pc(PSTART(i + 2))}"></i>`).join('');
+  return `<div class="rot" data-team="${esc(code)}" style="${tc(code)}"><h3${def('rot')}>${t('Who played when')}</h3>${rows.map(x => `<div class="rot-r" data-pid="${esc(x.pid)}"><span class="rot-n"><span class="rf">${esc(x.name)}</span><span class="rs">${esc(x.name.replace(/^(\S)\S*\s+/, '$1. '))}</span></span><div class="rot-t">${q}${g.rotation[x.pid].map(([a, b, m], i) =>
+    `<button type="button" class="rot-b" data-i="${i}" aria-pressed="false" style="left:${pc(a)};width:${pc(b - a)}" aria-label="${esc(x.name)} ${rotAt(a, n, true)} – ${rotAt(b, n, false)}"></button>`).join('')}</div></div>`).join('')}`
+    + `<div class="rot-r"><span></span><div class="rot-x">${Array.from({length: n}, (_, i) => `<span style="left:${pc((PSTART(i + 1) + PSTART(i + 2)) / 2)}">${perName(i, n)}</span>`).join('')}</div></div><div class="rot-tip" aria-live="polite"></div></div>`;
+};
+$('#gm-box').addEventListener('click', e => {
+  const btn = e.target.closest('.rot-b');
+  if (!btn || !ROT) return;
+  const rot = btn.closest('.rot'), pid = btn.closest('.rot-r').dataset.pid, [a, b, m] = ROT.rotation[pid][+btn.dataset.i], n = played(ROT.periods);
+  rot.querySelectorAll('.rot-b[aria-pressed="true"]').forEach(x => x.setAttribute('aria-pressed', 'false'));
+  btn.setAttribute('aria-pressed', 'true');
+  $('.rot-tip', rot).innerHTML = `<b>${esc(BOX[pid].name)}</b> · ${rotAt(a, n, true)} – ${rotAt(b, n, false)} · ${clock(rq(b - a, 10, 0))} ${t('MIN@stat')} · ${N(signed(String(m)))} ${t('+/-@stat')}`;
 });
 
 // each club's box score folds like the game log, the choice kept per side (away, home) across games and visits
@@ -1335,8 +1380,9 @@ async function renderGame(gid, my) {
   const box = code => {
     const rows = g.box[code] || [], s = sum(rows);
     for (const k of STATS) s[k] = rows.reduce((a, x) => a + x[k], 0);
-    return `<details class="panel" data-side="${code === g.home ? 'home' : 'away'}"${boxOpen(code === g.home ? 'home' : 'away') ? ' open' : ''}><summary><h2>${EN(tname(code))}</h2></summary><div class="scroll"><table class="tbl" data-team="${esc(code)}" style="${tc(code)}"><thead><tr>${head.map(h => `<th data-sort="${h}"${defSort(STAT_DEF[h])}><button type="button" class="sort">${t(h + '@stat')}</button></th>`).join('')}</tr></thead><tbody>${rows.map((x, i) => `<tr data-pid="${esc(x.pid)}" data-i="${i}"><td class="l"><a href="#${esc(code)}/${esc(x.pid)}">${x.start ? '<i class="st"></i>' : ''}${face(x.pid, x.name)}${esc(x.name)}</a></td>${x.sec > 0 ? `<td>${clock(x.sec)}</td><td class="k">${x.pts}</td><td>${x.reb}</td><td>${x.oreb}</td><td>${x.dreb}</td><td>${x.ast}</td><td>${x.stl}</td><td>${x.blk}</td><td>${x.tov}</td><td>${x.pf}</td><td>${x.fgm}-${x.fga}</td><td>${x.fg3m}-${x.fg3a}</td><td>${x.ftm}-${x.fta}</td><td>${N(signed(String(x.pm)))}</td>` : `<td class="dim l" colspan="14">${t('Did not play')}</td>`}</tr>`).join('')}<tr class="tot"><td class="l">${t('Totals')}</td><td></td><td class="k" data-k="pts">${s.pts}</td><td>${s.reb}</td><td>${s.oreb}</td><td>${s.dreb}</td><td>${s.ast}</td><td>${s.stl}</td><td>${s.blk}</td><td>${s.tov}</td><td>${s.pf}</td><td>${s.fgm}-${s.fga}</td><td>${s.fg3m}-${s.fg3a}</td><td>${s.ftm}-${s.fta}</td><td></td></tr></tbody></table></div></details>`;
+    return `<details class="panel" data-side="${code === g.home ? 'home' : 'away'}"${boxOpen(code === g.home ? 'home' : 'away') ? ' open' : ''}><summary><h2>${EN(tname(code))}</h2></summary><div class="scroll"><table class="tbl" data-team="${esc(code)}" style="${tc(code)}"><thead><tr>${head.map(h => `<th data-sort="${h}"${defSort(STAT_DEF[h])}><button type="button" class="sort">${t(h + '@stat')}</button></th>`).join('')}</tr></thead><tbody>${rows.map((x, i) => `<tr data-pid="${esc(x.pid)}" data-i="${i}"><td class="l"><a href="#${esc(code)}/${esc(x.pid)}">${x.start ? '<i class="st"></i>' : ''}${face(x.pid, x.name)}${esc(x.name)}</a></td>${x.sec > 0 ? `<td>${clock(x.sec)}</td><td class="k">${x.pts}</td><td>${x.reb}</td><td>${x.oreb}</td><td>${x.dreb}</td><td>${x.ast}</td><td>${x.stl}</td><td>${x.blk}</td><td>${x.tov}</td><td>${x.pf}</td><td>${x.fgm}-${x.fga}</td><td>${x.fg3m}-${x.fg3a}</td><td>${x.ftm}-${x.fta}</td><td>${N(signed(String(x.pm)))}</td>` : `<td class="dim l" colspan="14">${t('Did not play')}</td>`}</tr>`).join('')}<tr class="tot"><td class="l">${t('Totals')}</td><td></td><td class="k" data-k="pts">${s.pts}</td><td>${s.reb}</td><td>${s.oreb}</td><td>${s.dreb}</td><td>${s.ast}</td><td>${s.stl}</td><td>${s.blk}</td><td>${s.tov}</td><td>${s.pf}</td><td>${s.fgm}-${s.fga}</td><td>${s.fg3m}-${s.fg3a}</td><td>${s.ftm}-${s.fta}</td><td></td></tr></tbody></table></div>${g.rotation ? rotation(g, code) : ''}</details>`;
   };
+  ROT = g.rotation ? g : null;
   $('#gm-box').innerHTML = box(g.away) + box(g.home);
   BOX = Object.fromEntries(Object.values(g.box).flat().map(x => [x.pid, x]));
   const files = await Promise.all([g.away, g.home].map(c => get(`shots/${c}.json`).catch(() => null)));
@@ -1902,6 +1948,7 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['pace', 'Pace@stat', 'Pace', 'Possessions per 48 minutes, the club’s and its opponents’ averaged.', '(possessions + opponent possessions) ÷ 2 × 48 ÷ (club minutes ÷ 5)'],
     ['lineup', 'Lineup@stat', 'Lineup', 'Five players who shared the court: their minutes together, the points scored and allowed (for-against) and the +/-.', ''],
     ['with', 'With@stat', 'Teammates', 'The other four in the player’s five-man units with the most minutes together.', ''],
+    ['rot', '', 'Who played when', 'Each player’s stretches on the court through the game, the quarters ruled; a bar gives its start and end on the clock, its minutes and the club’s +/- over it. A player’s stretches add up to his box-score minutes, to the second, and his +/-.', ''],
     ['onoff', '', 'On and off court', 'The club’s ratings with the player on the court, with the player off it, and the difference.', 'On − off'],
     ['rank', '', 'Rank', 'The small number beside a rating is the club’s place among the 30, 1 the best; equal values share a place.', ''],
   ]],

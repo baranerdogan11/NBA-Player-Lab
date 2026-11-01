@@ -10,7 +10,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, ROOT)
 from shots import write_shots  # noqa: E402
-from site_data import RT, STATS, load_teams, period_start, write_lineups, write_ratings, write_site  # noqa: E402
+from site_data import RT, STATS, load_teams, period_start, rotation, write_lineups, write_ratings, write_site  # noqa: E402
 
 SEASON, LABEL, BUILT = "2026-27", "2026-27", "2026-10-26T06:00:00Z"
 FIRST = ["Jalen", "Marcus", "Tyrese", "Luka", "Devin", "Andre", "Cole", "Isaiah", "Malik", "Darius", "Evan", "Kobe"]
@@ -129,7 +129,9 @@ UNITS = [[0, 1, 2, 3, 4], [0, 5, 6, 7, 8], [0, 1, 2, 3, 4], [0, 1, 2, 3, 5]]   #
 
 def stints(games, lines):
     """One stint a quarter: each side's five of UNITS, the quarter's score, and the side's counts spread over the
-    quarters. Sets every box line's plus-minus to the margin while he was on the floor, as the feed's box score does."""
+    quarters. Sets every box line's plus-minus to the margin while he was on the floor, as the feed's box score does,
+    his seconds to his quarters' (so the game's rotation, site_data.rotation, adds up to the box score), and the
+    game's rotation."""
     box = {}
     for x in lines:
         box.setdefault((x["gid"], x["team"]), []).append(x)
@@ -137,8 +139,9 @@ def stints(games, lines):
     for g in games:
         if not g["final"]:
             continue
-        for x in box[(g["gid"], g["home"])] + box[(g["gid"], g["away"])]:
-            x["pm"] = 0
+        for c in (g["home"], g["away"]):
+            for j, x in enumerate(box[(g["gid"], c)]):
+                x["pm"], x["sec"] = 0, 720 * sum(j in u for u in UNITS)
         for q, score in enumerate(g["periods"]):
             for c, o, i in ((g["home"], g["away"], 0), (g["away"], g["home"], 1)):
                 side, opp = box[(g["gid"], c)], box[(g["gid"], o)]
@@ -148,6 +151,8 @@ def stints(games, lines):
                 out.append({"gid": g["gid"], "time": g["time"], "team": c, "players": [side[j]["pid"] for j in UNITS[q]], "sec": 720,
                             "pts": score[i], "opp_pts": score[1 - i], **{k: share(side, k) for k in ("fga", "oreb", "tov", "fta")},
                             **{f"opp_{k}": share(opp, k) for k in ("fga", "oreb", "tov", "fta")}})
+        g["rotation"] = {p: r for c in (g["home"], g["away"])
+                         for p, r in rotation([(u["players"], u["sec"], u["pts"], u["opp_pts"]) for u in out if u["gid"] == g["gid"] and u["team"] == c]).items()}
     return out
 
 
