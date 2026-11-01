@@ -39,6 +39,8 @@ jobs:
       final: ${{ steps.due.outputs.final }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref }}   # the branch as it is now, not the commit the run was queued on
 
       - uses: actions/setup-python@v7
         with:
@@ -84,6 +86,8 @@ jobs:
       sha: ${{ steps.publish.outputs.sha }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref }}   # the branch as it is now, not the commit the run was queued on
 
       - uses: actions/setup-python@v7
         with:
@@ -122,6 +126,10 @@ jobs:
       - name: Shot charts (teams/<season>/shots/ from the warehouse; every player's shots match his box-score FG, or the game is quarantined)
         if: hashFiles('warehouse.py') != ''
         run: python shots.py
+
+      - name: Assist pairs (teams/<season>/assists/ from the warehouse; every passer's pairs match his box-score AST, or the game is left out)
+        if: hashFiles('warehouse.py') != ''
+        run: python assists.py
 
       - name: Build site
         run: python build.py

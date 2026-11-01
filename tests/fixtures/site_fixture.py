@@ -9,6 +9,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, ROOT)
+from assists import write_assists  # noqa: E402
 from shots import write_shots  # noqa: E402
 from site_data import RT, STATS, load_teams, period_start, rotation, write_lineups, write_ratings, write_site  # noqa: E402
 
@@ -124,6 +125,24 @@ def spots(rng, games, lines):
     return out
 
 
+def passes(rng, games, lines):
+    """Every box line's assists as assisted baskets of its team-mates, one per make at most: a passer keeps only the
+    assists his team-mates' makes leave room for, so his AST is what the pairs add up to."""
+    when, out, by = {g["gid"]: g["time"] for g in games}, [], {}
+    for x in lines:
+        by.setdefault((x["gid"], x["team"]), []).append(x)
+    for (gid, team), xs in by.items():
+        open_ = [[x["pid"], 3] for x in xs for _ in range(x["fg3m"])] + [[x["pid"], 2] for x in xs for _ in range(x["fgm"] - x["fg3m"])]
+        rng.shuffle(open_)
+        for x in xs:
+            mine = [b for b in open_ if b[0] != x["pid"]][:x["ast"]]
+            x["ast"] = len(mine)
+            for b in mine:
+                open_.remove(b)
+                out.append({"gid": gid, "time": when[gid], "team": team, "passer": x["pid"], "scorer": b[0], "pts": b[1]})
+    return out
+
+
 UNITS = [[0, 1, 2, 3, 4], [0, 5, 6, 7, 8], [0, 1, 2, 3, 4], [0, 1, 2, 3, 5]]   # the five of each quarter, by place in the box
 
 
@@ -180,8 +199,10 @@ if __name__ == "__main__":
     out = os.path.join(sys.argv[1] if len(sys.argv) > 1 else "_site", "teams", SEASON)
     teams, players, games, lines = make(random.Random(7))
     units = stints(games, lines)
+    assists = passes(random.Random(17), games, lines)
     write_site(out, SEASON, LABEL, BUILT, teams, players, games, lines)
     write_shots(out, teams, spots(random.Random(13), games, lines))
     write_lineups(out, teams, units)
+    write_assists(out, teams, assists)
     write_ratings(out, teams, team_lines(games, lines))
     print(f"fixture league written to {out}")

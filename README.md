@@ -32,6 +32,10 @@ A port of [Euroleague Player Lab](https://github.com/baranerdogan11/Euroleague-P
   the shot charts on the Player and Game pages (a half court in the club's two colours, drawn as SVG by the page), each
   shot tagged with one of five zones, and `shots/league.json`, the league's makes and attempts by zone for the Player
   page's zone table; it stops if a player's shots in a game differ from his box-score FGM-FGA or his threes from his 3P
+- `assists.py`: writes `teams/<season>/assists/<CODE>.json`, the club's assist pairs per final (passer, scorer, assists
+  and the points those baskets made) from the play-by-play's assist credits; a game where a player's credits differ from
+  his box-score AST (a post-game stat correction) is left out of the pairs, and more of them than one per thousand box
+  lines quarantines those games
 - `tests/fixtures/site_fixture.py`: a made-up, self-consistent league the browser tests run against
 - `tests/`: Python self-tests (`tests/run_all.py` runs every `tests/test_*.py`), the Playwright browser tests
   (`tests/e2e/`) and the lint and type-check setup for the page's script (`tests/lint/`)
