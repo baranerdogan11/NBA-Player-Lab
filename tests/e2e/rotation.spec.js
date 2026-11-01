@@ -1,6 +1,7 @@
 // Who played when: under each club's box score, a row per player who played and a bar per stretch on the court. A
 // player's bars add up to his box-score minutes (within the second the box score drops) and his +/-, every bar sits on
-// the game flow's clock, and a bar opens its clock times, minutes and +/-. On a phone the rows fit the screen.
+// the game flow's clock, and a bar opens its clock times, minutes and +/-. The rows fold, and stay folded on the next
+// visit. On a phone the rows fit the screen.
 import {test, expect} from '@playwright/test';
 import {DESKTOP, PHONE, prepare, settled, go, noSidewaysScroll} from './site.js';
 
@@ -43,6 +44,22 @@ test.describe('desktop', () => {
     expect(tip).toContain(`${clock(rq(b - a, 10))} MIN`);
     expect(tip).toContain(`${m > 0 ? '+' : m < 0 ? '−' : ''}${Math.abs(m)} +/-`);
     expect(tip).toContain('Q1 12:00');
+    expect(problems, 'the page reported errors').toEqual([]);
+  });
+
+  test('the rows fold and stay folded on the next visit', async ({page}) => {
+    const problems = await prepare(page);
+    await open(page);
+    expect(await page.locator('#gm-box details.rot[open]').count()).toBe(2);
+    await page.click('#gm-box details.rot >> nth=0 >> summary');
+    await page.waitForFunction(() => localStorage.getItem('pl-rot') === 'closed');
+    expect(await page.locator('#gm-box details.rot .rot-b').first().isVisible()).toBe(false);
+    await page.reload();
+    await settled(page);
+    await page.waitForFunction(() => document.querySelectorAll('#gm-box details.rot').length === 2);
+    expect(await page.locator('#gm-box details.rot[open]').count()).toBe(0);
+    await page.click('#gm-box details.rot >> nth=1 >> summary');
+    await page.waitForFunction(() => localStorage.getItem('pl-rot') === 'open');
     expect(problems, 'the page reported errors').toEqual([]);
   });
 

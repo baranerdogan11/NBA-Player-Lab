@@ -218,16 +218,16 @@ test.describe('game box scores', () => {
     const problems = await prepare(page);
     await page.goto('./?l#game/0022600001');
     await settled(page);
-    const open = () => page.$$eval('#gm-box details', ds => ds.map(d => d.open));
+    const open = () => page.$$eval('#gm-box details[data-side]', ds => ds.map(d => d.open));
     expect(await open()).toEqual([true, true]);
-    await page.click('#gm-box details[data-side="home"] summary');
+    await page.click('#gm-box details[data-side="home"] > summary');
     expect(await open()).toEqual([true, false]);
     expect(await page.locator('#gm-box details[data-side="home"] table').isVisible()).toBe(false);
     await page.waitForFunction(() => localStorage.getItem('pl-box-home') === 'closed');   // the toggle event is queued
     await page.reload();
     await settled(page);
     expect(await open()).toEqual([true, false]);
-    await page.focus('#gm-box details[data-side="home"] summary');
+    await page.focus('#gm-box details[data-side="home"] > summary');
     await page.keyboard.press('Enter');
     expect(await open()).toEqual([true, true]);
     expect(problems, 'the page reported errors').toEqual([]);

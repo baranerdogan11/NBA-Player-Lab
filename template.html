@@ -273,7 +273,12 @@ html[data-theme="dark"] .board .score span{color:var(--ink)}
 /* game flow: the margin after every change of score, the home club's ink above the line and the away club's below */
 /* who played when: a row per player across the game, a bar per stretch on the court in the club's inks, the quarters ruled */
 .rot{margin:14px 0 2px}
-.rot h3{margin:0 0 8px;font:900 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase}
+.rot>summary{display:flex;align-items:center;gap:8px;padding:6px 0 8px;cursor:pointer;list-style:none;-webkit-user-select:none;user-select:none}
+.rot>summary::-webkit-details-marker{display:none}
+.rot>summary::after{content:"";width:7px;height:7px;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:translateY(2px) rotate(-135deg);transition:transform .2s}
+.rot:not([open])>summary::after{transform:translateY(-2px) rotate(45deg)}
+.rot>summary:focus-visible{outline:3px solid var(--A);outline-offset:2px}
+.rot h3{margin:0;font:900 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase}
 .rot-r{display:grid;grid-template-columns:minmax(0,150px) 1fr;align-items:center;gap:10px;height:18px}
 .rot-n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:700 11.5px/1 var(--sans);text-transform:uppercase;letter-spacing:.02em}
 .rot-t{position:relative;height:100%;border-bottom:1px solid var(--line)}
@@ -1313,10 +1318,12 @@ const rotation = (g, code) => {
   if (!rows.length) return '';
   const n = played(g.periods), end = PSTART(n + 1), pc = ds => `${(100 * ds / end).toFixed(3)}%`;
   const q = Array.from({length: n - 1}, (_, i) => `<i class="rot-q" style="left:${pc(PSTART(i + 2))}"></i>`).join('');
-  return `<div class="rot" data-team="${esc(code)}" style="${tc(code)}"><h3${def('rot')}>${t('Who played when')}</h3>${rows.map(x => `<div class="rot-r" data-pid="${esc(x.pid)}"><span class="rot-n"><span class="rf">${esc(x.name)}</span><span class="rs">${esc(x.name.replace(/^(\S)\S*\s+/, '$1. '))}</span></span><div class="rot-t">${q}${g.rotation[x.pid].map(([a, b, m], i) =>
+  return `<details class="rot" data-team="${esc(code)}" style="${tc(code)}"${rotOpen() ? ' open' : ''}><summary><h3>${t('Who played when')}</h3></summary>${rows.map(x => `<div class="rot-r" data-pid="${esc(x.pid)}"><span class="rot-n"><span class="rf">${esc(x.name)}</span><span class="rs">${esc(x.name.replace(/^(\S)\S*\s+/, '$1. '))}</span></span><div class="rot-t">${q}${g.rotation[x.pid].map(([a, b, m], i) =>
     `<button type="button" class="rot-b" data-i="${i}" aria-pressed="false" style="left:${pc(a)};width:${pc(b - a)}" aria-label="${esc(x.name)} ${rotAt(a, n, true)} – ${rotAt(b, n, false)}"></button>`).join('')}</div></div>`).join('')}`
-    + `<div class="rot-r"><span></span><div class="rot-x">${Array.from({length: n}, (_, i) => `<span style="left:${pc((PSTART(i + 1) + PSTART(i + 2)) / 2)}">${perName(i, n)}</span>`).join('')}</div></div><div class="rot-tip" aria-live="polite"></div></div>`;
+    + `<div class="rot-r"><span></span><div class="rot-x">${Array.from({length: n}, (_, i) => `<span style="left:${pc((PSTART(i + 1) + PSTART(i + 2)) / 2)}">${perName(i, n)}</span>`).join('')}</div></div><div class="rot-tip" aria-live="polite"></div></details>`;
 };
+// the rows fold on their own, open unless closed before; the choice is kept for every game
+const rotOpen = () => { try { return localStorage.getItem('pl-rot') !== 'closed'; } catch (e) { return true; } };
 $('#gm-box').addEventListener('click', e => {
   const btn = e.target.closest('.rot-b');
   if (!btn || !ROT) return;
@@ -1331,6 +1338,7 @@ const boxOpen = side => { try { return localStorage.getItem(`pl-box-${side}`) !=
 $('#gm-box').addEventListener('toggle', e => {
   const d = e.target;
   if (d.dataset.side) try { localStorage.setItem(`pl-box-${d.dataset.side}`, d.open ? 'open' : 'closed'); } catch (e) {}
+  if (d.classList.contains('rot')) try { localStorage.setItem('pl-rot', d.open ? 'open' : 'closed'); } catch (e) {}
 }, true);
 // a stat's heading puts that club's players in its order, most first (ties keep the box score's order); the same heading
 // again, or Player, brings the box score's own order back. Who did not play stays below, the totals last
