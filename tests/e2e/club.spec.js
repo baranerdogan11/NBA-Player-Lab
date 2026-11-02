@@ -43,6 +43,7 @@ test('its next five games come from the schedule, with the rest before each, and
     const last = G.slice(0, G.indexOf(g)).filter(x => x.home === CODE || x.away === CODE).pop();
     expect(shown[i].rest, `rest before ${g.gid}`).toBe(String((Date.parse(g.date) - Date.parse(last.date)) / 864e5 - 1));
   }
+  await page.click('#tm-next-sec > summary [data-t="Up next"]');
   await page.click('#tm-next a.card');
   await page.waitForFunction(() => document.body.dataset.page === 'game' && !document.querySelector('#gm-pre').hidden);
   const rest = await page.evaluate(c => document.querySelector(`#pv-form [data-team="${c}"] .rest`).dataset.rest, CODE);
@@ -72,6 +73,7 @@ test('each roster line is the Player page\'s season averages, and opens that pag
   }
   await go(page, `#team/${CODE}`, club, CODE);
   const pid = rows[0].pid;
+  await page.click('#tm-roster-sec > summary');
   await page.click(`#tm-roster tr[data-pid="${pid}"] a`);
   await page.waitForFunction(p => document.body.dataset.page === 'player' && document.querySelector('#player').value === p, pid);
   await page.click('#hero .tag a');
@@ -180,5 +182,56 @@ test('quarter by quarter is the game pages\' score by period, and Standings show
   await page.click('#st-quarters th[data-sort="q3"] button');
   const ranks = await page.$$eval('#st-quarters tbody td[data-k="q3"]', tds => tds.map(td => +td.dataset.r || Infinity));
   expect(ranks).toEqual([...ranks].sort((x, y) => x - y));
+  expect(problems).toEqual([]);
+});
+
+test('every section starts closed, opens and closes, and stays open from club to club', async ({page}) => {
+  const problems = await prepare(page);
+  await page.goto(`./?l#team/${CODE}`);
+  await settled(page);
+  await page.waitForFunction(club, CODE);
+  const open = () => page.evaluate(() => [...document.querySelectorAll('#pg-team details.panel')].map(d => [d.id, d.open]));
+  expect((await open()).length).toBe(6);
+  expect((await open()).filter(([, o]) => o)).toEqual([]);
+  await page.click('#tm-zones-sec > summary');
+  await page.click('#tm-roster-sec > summary');
+  await go(page, '#team/LAL', club, 'LAL');
+  expect((await open()).filter(([, o]) => o).map(([id]) => id)).toEqual(['tm-roster-sec', 'tm-zones-sec']);
+  await go(page, '#standings/league', () => document.body.dataset.page === 'standings');
+  await go(page, `#team/${CODE}`, club, CODE);
+  expect((await open()).filter(([, o]) => o), 'closed again when the page is opened again').toEqual([]);
+  await page.click('#tm-roster-sec > summary');
+  await page.click('#tm-roster-sec > summary');
+  expect(await page.evaluate(() => document.querySelector('#tm-roster-sec').open)).toBe(false);
+  expect(problems).toEqual([]);
+});
+
+test('shot performance prints each zone\'s FG% for the club and its opponents, shaded against the league', async ({page}) => {
+  const problems = await prepare(page);
+  await page.goto(`./?l#team/${CODE}`);
+  await settled(page);
+  await page.waitForFunction(club, CODE);
+  await page.click('#tm-zones-sec > summary');
+  const [lg, G] = await page.evaluate(() => Promise.all([get('shots/league.json'), get('games.json').then(d => d.games)]));
+  const files = await page.evaluate(() => Promise.all(IDX.teams.map(x => get(`shots/${x.code}.json`))));
+  const mine = files.find(f => f.code === CODE), gids = new Set(G.filter(g => g.home === CODE || g.away === CODE).map(g => g.gid));
+  const zones = (rows) => [0, 1, 2, 3, 4].map(z => rows.reduce((a, r) => r[4] === z ? [a[0] + r[3], a[1] + 1] : a, [0, 0]));
+  const own = zones(Object.values(mine.players).flat());
+  const opp = zones(files.filter(f => f.code !== CODE).flatMap(f => Object.values(f.players).flat().filter(r => gids.has(f.games[r[0]]))));
+  expect(lg.teams[CODE].for, 'offense is the club file\'s shots').toEqual(own);
+  expect(lg.teams[CODE].against, 'defense is the opponents\' shots in its games').toEqual(opp);
+  const shown = await page.evaluate(() => Object.fromEntries(['offense', 'defense'].map(s => [s,
+    [...document.querySelectorAll(`#tm-zones [data-side="${s}"] text.zp`)].map(x => [+x.dataset.z, x.lastChild.textContent])])));
+  const half = (m, a) => Math.floor((2000 * m + a) / (2 * a));
+  const p = ([m, a]) => a ? `${(half(m, a) / 10).toFixed(1)}%` : '–';
+  for (const [side, zs] of [['offense', own], ['defense', opp]]) {
+    expect(shown[side].map(([z, v]) => [z, v]), side).toEqual([[0, p(zs[0])], [1, p(zs[1])], [2, p(zs[2])], [3, p(zs[3])], [3, p(zs[3])], [4, p(zs[4])]]);
+    const grades = await page.evaluate(s => Object.fromEntries([...document.querySelectorAll(`#tm-zones [data-side="${s}"] path.zg`)].map(x => [x.dataset.z, +x.dataset.g])), side);
+    for (const [z, [m, a]] of zs.entries()) {
+      const d = (half(m, a) - half(...lg.zones[z])) * (side === 'defense' ? -1 : 1), k = Math.abs(d) < 15 ? 0 : Math.abs(d) < 40 ? 1 : Math.abs(d) < 80 ? 2 : 3;
+      expect(grades[z] || 0, `${side} zone ${z}`).toBe(a < 5 ? 0 : Math.sign(d) * k);
+    }
+  }
+  expect(await page.locator('#tm-zones circle.made, #tm-zones .miss').count(), 'no dots or crosses').toBe(0);
   expect(problems).toEqual([]);
 });

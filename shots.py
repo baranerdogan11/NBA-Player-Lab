@@ -5,7 +5,8 @@ Files under <out>/shots/ (out is teams/<season>/):
                g indexes games, x and y are the spot in tenths of a foot from the rim (the CDN's xLegacy and yLegacy:
                x > 0 is the shooter's right as he faces the basket, y grows away from the baseline; null when the feed has
                no spot, so the chart leaves it out but the zones still count it), made is 1 or 0, zone indexes ZONES.
-  league.json  {"zones": [[fgm, fga], ...]}, every club's attempts by zone, in ZONES order.
+  league.json  {"zones": [[fgm, fga], ...], "teams": {CODE: {"for": [[fgm, fga], ...], "against": [[fgm, fga], ...]}}}: every
+               club's attempts by zone, in ZONES order, then each club's own (its file's) and its opponents' in its games.
 A player traded mid-season has shots in each club's file, under the club he shot for.
 
 from_warehouse() reads warehouse/<season>/shots.parquet (warehouse.py) and checks every player's attempts and makes per
@@ -43,6 +44,12 @@ def write_shots(out, teams, shots):
         by_team[s["team"]].append(s)
     os.makedirs(os.path.join(out, "shots"), exist_ok=True)
     league = [[0, 0] for _ in ZONES]
+    side = {code: {"for": [[0, 0] for _ in ZONES], "against": [[0, 0] for _ in ZONES]} for code in by_team}
+    clubs = {}
+    for s in shots:
+        clubs.setdefault(s["gid"], set()).add(s["team"])
+    if any(len(c) != 2 for c in clubs.values()):
+        raise ValueError(f"games without two clubs' shots: {sorted(g for g, c in clubs.items() if len(c) != 2)[:5]}")
     for code, rows in by_team.items():
         rows.sort(key=lambda s: (s["time"], s["gid"]))
         games = list(dict.fromkeys(s["gid"] for s in rows))
@@ -53,11 +60,16 @@ def write_shots(out, teams, shots):
             z, made = zone(s["pts"], s.get("area"), x, y), 1 if s["made"] else 0
             league[z][0] += made
             league[z][1] += 1
+            side[code]["for"][z][0] += made
+            side[code]["for"][z][1] += 1
+            for opp in clubs[s["gid"]] - {code}:
+                side[opp]["against"][z][0] += made
+                side[opp]["against"][z][1] += 1
             players.setdefault(str(s["pid"]), []).append([g[s["gid"]], x, y, made, z])
         with open(os.path.join(out, "shots", f"{code}.json"), "w") as f:
             json.dump({"code": code, "games": games, "players": players}, f, separators=(",", ":"))
     with open(os.path.join(out, "shots", "league.json"), "w") as f:
-        json.dump({"zones": league}, f, separators=(",", ":"))
+        json.dump({"zones": league, "teams": side}, f, separators=(",", ":"))
 
 
 class Mismatch(ValueError):
