@@ -10,7 +10,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, ROOT)
 from assists import write_assists  # noqa: E402
-from shots import write_shots  # noqa: E402
+from shots import write_shots, zone  # noqa: E402
 from site_data import RT, STATS, load_teams, period_start, rotation, write_league_lineups, write_lineups, write_ratings, write_site  # noqa: E402
 
 SEASON, LABEL, BUILT = "2026-27", "2026-27", "2026-10-26T06:00:00Z"
@@ -143,6 +143,17 @@ def passes(rng, games, lines):
     return out
 
 
+def makes(shots, baskets):
+    """Every made shot of spots() as a basket for write_assists(): zone from its spot, and the passer of the first unused
+    assisted basket of passes() with the same scorer, game and value (none when unassisted)."""
+    left = {}
+    for b in baskets:
+        left.setdefault((b["gid"], b["scorer"], b["pts"]), []).append(b["passer"])
+    return [{"gid": s["gid"], "time": s["time"], "team": s["team"], "scorer": s["pid"], "pts": s["pts"],
+             "zone": zone(s["pts"], None, s["x"], s["y"]), "passer": (left.get((s["gid"], s["pid"], s["pts"])) or [None]).pop(0)}
+            for s in shots if s["made"]]
+
+
 UNITS = [[0, 1, 2, 3, 4], [0, 5, 6, 7, 8], [0, 1, 2, 3, 4], [0, 1, 2, 3, 5]]   # the five of each quarter, by place in the box
 
 
@@ -201,9 +212,10 @@ if __name__ == "__main__":
     units = stints(games, lines)
     assists = passes(random.Random(17), games, lines)
     write_site(out, SEASON, LABEL, BUILT, teams, players, games, lines)
-    write_shots(out, teams, spots(random.Random(13), games, lines))
+    shots = spots(random.Random(13), games, lines)
+    write_shots(out, teams, shots)
     write_lineups(out, teams, units)
     write_league_lineups(out, teams)
-    write_assists(out, teams, assists)
+    write_assists(out, teams, makes(shots, assists))
     write_ratings(out, teams, team_lines(games, lines))
     print(f"fixture league written to {out}")
