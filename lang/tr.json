@@ -474,5 +474,15 @@
  "Assists to": "Asist yaptığı",
  "A passer and the team-mate whose baskets he assisted: the assists between them and the points those baskets made, from the play-by-play. A passer’s duos in a game add up to his AST; a game whose assists the league corrected after the final is left out.": "Bir pasör ve sayılarına asist yaptığı takım arkadaşı: aralarındaki asistler ve bu basketlerden gelen sayılar, oyun akışından. Bir pasörün maçtaki ikilileri asist sayısını verir; ligin maçtan sonra asistlerini düzelttiği maç dışarıda bırakılır.",
  "The team-mates who assisted the player’s baskets most this season, and the points those baskets made.": "Bu sezon oyuncunun basketlerine en çok asist yapan takım arkadaşları ve bu basketlerden gelen sayılar.",
- "The team-mates whose baskets the player assisted most this season, and the points those baskets made.": "Bu sezon oyuncunun en çok asist yaptığı takım arkadaşları ve bu basketlerden gelen sayılar."
+ "The team-mates whose baskets the player assisted most this season, and the points those baskets made.": "Bu sezon oyuncunun en çok asist yaptığı takım arkadaşları ve bu basketlerden gelen sayılar.",
+ "Unassisted makes": "Asistsiz isabetler",
+ "AST’D%@stat": "ASİSTLİ%",
+ "Unassisted %": "Asistsiz %",
+ "Assisted share": "Asistli pay",
+ "The share of the player’s makes in the zone that a team-mate is credited with an assist on.": "Oyuncunun o bölgedeki isabetlerinden bir takım arkadaşına asist yazılanların payı.",
+ "Assisted makes ÷ FGM": "Asistli isabetler ÷ isabetli FG",
+ "Makes with no assist credited: off the dribble, in the post, and putbacks too.": "Asist yazılmayan isabetler: top sürerek, postta ve hücum ribaundundan dönüşler de.",
+ "FGM − assisted makes": "İsabetli FG − asistli isabetler",
+ "Unassisted board": "Asistsiz listesi",
+ "Also 300 made field goals over 82 games, in proportion to the club’s games so far, counted where the assist credits match the box score.": "Ayrıca 82 maçta 300 isabetli saha içi şut, takımın şimdiye kadarki maçlarına oranlanarak; asistlerin maç istatistiğiyle uyuştuğu maçlarda sayılır."
 }
