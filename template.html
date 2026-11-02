@@ -172,6 +172,7 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 .zones i{display:inline-block;width:10px;height:10px;margin-right:8px;border:1.5px solid var(--ink);vertical-align:-1px}
 .zones i.hi{background:#ff4fa5}
 .zones i.lo{background:#0078b4}
+.unast{max-width:560px;margin:14px auto -6px}
 .court-h{display:flex;align-items:center;justify-content:center;font:900 13px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px}
 .arr{flex:none;display:grid;place-items:center;width:44px;height:44px;border:2px solid var(--ink);background:var(--paper);box-shadow:4px 4px 0 var(--ink);color:var(--ink);transition:transform .1s}
 .arr svg{width:22px;height:22px}
@@ -556,7 +557,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <a class="lgb" id="lg-badge" href="#league" hidden></a>
     <div class="pick"><select id="team" data-kind="team" aria-label="Team" data-ta="Team"></select><select id="from" data-kind="country" aria-label="From" data-ta="From"></select><select id="player" data-kind="player" aria-label="Player" data-ta="Player"></select><a class="arr" id="prev" aria-label="Previous player" data-ta="Previous player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="arr" id="next" aria-label="Next player" data-ta="Next player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 5.5 6.5 6.5-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
     <div class="tiles" id="tiles"></div>
-    <details class="panel" id="sc" open><summary><h2 data-t="Shot chart">Shot chart</h2></summary><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div><div class="scroll zones" id="sc-zones"></div></details>
+    <details class="panel" id="sc" open><summary><h2 data-t="Shot chart">Shot chart</h2></summary><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div><div class="fm-h unast" id="sc-unast" hidden></div><div class="scroll zones" id="sc-zones"></div></details>
     <details class="panel" id="lu" open hidden><summary><h2 data-t="Lineups">Lineups</h2></summary><div class="scroll"><table class="tbl" id="onoff"></table></div><div class="scroll"><table class="tbl" id="fives"></table></div></details>
     <details class="panel" id="duo" open hidden><summary><h2 data-t="Duos">Duos</h2></summary><div class="fives" id="duo-cols"></div></details>
     <details class="panel" id="log-sec" open><summary><h2 data-t="Game log">Game log</h2></summary><div class="gform" id="form" hidden></div><div class="scroll"><table class="tbl" id="log"></table></div></details>
@@ -816,16 +817,22 @@ function court(code, shots, heat = []) {
 }
 // the Player page's chart: his season, or one game picked from his log, on the court of the club he shot for
 // with his zones against the league's below it (the season's league totals, for a game too)
-let SC = {pid: '', code: '', shots: [], club: {}, league: null};
+// and, from the assist credits (assists.py: made rows [gid, zone, assisted, makes]), the share of his makes a team-mate set up
+let SC = {pid: '', code: '', shots: [], club: {}, league: null, made: null};
+const zoneAst = made => ZN.map((_, z) => made.reduce((a, r) => r[1] === z ? [a[0] + r[2], a[1] + r[3]] : a, [0, 0]));
 const scPick = () => { const g = $('#sc-game').value, shots = g ? SC.shots.filter(s => s[0] === g) : SC.shots, lg = SC.league && SC.shots.every(s => s[4] != null) ? SC.league : null;
-  const zf = lg ? zoneFg(shots) : null; return {code: g ? SC.club[g] : SC.code, shots, lg, zf, heat: lg ? zoneHeat(zf, lg) : []}; };
+  const zf = lg ? zoneFg(shots) : null, za = lg && SC.made ? zoneAst(g ? SC.made.filter(r => r[0] === g) : SC.made) : null;
+  return {code: g ? SC.club[g] : SC.code, shots, lg, zf, za, heat: lg ? zoneHeat(zf, lg) : []}; };
 const shotsSvg = () => { const k = scPick(); return court(k.code, k.shots, k.heat); };
 const drawShots = () => {
   const k = scPick();
   $('#sc-court').innerHTML = court(k.code, k.shots, k.heat);
+  const [am, fm] = k.za ? k.za.reduce((a, [x, y]) => [a[0] + x, a[1] + y], [0, 0]) : [0, 0];
+  $('#sc-unast').hidden = !fm;
+  $('#sc-unast').innerHTML = fm ? `<span${def('unast')}>${t('Unassisted makes')}</span><span><b>${fm - am}/${fm}</b> · <b>${pct(fm - am, fm)}%</b></span>` : '';
   $('#sc-zones').hidden = !k.lg;
-  $('#sc-zones').innerHTML = k.lg ? `<table class="tbl" style="${tc(k.code)}"><thead><tr><th class="l"${def('zones heat')}>${t('Zone')}</th><th${def('fg')}>${t('FG@stat')}</th><th${def('fgp')}>${t('FG%@stat')}</th><th${def('league')}>${t('League')}</th></tr></thead><tbody>${k.zf.map(([m, n], z) =>
-    `<tr data-z="${z}"><td class="l"><i class="${k.heat[z] || ''}"></i>${t(ZN[z])}</td><td>${m}-${n}</td><td class="k">${n ? pct(m, n) : '–'}</td><td>${pct(...k.lg[z])}</td></tr>`).join('')}</tbody></table>` : '';
+  $('#sc-zones').innerHTML = k.lg ? `<table class="tbl" style="${tc(k.code)}"><thead><tr><th class="l"${def('zones heat')}>${t('Zone')}</th><th${def('fg')}>${t('FG@stat')}</th><th${def('fgp')}>${t('FG%@stat')}</th><th${def('league')}>${t('League')}</th>${k.za ? `<th${def('astd')}>${t('AST’D%@stat')}</th>` : ''}</tr></thead><tbody>${k.zf.map(([m, n], z) =>
+    `<tr data-z="${z}"><td class="l"><i class="${k.heat[z] || ''}"></i>${t(ZN[z])}</td><td>${m}-${n}</td><td class="k">${n ? pct(m, n) : '–'}</td><td>${pct(...k.lg[z])}</td>${k.za ? `<td class="astd">${k.za[z][1] ? pct(...k.za[z]) : '–'}</td>` : ''}</tr>`).join('')}</tbody></table>` : '';
 };
 $('#sc-game').addEventListener('change', () => { drawShots(); prime('player'); });
 
@@ -978,9 +985,11 @@ async function renderPlayer(code, pid, my, gid) {
   }).join('') : `<tr><td class="empty l" colspan="${head.length}">${t('No games played yet.')}</td></tr>`}</tbody>`;
   const played = log.filter(x => x.sec > 0), clubs = [...new Set([code, ...played.map(x => x.team)])];
   drawForm(played, code);
-  const [files, league] = await Promise.all([Promise.all(clubs.map(c => get(`shots/${c}.json`).catch(() => null))), get('shots/league.json').then(d => d.zones).catch(() => null), drawLineups(p, code, clubs, my), drawDuos(p, clubs, my)]);
+  const [files, league, asts] = await Promise.all([Promise.all(clubs.map(c => get(`shots/${c}.json`).catch(() => null))), get('shots/league.json').then(d => d.zones).catch(() => null),
+    Promise.all(clubs.map(c => get(`assists/${c}.json`).catch(() => null))), drawLineups(p, code, clubs, my), drawDuos(p, clubs, my)]);
   if (stale(my)) return;
-  SC = {pid: p.pid, code, shots: files.flatMap(f => f && f.players[p.pid] ? f.players[p.pid].map(s => [f.games[s[0]], s[1], s[2], s[3], s[4]]) : []), club: Object.fromEntries(played.map(x => [x.gid, x.team])), league};
+  const made = asts.every(f => f && f.made) ? asts.flatMap(f => f.made.filter(r => r[1] === p.pid).map(r => [f.games[r[0]], r[2], r[3], r[4]])) : null;
+  SC = {pid: p.pid, code, shots: files.flatMap(f => f && f.players[p.pid] ? f.players[p.pid].map(s => [f.games[s[0]], s[1], s[2], s[3], s[4]]) : []), club: Object.fromEntries(played.map(x => [x.gid, x.team])), league, made};
   const at = played.some(x => x.gid === gid) ? gid : '';
   $('#sc-game').innerHTML = `<option value="" data-c="${esc(code)}"${at ? '' : ' selected'}>${t('Season')}</option>${played.map(x => `<option value="${esc(x.gid)}" data-c="${esc(x.opp)}"${x.gid === at ? ' selected' : ''}>${fmtDate(x.date)} ${x.home ? t('vs') : '@'} ${esc(x.opp)}</option>`).join('')}`;
   $('#sc').hidden = false;
@@ -1664,6 +1673,7 @@ const LEAD = {
   ft: ['FT%', s => s.ftm / s.fta, s => pct(s.ftm, s.fta), (s, tg) => 82 * s.ftm >= 125 * tg, s => `${s.ftm}-${s.fta}`],
   ts: ['TS%', s => s.pts / (s.fga + 0.44 * s.fta), s => ts(s.pts, s.fga, s.fta), (s, tg) => 82 * s.fgm >= 300 * tg, s => String(s.pts)],
   usg: ['USG%', s => Number(usg(s)), s => N(usg(s)), busy],
+  uast: ['Unassisted %', s => s.uam / s.am, s => pct(s.uam, s.am), (s, tg) => 82 * s.am >= 300 * tg],
   rapm: ['RAPM', ...rapm('rapm')], orapm: ['O-RAPM', ...rapm('orapm')], drapm: ['D-RAPM', ...rapm('drapm')],
 };
 // the top 25 who qualify for a board, each with the shown value and a rank that ties on it
@@ -1698,6 +1708,12 @@ async function renderLeaders(stat, my, rookies, size) {
   if (stat === 'form') return drawTrend(L);
   if (stat === 'lineups') return drawUnits(L, await get('lineups/league.json').catch(() => null), size, my);
   if (stat === 'highs') return drawHighs(await get('highs.json').catch(() => ({stats: {}})), my);
+  // the unassisted board counts makes from the assist credits (assists/league.json: pid -> [assisted, makes])
+  if (stat === 'uast') {
+    const A = await get('assists/league.json').then(d => d.players).catch(() => ({}));
+    if (stale(my)) return;
+    L = L.map(p => { const [a, m] = A[p.pid] || [0, 0]; return {...p, am: m, uam: m - a}; });
+  }
   const extra = LEAD[stat][4], rows = board(L, stat);
   $('#ld').innerHTML = `<thead><tr><th${def('place')}>#</th><th class="l">${t('Player')}</th><th class="l">${t('Team')}</th><th${def('gp floor-pg')}>${t('GP@stat')}</th>${extra ? `<th${def(stat === 'ts' ? 'pts' : 'ma')}>${t(stat === 'ts' ? 'PTS@stat' : 'M-A@stat')}</th>` : ''}<th${def(LEAD_DEF[stat])}>${t(LEAD[stat][0])}</th></tr></thead><tbody>${rows.length ? rows.map(({p, v, rank}) =>
     `<tr data-pid="${esc(p.pid)}"><td>${rank}</td><td class="l"><a href="#${esc(p.team)}/${esc(p.pid)}">${esc(p.name)}</a></td><td class="l">${logo(p.team)}${esc(p.team)}</td><td>${p.gp}</td>${extra ? `<td>${extra(p)}</td>` : ''}<td class="k">${v}</td></tr>`
@@ -2072,6 +2088,8 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['zones', '', 'Zones', 'Each attempt falls in one of five zones: restricted area (within 4 feet of the rim), paint, mid-range, corner three and above-the-break three. The two three-point zones add up to the box score’s threes.', ''],
     ['heat', '', 'Hot and cold zones', 'From five attempts in a zone, it prints pink when the player’s FG% there beats the league’s and blue when it trails.', ''],
     ['league', '', 'League', 'The whole league’s FG% in the zone over the season.', ''],
+    ['astd', 'AST’D%@stat', 'Assisted share', 'The share of the player’s makes in the zone that a team-mate is credited with an assist on.', 'Assisted makes ÷ FGM'],
+    ['unast', '', 'Unassisted makes', 'Makes with no assist credited: off the dribble, in the post, and putbacks too.', 'FGM − assisted makes'],
   ]],
   ['Form and trends', [
     ['form', '', 'Form', 'The last ten games played as Game Score bars, oldest first, over a dashed line at the season average; a filled bar is at or above it.', ''],
@@ -2093,6 +2111,7 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['floor-fg3', '', '3P% board', 'Also 82 made threes over 82 games, in proportion to the club’s games so far.', ''],
     ['floor-ft', '', 'FT% board', 'Also 125 made free throws over 82 games, in proportion to the club’s games so far.', ''],
     ['floor-busy', '', 'Usage and RAPM boards', 'Also 15 minutes a game.', ''],
+    ['floor-unast', '', 'Unassisted board', 'Also 300 made field goals over 82 games, in proportion to the club’s games so far, counted where the assist credits match the box score.', ''],
     ['floor-trend', '', 'Trending board', 'Ten games played, 70% of the club’s games and 15 minutes a game, over the season and over the last five.', ''],
     ['floor-units', '', 'Lineups board', 'The ten best units by net rating, equal ratings sharing a place. A five needs 6 minutes together for every game the clubs have played (the middle club’s count), up to 100; a pair 20, up to 400.', ''],
     ['rookies', '', 'Rookies', 'The Rookies switch keeps every board to players in their first NBA season; the floors stay the same.', ''],
@@ -2112,7 +2131,7 @@ const defName = r => { const ab = r[1] ? t(r[1]) : '', nm = t(r[2]); return ab &
 const defBody = r => `<span>${esc(t(r[3]))}</span>${r[4] ? `<code>${esc(t(r[4]))}</code>` : ''}`;
 // the Leaders boards: each one's stat and its floor
 const LEAD_DEF = {pts: 'pts floor-pg', reb: 'reb floor-pg', ast: 'ast floor-pg', stl: 'stl floor-pg', blk: 'blk floor-pg', fg3m: 'fg3 floor-pg', min: 'min floor-pg',
-  fg: 'fgp floor-pg floor-fg', fg3: 'fg3p floor-pg floor-fg3', ft: 'ftp floor-pg floor-ft', ts: 'ts floor-pg floor-fg', usg: 'usg floor-pg floor-busy',
+  fg: 'fgp floor-pg floor-fg', fg3: 'fg3p floor-pg floor-fg3', ft: 'ftp floor-pg floor-ft', ts: 'ts floor-pg floor-fg', usg: 'usg floor-pg floor-busy', uast: 'unast floor-pg floor-unast',
   rapm: 'rapm floor-pg floor-busy', orapm: 'orapm floor-pg floor-busy', drapm: 'drapm floor-pg floor-busy', form: 'trend floor-trend', lineups: 'lineup pair floor-units', highs: 'highs'};
 // a stat label (as tiles and table headings name it) and its entry
 const STAT_DEF = {PTS: 'pts', REB: 'reb', OREB: 'oreb', DREB: 'dreb', AST: 'ast', STL: 'stl', BLK: 'blk', TOV: 'tov', PF: 'pf', FG: 'fg', '3P': 'fg3', FT: 'ft',
