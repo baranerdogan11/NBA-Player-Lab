@@ -36,7 +36,10 @@ A port of [Euroleague Player Lab](https://github.com/baranerdogan11/Euroleague-P
   and the points those baskets made) from the play-by-play's assist credits; a game where a player's credits differ from
   his box-score AST (a post-game stat correction) is left out of the pairs, and more of them than one per thousand box
   lines quarantines those games. The Game page lists each club's top five pairs (Duos); the Player page the three
-  team-mates who assisted him most this season and the three he assisted most
+  team-mates who assisted him most this season and the three he assisted most. The same files carry every player's
+  made field goals per game and shot zone with how many were assisted (unassisted makes include putbacks), and
+  `assists/league.json` the league's counts by zone and by player; each player's makes in a game must equal his
+  box-score FGM and his three-point zones his 3PM, or the game is left out
 - `tests/fixtures/site_fixture.py`: a made-up, self-consistent league the browser tests run against
 - `tests/`: Python self-tests (`tests/run_all.py` runs every `tests/test_*.py`), the Playwright browser tests
   (`tests/e2e/`) and the lint and type-check setup for the page's script (`tests/lint/`)

@@ -127,7 +127,7 @@ jobs:
         if: hashFiles('warehouse.py') != ''
         run: python shots.py
 
-      - name: Assist pairs (teams/<season>/assists/ from the warehouse; every passer's pairs match his box-score AST, or the game is left out)
+      - name: Assist pairs and assisted makes (teams/<season>/assists/ from the warehouse; every passer's pairs match his box-score AST and every player's makes his FGM, or the game is left out)
         if: hashFiles('warehouse.py') != ''
         run: python assists.py
 
