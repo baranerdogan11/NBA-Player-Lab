@@ -474,5 +474,14 @@
  "Assists to": "Asist yaptığı",
  "A passer and the team-mate whose baskets he assisted: the assists between them and the points those baskets made, from the play-by-play. A passer’s duos in a game add up to his AST; a game whose assists the league corrected after the final is left out.": "Bir pasör ve sayılarına asist yaptığı takım arkadaşı: aralarındaki asistler ve bu basketlerden gelen sayılar, oyun akışından. Bir pasörün maçtaki ikilileri asist sayısını verir; ligin maçtan sonra asistlerini düzelttiği maç dışarıda bırakılır.",
  "The team-mates who assisted the player’s baskets most this season, and the points those baskets made.": "Bu sezon oyuncunun basketlerine en çok asist yapan takım arkadaşları ve bu basketlerden gelen sayılar.",
- "The team-mates whose baskets the player assisted most this season, and the points those baskets made.": "Bu sezon oyuncunun en çok asist yaptığı takım arkadaşları ve bu basketlerden gelen sayılar."
+ "The team-mates whose baskets the player assisted most this season, and the points those baskets made.": "Bu sezon oyuncunun en çok asist yaptığı takım arkadaşları ve bu basketlerden gelen sayılar.",
+ "Lineups@board": "Kadrolar",
+ "Fives": "Beşliler",
+ "Pairs": "İkililer",
+ "Pair@stat": "İKİLİ",
+ "Pair": "İkili",
+ "Two teammates on the court together, over every five they shared.": "Sahada birlikte olan iki takım arkadaşı; paylaştıkları tüm beşliler üzerinden.",
+ "Lineups board": "Kadrolar listesi",
+ "The ten best units by net rating, equal ratings sharing a place. A five needs 6 minutes together for every game the clubs have played (the middle club’s count), up to 100; a pair 20, up to 400.": "Net reytinge göre en iyi on kadro; eşit reytingler aynı sırayı paylaşır. Bir beşli, takımların oynadığı her maç için (ortadaki takımın sayısı) birlikte 6 dakika ister, en fazla 100; bir ikili 20, en fazla 400.",
+ "No lineup qualifies yet.": "Henüz barajı geçen kadro yok."
 }
