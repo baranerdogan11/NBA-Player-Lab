@@ -218,6 +218,16 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 .teams a:hover img,.teams a[aria-current="true"] img{filter:none;opacity:1}
 .teams a[aria-current="true"]{border-color:var(--ink);background:var(--paper-dark);box-shadow:3px 3px 0 var(--B)}
 @media (max-width:760px){.teams{display:none}}
+/* the club page prints the logos large: the strip in two rows, the crest filling the poster's disc */
+#tm-teams{grid-template-columns:repeat(15,minmax(0,1fr));gap:6px 4px}
+#tm-teams a{aspect-ratio:auto;height:54px;padding:4px}
+#tm-hero{background:radial-gradient(circle at 126px 50%,var(--A) 0 124px,transparent 125px),repeating-linear-gradient(45deg,transparent 0 6px,rgba(26,26,26,.16) 6px 7px),var(--B)}
+#tm-hero .badge .crest{width:176px;height:176px;font-size:40px}
+#tm-hero .tag .mark{width:34px;height:34px;padding:3px}
+#tm-hero .tag .mark img{inset:3px;width:28px;height:28px}
+#pg-team .pick .chip{width:30px;height:30px}
+@media (max-width:760px){#tm-hero{background:radial-gradient(circle at 101px 91px,var(--A) 0 92px,transparent 93px),repeating-linear-gradient(45deg,transparent 0 6px,rgba(26,26,26,.16) 6px 7px),var(--B)}
+  #tm-hero .badge .crest{width:128px;height:128px;font-size:30px}}
 
 /* the poster: the club's second ink in halftone stripes with a disc of the first, the player's headshot printed over it,
    his name on a label block of the first ink, his number huge and misregistered */
