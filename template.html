@@ -223,6 +223,9 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 #tm-teams a{aspect-ratio:auto;height:54px;padding:4px}
 #tm-hero{background:radial-gradient(circle at 126px 50%,var(--A) 0 124px,transparent 125px),repeating-linear-gradient(45deg,transparent 0 6px,rgba(26,26,26,.16) 6px 7px),var(--B)}
 #tm-hero .badge .crest{width:176px;height:176px;font-size:40px}
+/* a black first ink (Nets, Spurs) would swallow their black logos, so the crest sits on a paper disc, as in the dark theme */
+#tm-hero .badge.dk .crest.on{border-radius:50%;background:#f3efe4}
+#tm-hero .badge.dk .crest.on img{inset:12%;width:76%;height:76%;mix-blend-mode:normal}
 #tm-hero .tag .mark{width:34px;height:34px;padding:3px}
 #tm-hero .tag .mark img{inset:3px;width:28px;height:28px}
 #pg-team .pick .chip{width:30px;height:30px}
@@ -1277,7 +1280,7 @@ async function renderTeam(code, my) {
   const T = team(code), r = records(G)[code], gp = r.w + r.l, d = signed(rdiv(r.pf - r.pa, gp));
   document.body.setAttribute('style', colours(code));
   $('#tm-hero').setAttribute('style', colours(code));
-  $('#tm-hero').innerHTML = `<div class="badge">${logo(code, 'crest')}</div><div class="who"><div class="tag">${logo(code, 'mark')}<span>${EN(T.city)} · ${t(T.conf === 'E' ? 'Eastern Conference' : 'Western Conference')}</span></div><h1>${EN(T.name)}</h1><div class="facts"><span${def('home')}>${t('Home')} <b>${r.hw}-${r.hl}</b></span><span${def('away')}>${t('Away')} <b>${r.aw}-${r.al}</b></span><span${def('l10')}>${t('L10@stat')} <b>${l10(r.seq)}</b>${dots(r.seq)}</span><span${def('strk')}>${t('STRK@stat')} <b>${streak(r.seq)}</b></span></div></div>`;
+  $('#tm-hero').innerHTML = `<div class="badge${lum(T.colors[0]) < 0.03 ? ' dk' : ''}">${logo(code, 'crest')}</div><div class="who"><div class="tag">${logo(code, 'mark')}<span>${EN(T.city)} · ${t(T.conf === 'E' ? 'Eastern Conference' : 'Western Conference')}</span></div><h1>${EN(T.name)}</h1><div class="facts"><span${def('home')}>${t('Home')} <b>${r.hw}-${r.hl}</b></span><span${def('away')}>${t('Away')} <b>${r.aw}-${r.al}</b></span><span${def('l10')}>${t('L10@stat')} <b>${l10(r.seq)}</b>${dots(r.seq)}</span><span${def('strk')}>${t('STRK@stat')} <b>${streak(r.seq)}</b></span></div></div>`;
   const tiles = [['W', String(r.w)], ['L', String(r.l)], ['PCT', winPct(r.w, gp)], ['PPG', avg(r.pf, gp)], ['OPP PPG', avg(r.pa, gp)], ['DIFF', N(d)]];
   $('#tm-tiles').innerHTML = tiles.map(([k, v], i) => `<div class="tile${i === 0 ? ' lead' : ''}" data-k="${k}"${def(STAT_DEF[k])}><b>${v}</b><span>${t(k + '@stat')}</span></div>`).join('');
   const next = G.filter(g => g.hs == null && (g.home === code || g.away === code)).slice(0, 5);
