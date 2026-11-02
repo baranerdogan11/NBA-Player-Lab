@@ -173,6 +173,16 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 .zones i.hi{background:#ff4fa5}
 .zones i.lo{background:#0078b4}
 .unast{max-width:560px;margin:14px auto -6px}
+.panel>summary .more{margin-right:4px}
+.panel>summary:has(.more)::after{margin-left:14px}
+.zcourts{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:640px){.zcourts{grid-template-columns:1fr}}
+.zkey{grid-column:1/-1;flex-wrap:wrap;display:flex;align-items:center;justify-content:center;gap:4px;font:700 11px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase}
+.zkey i{width:18px;height:12px;border:1.5px solid var(--ink)}
+.zkey span:first-child{margin-right:6px}
+.zkey span:last-child{margin-left:6px}
+.zc text{font-family:var(--sans);font-weight:900}
+.zc .zn{font-weight:700}
 .court-h{display:flex;align-items:center;justify-content:center;font:900 13px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px}
 .arr{flex:none;display:grid;place-items:center;width:44px;height:44px;border:2px solid var(--ink);background:var(--paper);box-shadow:4px 4px 0 var(--ink);color:var(--ink);transition:transform .1s}
 .arr svg{width:22px;height:22px}
@@ -382,7 +392,7 @@ html[data-theme="dark"] .intro{--A:#0078b4}
 .intro .badge i{width:80%;height:80%;border-radius:50%;background:var(--fluoro-pink);mix-blend-mode:multiply;box-shadow:10px 8px 0 var(--riso-blue);background-image:linear-gradient(90deg,transparent 48.5%,rgba(26,26,26,.6) 48.5% 51.5%,transparent 51.5%),radial-gradient(circle at 50% -40%,transparent 62%,rgba(26,26,26,.6) 62% 64.5%,transparent 64.5%),radial-gradient(circle at 50% 140%,transparent 62%,rgba(26,26,26,.6) 62% 64.5%,transparent 64.5%)}
 @media (max-width:760px){.intro .badge{width:110px;height:110px}}
 .sec-h.on-floor{padding:30px 0 10px;border-bottom:4px solid var(--ink)}
-.sec-h .more,.panel>h2 .more{margin-left:auto;font:italic 400 16px/1 var(--serif);text-transform:none;letter-spacing:0;text-decoration:underline;text-underline-offset:3px}
+.sec-h .more,.panel>h2 .more,.panel>summary .more{margin-left:auto;font:italic 400 16px/1 var(--serif);text-transform:none;letter-spacing:0;text-decoration:underline;text-underline-offset:3px}
 .trio{display:grid;gap:12px 32px;grid-template-columns:repeat(3,minmax(0,1fr))}
 .trio>.panel{margin-top:18px}
 @media (max-width:900px){.trio{grid-template-columns:minmax(0,1fr)}}
@@ -597,11 +607,12 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <div class="hero" id="tm-hero"></div>
     <div class="pick"><select id="tm-pick" data-kind="team" aria-label="Team" data-ta="Team"></select></div>
     <div class="tiles" id="tm-tiles"></div>
-    <section class="panel"><h2><span data-t="Up next">Up next</span><a class="more" id="tm-cal" data-t="Add to calendar">Add to calendar</a></h2><div class="cards" id="tm-next"></div></section>
-    <section class="panel"><h2 data-t="Roster">Roster</h2><div class="scroll"><table class="tbl" id="tm-roster"></table></div></section>
-    <section class="panel"><h2 data-t="Ratings">Ratings</h2><div class="scroll"><table class="tbl rt" id="tm-rt"></table></div></section>
-    <section class="panel"><h2 data-t="Four Factors">Four Factors</h2><div class="scroll"><table class="tbl rt" id="tm-ff"></table></div></section>
-    <section class="panel"><h2 data-t="Quarter by quarter">Quarter by quarter</h2><div class="scroll"><table class="tbl rt" id="tm-q"></table></div><div class="scroll"><table class="tbl rt" id="tm-qrec"></table></div></section>
+    <details class="panel" id="tm-next-sec"><summary><h2><span data-t="Up next">Up next</span><a class="more" id="tm-cal" data-t="Add to calendar">Add to calendar</a></h2></summary><div class="cards" id="tm-next"></div></details>
+    <details class="panel" id="tm-roster-sec"><summary><h2 data-t="Roster">Roster</h2></summary><div class="scroll"><table class="tbl" id="tm-roster"></table></div></details>
+    <details class="panel" id="tm-rt-sec"><summary><h2 data-t="Ratings">Ratings</h2></summary><div class="scroll"><table class="tbl rt" id="tm-rt"></table></div></details>
+    <details class="panel" id="tm-ff-sec"><summary><h2 data-t="Four Factors">Four Factors</h2></summary><div class="scroll"><table class="tbl rt" id="tm-ff"></table></div></details>
+    <details class="panel" id="tm-zones-sec" hidden><summary><h2 data-t="Shot performance">Shot performance</h2></summary><div class="courts zcourts" id="tm-zones"></div></details>
+    <details class="panel" id="tm-q-sec"><summary><h2 data-t="Quarter by quarter">Quarter by quarter</h2></summary><div class="scroll"><table class="tbl rt" id="tm-q"></table></div><div class="scroll"><table class="tbl rt" id="tm-qrec"></table></div></details>
   </section>
   <section class="pg" id="pg-leaders" hidden>
     <div class="tabs" id="ld-tabs" role="group" aria-label="Stat" data-ta="Stat"></div>
@@ -835,6 +846,33 @@ const drawShots = () => {
     `<tr data-z="${z}"><td class="l"><i class="${k.heat[z] || ''}"></i>${t(ZN[z])}</td><td>${m}-${n}</td><td class="k">${n ? pct(m, n) : '–'}</td><td>${pct(...k.lg[z])}</td>${k.za ? `<td class="astd">${k.za[z][1] ? pct(...k.za[z]) : '–'}</td>` : ''}</tr>`).join('')}</tbody></table>` : '';
 };
 $('#sc-game').addEventListener('change', () => { drawShots(); prime('player'); });
+
+// ---- Club shot zones (shots/league.json teams: each club's own attempts by zone and its opponents' in its games): the
+// FG% in each zone printed on the court, the zone shaded by how far it sits from the league's on the shown tenths, pink
+// where the club does better (a higher FG% on offense, a lower one allowed on defense), blue where it does worse
+const ZTXT = [[0, -13], [0, -80], [0, -168], [235, -18], [0, -300]];
+const zoneGrade = (m, n, lg, against) => {
+  if (n < ZMIN || !lg[1]) return 0;
+  const d = (rq(100 * m, n) - rq(100 * lg[0], lg[1])) * (against ? -1 : 1), a = Math.abs(d);
+  return Math.sign(d) * (a < 15 ? 0 : a < 40 ? 1 : a < 80 ? 2 : 3);
+};
+function zoneCourt(code, zs, lg, against) {
+  const c1 = team(code) ? team(code).colors[0] : '#333333', ln = (w = 3) => `fill="none" stroke="#1a1a1a" stroke-width="${w}"`;
+  const g = zs.map(([m, n], z) => zoneGrade(m, n, lg[z], against));
+  const fills = zs.map((_, z) => g[z] ? `<path class="zg" data-z="${z}" data-g="${g[z]}" d="${ZD[z]}" fill="${g[z] > 0 ? '#ff4fa5' : '#0078b4'}" fill-opacity="${[0, .28, .55, .85][Math.abs(g[z])]}" fill-rule="evenodd"/>` : '').join('');
+  const lab = ([m, n], z) => {
+    const [x, y] = ZTXT[z], p = n ? `${pct(m, n)}%` : '–', title = `<title>${esc(`${t(ZN[z])} · ${m}-${n}`)}</title>`;
+    if (z === 3) return [-x, x].map(cx => `<text class="zp" data-z="${z}" x="${cx}" y="${y}" transform="rotate(-90 ${cx} ${y})" font-size="17">${title}${p}</text>`).join('');
+    return `<text class="zp" data-z="${z}" x="${x}" y="${y}" font-size="${z ? 26 : 19}">${title}${p}</text>`
+      + `<text class="zn" x="${x}" y="${z ? y + 22 : 36}" font-size="${z ? 15 : 13}">${m}-${n}</text>`;
+  };
+  return `<svg class="court zc" viewBox="-280 -417.5 560 500" role="img" aria-label="${esc(t(against ? 'Defense' : 'Offense'))}"><rect x="-280" y="-417.5" width="560" height="500" fill="${c1}"/><rect x="-250" y="-417.5" width="500" height="470" fill="${FLOOR}"/>`
+    + fills + `<path d="M-80 52.5V-137.5H80V52.5M-60 -137.5a60 60 0 0 1 120 0" ${ln()}/>`
+    + `<path d="M-220 52.5V-89.5A237.5 237.5 0 0 1 220-89.5V52.5M-40 52.5V0a40 40 0 0 1 80 0v52.5M-60-417.5a60 60 0 0 0 120 0" ${ln()}/>`
+    + `<path d="M-30 12.5h60" ${ln(5)}/><circle r="7.5" ${ln(2.5)}/><rect x="-250" y="-417.5" width="500" height="470" ${ln(5)}/>`
+    + `<g class="zl" text-anchor="middle" fill="#1a1a1a" stroke="${FLOOR}" stroke-width="5" paint-order="stroke" stroke-linejoin="round">${zs.map(lab).join('')}</g></svg>`;
+}
+const zoneKey = () => `<div class="zkey"><span${def('zgrade')}>${t('Worse than the league')}</span>${[-3, -2, -1, 0, 1, 2, 3].map(k => `<i style="background:${k ? `${k > 0 ? '#ff4fa5' : '#0078b4'}${['', '47', '8c', 'd9'][Math.abs(k)]}` : FLOOR}"></i>`).join('')}<span>${t('Better than the league')}</span></div>`;
 
 // ---- Lineups (lineups.py): each club's fives, one row of integer totals per five per game. A rating is points per 100
 // possessions (FGA − OREB + TOV + 0.44 FTA, so 100 × possessions is an integer), rounded once to tenths by rq; net and
@@ -1216,8 +1254,10 @@ let CLUB = '';
 try { CLUB = localStorage.getItem('pl-club') || ''; } catch (e) {}
 async function renderTeam(code, my) {
   if (!team(code)) code = team(CLUB) ? CLUB : IDX.teams[0].code;
-  const [G, data, rt] = await Promise.all([get('games.json').then(d => d.games), get(`${code}.json`), get('ratings.json').catch(() => ({teams: []}))]);
+  const [G, data, rt, zl] = await Promise.all([get('games.json').then(d => d.games), get(`${code}.json`), get('ratings.json').catch(() => ({teams: []})), get('shots/league.json').catch(() => null)]);
   if (stale(my)) return;
+  // every section starts closed when the page is opened; moving from club to club keeps them as the reader left them
+  if (document.body.dataset.page !== 'team') for (const d of $$('#pg-team details.panel')) d.open = false;
   CLUB = code;
   try { localStorage.setItem('pl-club', code); } catch (e) {}
   $('#tb-team').href = $('#rl-team').href = `#team/${code}`;
@@ -1260,6 +1300,10 @@ async function renderTeam(code, my) {
   $('#tm-qrec').setAttribute('style', tc(code));
   $('#tm-qrec').innerHTML = `<thead><tr><th class="l"></th>${Q_SPLITS.map(([k, , l]) => `<th${def(k)}>${t(l)}</th>`).join('')}</tr></thead><tbody>${[['lead', 'Leading'], ['trail', 'Trailing'], ['tied', 'Level']].map(([s, l]) =>
     `<tr data-at="${s}"><td class="l">${t(l)}</td>${Q_SPLITS.map(([k]) => `<td data-rec="${k}">${wl(qa[k][s])}</td>`).join('')}</tr>`).join('')}</tbody>`;
+  const zt = zl && zl.teams && zl.teams[code];
+  $('#tm-zones-sec').hidden = !zt;
+  $('#tm-zones').innerHTML = zt ? [['Offense', zt.for, false], ['Defense', zt.against, true]].map(([l, zs, against]) =>
+    `<div data-side="${l.toLowerCase()}"><div class="court-h"><span${def('zgrade zones')}>${t(l)}</span></div>${zoneCourt(code, zs, zl.zones, against)}</div>`).join('') + zoneKey() : '';
   document.title = `${tname(code)} · NBA Player Lab`;
 }
 
@@ -2088,6 +2132,7 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['zones', '', 'Zones', 'Each attempt falls in one of five zones: restricted area (within 4 feet of the rim), paint, mid-range, corner three and above-the-break three. The two three-point zones add up to the box score’s threes.', ''],
     ['heat', '', 'Hot and cold zones', 'From five attempts in a zone, it prints pink when the player’s FG% there beats the league’s and blue when it trails.', ''],
     ['league', '', 'League', 'The whole league’s FG% in the zone over the season.', ''],
+    ['zgrade', '', 'Club zones', 'On the club page, each zone’s FG% on offense and the FG% opponents shoot there on defense, shaded against the league’s: pink where the club does better, blue where it does worse, deeper at 1.5, 4 and 8 points apart.', ''],
     ['astd', 'AST’D%@stat', 'Assisted share', 'The share of the player’s makes in the zone that a team-mate is credited with an assist on.', 'Assisted makes ÷ FGM'],
     ['unast', '', 'Unassisted makes', 'Makes with no assist credited: off the dribble, in the post, and putbacks too.', 'FGM − assisted makes'],
   ]],

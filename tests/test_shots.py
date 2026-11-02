@@ -55,7 +55,8 @@ diff = filecmp.dircmp(os.path.join(direct, "shots"), os.path.join(read, "shots")
 one = json.load(open(os.path.join(read, "shots", f"{lines[0]['team']}.json")))
 mine = [s for s in shots if s["pid"] == lines[0]["pid"] and s["gid"] == lines[0]["gid"]]
 files = [json.load(open(os.path.join(read, "shots", f"{t['code']}.json"))) for t in teams]
-league = json.load(open(os.path.join(read, "shots", "league.json")))["zones"]
+full = json.load(open(os.path.join(read, "shots", "league.json")))
+league, sides = full["zones"], full["teams"]
 rows = [r for f in files for p in f["players"].values() for r in p]
 zoned = {}
 for f in files:
@@ -77,6 +78,12 @@ checks = {
     "every zone has shots in the fixture": all(n for _, n in league),
     "the league file is every club's shots by zone": len(league) == len(ZONES)
         and league == [[sum(r[3] for r in rows if r[4] == z), sum(1 for r in rows if r[4] == z)] for z in range(len(ZONES))],
+    "a club's own zones are its file's shots": all(sides[f["code"]]["for"] == [[sum(r[3] for p in f["players"].values() for r in p if r[4] == z),
+        sum(1 for p in f["players"].values() for r in p if r[4] == z)] for z in range(len(ZONES))] for f in files),
+    "a club's zones against are its opponents' shots in its games": all(sides[t["code"]]["against"] == [[sum(s["made"] for s in shots if s["team"] != t["code"]
+        and s["gid"] in {x["gid"] for x in games if t["code"] in (x["home"], x["away"])} and zone(s["pts"], s.get("area"), s["x"], s["y"]) == z),
+        sum(1 for s in shots if s["team"] != t["code"] and s["gid"] in {x["gid"] for x in games if t["code"] in (x["home"], x["away"])}
+            and zone(s["pts"], s.get("area"), s["x"], s["y"]) == z)] for z in range(len(ZONES))] for t in teams),
     "the feed's area wins over the spot": sum(r[4] == 2 for r in files[[t["code"] for t in teams].index(shots[first]["team"])]["players"][shots[first]["pid"]])
         == 1 + sum(zone(s["pts"], None, s["x"], s["y"]) == 2 for s in shots if s["pid"] == shots[first]["pid"]),
     "warehouse tables give the same shot files" + (f" (differs: {diff[:5]})" if diff else ""): not diff and len(os.listdir(os.path.join(read, "shots"))) == 31,

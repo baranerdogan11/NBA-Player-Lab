@@ -104,6 +104,7 @@ test.describe('definitions by keyboard', () => {
     await page.goto('./?l#team/BOS');
     await settled(page);
     await page.waitForFunction(() => document.querySelectorAll('#tm-ff td[data-k]').length === 8);
+    await page.click('#tm-rt-sec > summary');
     await page.focus('#tm-rt th[data-def^="pace"]');
     await page.keyboard.press('Enter');
     expect((await card(page)).text).toContain('48');
