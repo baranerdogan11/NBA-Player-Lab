@@ -359,6 +359,83 @@ def write_lineups(out, teams, rows):
                        "rows": [[games.index(g), i, u["ds"], *(u[k] for k in keys)] for (g, i), u in units.items()]}, f, separators=(",", ":"))
 
 
+# the league's best units (Leaders): every club's five-man and two-man units over the season, summed from its lineup
+# rows, kept when they reach the floor in minutes. The floor rises with the games the clubs have played (the middle
+# club's count), so early boards are not topped by a few lucky minutes, up to 100 for a five and 400 for a pair
+LEAGUE_FLOOR = {5: (6, 100), 2: (20, 400)}   # size: (minutes per game played, cap)
+
+
+def league_units(out, teams):
+    """{5: {...}, 2: {...}} keyed (code, pids): [games, ds, pts, opp_pts, LU_COUNTS, opp LU_COUNTS], and the clubs'
+    games played, from teams/<season>/lineups/<CODE>.json."""
+    from itertools import combinations
+    units, gp = {5: {}, 2: {}}, []
+    for t in teams:
+        path = os.path.join(out, "lineups", f"{t['code']}.json")
+        if not os.path.exists(path):
+            continue
+        with open(path) as f:
+            lu = json.load(f)
+        gp.append(len(lu["games"]))
+        for g, i, *vals in lu["rows"]:
+            five = lu["fives"][i]
+            for n, keys in ((5, [tuple(five)]), (2, combinations(five, 2))):
+                for k in keys:
+                    u = units[n].setdefault((t["code"], k), [set(), *[0] * len(vals)])
+                    u[0].add(g)
+                    for j, v in enumerate(vals):
+                        u[1 + j] += v
+    return {n: {k: [len(u[0]), *u[1:]] for k, u in us.items()} for n, us in units.items()}, gp
+
+
+def league_floor(gp):
+    """The minutes floor for a five and a pair, from the clubs' games played."""
+    g = sorted(gp)[(len(gp) - 1) // 2] if gp else 0
+    return g, {n: min(per * g, cap) for n, (per, cap) in LEAGUE_FLOOR.items()}
+
+
+def write_league_lineups(out, teams):
+    """teams/<season>/lineups/league.json: {games, floor: {5, 2} minutes, fives and pairs: [code, pids, games, ds, pts,
+    opp_pts, LU_COUNTS, opp LU_COUNTS]}, the units at or above the floor, most minutes first."""
+    units, gp = league_units(out, teams)
+    g, floor = league_floor(gp)
+    pick = lambda n: sorted(([c, list(k), *u] for (c, k), u in units[n].items() if u[1] >= 600 * floor[n]),  # noqa: E731
+                            key=lambda r: (-r[3], r[0], r[1]))
+    _dump(os.path.join(out, "lineups", "league.json"), {"games": g, "floor": {str(n): f for n, f in floor.items()},
+                                                         "fives": pick(5), "pairs": pick(2)})
+
+
+def check_league_lineups(out, teams):
+    """Raises unless league.json holds exactly the units at or above the floor, each the sum of its club's lineup rows:
+    a five's rows are its own, a pair's every row of a five with both in it."""
+    lu = {}
+    for t in teams:
+        path = os.path.join(out, "lineups", f"{t['code']}.json")
+        if os.path.exists(path):
+            with open(path) as f:
+                lu[t["code"]] = json.load(f)
+    with open(os.path.join(out, "lineups", "league.json")) as f:
+        lg = json.load(f)
+    gp = sorted(len(x["games"]) for x in lu.values())
+    g = gp[(len(gp) - 1) // 2] if gp else 0
+    if lg["games"] != g or lg["floor"] != {str(n): min(per * g, cap) for n, (per, cap) in LEAGUE_FLOOR.items()}:
+        raise ValueError(f"league lineups: floor {lg['games']} games {lg['floor']}, clubs' middle {g} games")
+    for key, n in (("fives", 5), ("pairs", 2)):
+        want = {}
+        for code, x in lu.items():
+            for r in x["rows"]:
+                five = x["fives"][r[1]]
+                for pids in ([five] if n == 5 else [[a, b] for a in five for b in five if a < b]):
+                    w = want.setdefault((code, ",".join(pids)), [set(), [0] * (len(r) - 2)])
+                    w[0].add(r[0])
+                    w[1] = [a + b for a, b in zip(w[1], r[2:])]
+        want = {k: [len(gs), *v] for k, (gs, v) in want.items() if v[0] >= 600 * lg["floor"][str(n)]}
+        got = {(r[0], ",".join(r[1])): r[2:] for r in lg[key]}
+        if len(got) != len(lg[key]) or got != want:
+            diff = sorted({*got} ^ {*want}) or [k for k in sorted(got) if got[k] != want[k]]
+            raise ValueError(f"league lineups: {key} differ from the club files at {diff[:3]}")
+
+
 def from_warehouse(wh):
     """players, games, lines for write_site() from the Parquet tables in the directory wh. A game whose box score is
     quarantined (quarantine.py) is read as not final yet; one held out of the game flow has no flow, and one held out of
@@ -471,5 +548,7 @@ if __name__ == "__main__":
     rows = team_lines(wh)
     write_ratings(out, teams, rows)
     check_ratings(out, rows, quarantine.held(wh, "lineups"))   # lineups.py has written teams/<season>/lineups/ by now
+    write_league_lineups(out, teams)
+    check_league_lineups(out, teams)
     print(f"{SEASON}: site JSON written to {out}")
     raise SystemExit(quarantine.exit_code(wh))
