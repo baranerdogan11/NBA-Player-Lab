@@ -123,6 +123,13 @@ a,button,select,.card{-webkit-tap-highlight-color:transparent}
 .five .faces .face{margin:0 0 0 -4px;box-shadow:0 0 0 2px var(--paper),inset 0 0 0 1.5px var(--ink)}
 .five .faces .face:first-child{margin-left:0}
 .five .nm{display:block;font:italic 400 13px/1.35 var(--serif);color:var(--ink2)}
+.units td.unit a{display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none}
+.units .faces{flex:none;display:flex}
+.units .faces .face{width:24px;height:24px;font-size:9px;margin:0 0 0 -6px;box-shadow:0 0 0 2px var(--paper),inset 0 0 0 1.5px var(--ink)}
+.units .faces .face:first-child{margin-left:0}
+.units .nm{font:italic 400 13px/1.3 var(--serif);color:var(--ink2);white-space:nowrap}
+.units td,.units th{white-space:nowrap}
+@media (max-width:760px){.units .nm,.units .code{display:none}}
 #lu .scroll+.scroll{margin-top:16px}
 .fives{display:grid;gap:20px;padding-bottom:4px}
 @media (min-width:1100px){.fives{grid-template-columns:1fr 1fr}}
@@ -599,7 +606,9 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
   <section class="pg" id="pg-leaders" hidden>
     <div class="tabs" id="ld-tabs" role="group" aria-label="Stat" data-ta="Stat"></div>
     <div class="tabs ld-only"><button type="button" id="ld-rook" aria-pressed="false" data-t="Rookies">Rookies</button></div>
+    <div class="tabs" id="ld-size" role="group" aria-label="Lineup" data-ta="Lineup" hidden></div>
     <section class="panel" id="ld-sec"><div class="scroll"><table class="tbl" id="ld"></table></div></section>
+    <section class="panel" id="ld-lu" hidden><div class="scroll"><table class="tbl units" id="ld-units"></table></div></section>
     <div id="ld-form" hidden>
       <section class="panel"><h2 data-t="Trending up" data-def="trend floor-trend" tabindex="0">Trending up</h2><div class="scroll"><table class="tbl trend" id="ld-up"></table></div></section>
       <section class="panel"><h2 data-t="Trending down" data-def="trend floor-trend" tabindex="0">Trending down</h2><div class="scroll"><table class="tbl trend" id="ld-down"></table></div></section>
@@ -745,7 +754,7 @@ async function route() {
     else if (page === 'games') await renderGames(b, my);
     else if (page === 'game') await renderGame(b, my);
     else if (page === 'team') await renderTeam(b, my);
-    else if (page === 'leaders') await renderLeaders(b, my, c === 'rookies');
+    else if (page === 'leaders') await renderLeaders(b, my, c === 'rookies', c === '2' ? 2 : 5);
     else if (page === 'privacy') document.title = `${t('Privacy')} · NBA Player Lab`;
     else if (page === 'glossary') renderGlossary();
     else if (page === 'league') await renderLeague(b, c, my);
@@ -1680,21 +1689,24 @@ const board = (L, stat) => {
 };
 // the Rookies switch (#leaders/<stat>/rookies) keeps every board to players in their first NBA season, floors unchanged;
 // the season highs stay league-wide
-async function renderLeaders(stat, my, rookies) {
+async function renderLeaders(stat, my, rookies, size) {
   let L = (await get('leaders.json')).players;
   if (stale(my)) return;
-  if (!LEAD[stat] && stat !== 'form' && stat !== 'highs') stat = 'pts';
-  rookies = rookies && stat !== 'highs';
+  if (!LEAD[stat] && stat !== 'form' && stat !== 'highs' && stat !== 'lineups') stat = 'pts';
+  const wide = stat === 'highs' || stat === 'lineups';
+  rookies = rookies && !wide;
   if (rookies) L = L.filter(p => p.rookie);
-  $('#ld-tabs').innerHTML = [...Object.entries(LEAD), ['form', ['Trending']], ['highs', ['Season highs']]].map(([k, [l]]) => `<a href="#leaders/${k}${rookies && k !== 'highs' ? '/rookies' : ''}" aria-current="${k === stat}" data-def="${LEAD_DEF[k]}">${t(l)}</a>`).join('');
+  $('#ld-tabs').innerHTML = [...Object.entries(LEAD), ['form', ['Trending']], ['lineups', ['Lineups@board']], ['highs', ['Season highs']]].map(([k, [l]]) => `<a href="#leaders/${k}${rookies && k !== 'highs' && k !== 'lineups' ? '/rookies' : ''}" aria-current="${k === stat}" data-def="${LEAD_DEF[k]}">${t(l)}</a>`).join('');
   const rk = $('#ld-rook');
-  rk.parentElement.hidden = stat === 'highs';
+  rk.parentElement.hidden = wide;
   rk.setAttribute('aria-pressed', String(rookies));
   rk.dataset.stat = stat;
-  $('#ld-sec').hidden = stat === 'form' || stat === 'highs';
+  $('#ld-sec').hidden = stat === 'form' || wide;
   $('#ld-form').hidden = stat !== 'form';
   $('#ld-highs').hidden = stat !== 'highs';
+  $('#ld-size').hidden = $('#ld-lu').hidden = stat !== 'lineups';
   if (stat === 'form') return drawTrend(L);
+  if (stat === 'lineups') return drawUnits(L, await get('lineups/league.json').catch(() => null), size, my);
   if (stat === 'highs') return drawHighs(await get('highs.json').catch(() => ({stats: {}})), my);
   // the unassisted board counts makes from the assist credits (assists/league.json: pid -> [assisted, makes])
   if (stat === 'uast') {
@@ -1727,6 +1739,25 @@ function drawTrend(L) {
   };
   $('#ld-up').innerHTML = table(all.filter(r => r.d > 0).sort((x, y) => y.d - x.d || x.p.name.localeCompare(y.p.name)), 'up');
   $('#ld-down').innerHTML = table(all.filter(r => r.d < 0).sort((x, y) => x.d - y.d || x.p.name.localeCompare(y.p.name)), 'dn');
+}
+
+// ---- Best lineups (lineups/league.json): every club's fives and pairs over the season at or above the minutes floor, which
+// rises with the games played; ranked by net rating as shown (rates(), as in a player's lineups panel), then minutes. A row
+// opens the Player page of the unit's busiest player (most season minutes), with his lineups panel
+const UNITS = {5: ['fives', 'Fives', 'lineup'], 2: ['pairs', 'Pairs', 'pair']};
+function drawUnits(L, lg, n, my) {
+  if (stale(my)) return;
+  const [key, , id] = UNITS[n], P = Object.fromEntries(L.map(p => [p.pid, p]));
+  $('#ld-size').innerHTML = [5, 2].map(k => `<a href="#leaders/lineups${k === 2 ? '/2' : ''}" aria-current="${k === n}" data-n="${k}">${t(UNITS[k][1])}</a>`).join('');
+  const name = pid => P[pid] ? P[pid].name : pid;
+  const rows = (lg ? lg[key] : []).map(([code, pids, , ...v]) => { const u = luAdd(luZero(), [0, 0, ...v]); return {code, pids, u, r: rates(u)}; })
+    .filter(x => x.r[2] != null).sort((a, b) => b.r[2] - a.r[2] || b.u.ds - a.u.ds || a.code.localeCompare(b.code) || a.pids.join().localeCompare(b.pids.join())).slice(0, 10);
+  let rank = 0;
+  $('#ld-units').innerHTML = `<thead><tr><th${def('place')}>#</th><th class="l"${def(`${id} floor-units`)}>${t(n === 5 ? 'Lineup@stat' : 'Pair@stat')}</th><th class="l">${t('Team')}</th><th${def('min floor-units')}>${t('MIN@stat')}</th><th class="x"${def('pm')}>${t('+/-@stat')}</th><th class="x"${def('ortg poss')}>${t('ORtg@stat')}</th><th class="x"${def('drtg poss')}>${t('DRtg@stat')}</th><th${def('net')}>${t('Net@stat')}</th></tr></thead><tbody>${rows.length ? rows.map(({code, pids, u, r}, i) => {
+    if (!i || r[2] !== rows[i - 1].r[2]) rank = i + 1;
+    const top = pids.reduce((a, b) => ((P[b] || {}).sec || 0) > ((P[a] || {}).sec || 0) ? b : a), names = pids.map(p => EN(surname(name(p)))).join(' · '), label = esc(pids.map(p => name(p)).join(', '));
+    return `<tr data-unit="${esc(code)}:${esc(pids.join(','))}"><td>${rank}</td><td class="l unit"><a href="#${esc(code)}/${esc(top)}" aria-label="${label}"><span class="faces" style="${colours(code)}">${pids.map(p => face(p, name(p))).join('')}</span><span class="nm">${names}</span></a></td><td class="l">${logo(code)}<span class="code">${esc(code)}</span></td><td>${N(rdiv(u.ds, 600, 0))}</td><td class="x">${N(signed(String(u.pts - u.opp)))}</td><td class="x">${tenths(r[0])}</td><td class="x">${tenths(r[1])}</td><td class="k">${tenths(r[2], 1)}</td></tr>`;
+  }).join('') : `<tr><td class="empty l" colspan="8">${t('No lineup qualifies yet.')}</td></tr>`}</tbody>`;
 }
 
 // ---- Season highs: the season's ten best single games for each stat (highs.json, Game Score in tenths), ranks tied on
@@ -2014,6 +2045,7 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['net', 'Net@stat', 'Net rating', 'Offensive less defensive rating, each as shown.', 'ORtg − DRtg'],
     ['pace', 'Pace@stat', 'Pace', 'Possessions per 48 minutes, the club’s and its opponents’ averaged.', '(possessions + opponent possessions) ÷ 2 × 48 ÷ (club minutes ÷ 5)'],
     ['lineup', 'Lineup@stat', 'Lineup', 'Five players who shared the court: their minutes together, the points scored and allowed (for-against) and the +/-.', ''],
+    ['pair', 'Pair@stat', 'Pair', 'Two teammates on the court together, over every five they shared.', ''],
     ['with', 'With@stat', 'Teammates', 'The other four in the player’s five-man units with the most minutes together.', ''],
     ['rot', '', 'Who played when', 'Each player’s stretches on the court through the game, the quarters ruled; a bar gives its start and end on the clock, its minutes and the club’s +/- over it. A player’s stretches add up to his box-score minutes, to the second, and his +/-.', ''],
     ['duo', '', 'Duos', 'A passer and the team-mate whose baskets he assisted: the assists between them and the points those baskets made, from the play-by-play. A passer’s duos in a game add up to his AST; a game whose assists the league corrected after the final is left out.', ''],
@@ -2081,6 +2113,7 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['floor-busy', '', 'Usage and RAPM boards', 'Also 15 minutes a game.', ''],
     ['floor-unast', '', 'Unassisted board', 'Also 300 made field goals over 82 games, in proportion to the club’s games so far, counted where the assist credits match the box score.', ''],
     ['floor-trend', '', 'Trending board', 'Ten games played, 70% of the club’s games and 15 minutes a game, over the season and over the last five.', ''],
+    ['floor-units', '', 'Lineups board', 'The ten best units by net rating, equal ratings sharing a place. A five needs 6 minutes together for every game the clubs have played (the middle club’s count), up to 100; a pair 20, up to 400.', ''],
     ['rookies', '', 'Rookies', 'The Rookies switch keeps every board to players in their first NBA season; the floors stay the same.', ''],
   ]],
   ['My league', [
@@ -2099,7 +2132,7 @@ const defBody = r => `<span>${esc(t(r[3]))}</span>${r[4] ? `<code>${esc(t(r[4]))
 // the Leaders boards: each one's stat and its floor
 const LEAD_DEF = {pts: 'pts floor-pg', reb: 'reb floor-pg', ast: 'ast floor-pg', stl: 'stl floor-pg', blk: 'blk floor-pg', fg3m: 'fg3 floor-pg', min: 'min floor-pg',
   fg: 'fgp floor-pg floor-fg', fg3: 'fg3p floor-pg floor-fg3', ft: 'ftp floor-pg floor-ft', ts: 'ts floor-pg floor-fg', usg: 'usg floor-pg floor-busy', uast: 'unast floor-pg floor-unast',
-  rapm: 'rapm floor-pg floor-busy', orapm: 'orapm floor-pg floor-busy', drapm: 'drapm floor-pg floor-busy', form: 'trend floor-trend', highs: 'highs'};
+  rapm: 'rapm floor-pg floor-busy', orapm: 'orapm floor-pg floor-busy', drapm: 'drapm floor-pg floor-busy', form: 'trend floor-trend', lineups: 'lineup pair floor-units', highs: 'highs'};
 // a stat label (as tiles and table headings name it) and its entry
 const STAT_DEF = {PTS: 'pts', REB: 'reb', OREB: 'oreb', DREB: 'dreb', AST: 'ast', STL: 'stl', BLK: 'blk', TOV: 'tov', PF: 'pf', FG: 'fg', '3P': 'fg3', FT: 'ft',
   'FG%': 'fgp', '3P%': 'fg3p', 'FT%': 'ftp', 'TS%': 'ts', '+/-': 'pm', MIN: 'min', GP: 'gp', Result: 'result',

@@ -484,5 +484,14 @@
  "Makes with no assist credited: off the dribble, in the post, and putbacks too.": "Asist yazılmayan isabetler: top sürerek, postta ve hücum ribaundundan dönüşler de.",
  "FGM − assisted makes": "İsabetli FG − asistli isabetler",
  "Unassisted board": "Asistsiz listesi",
- "Also 300 made field goals over 82 games, in proportion to the club’s games so far, counted where the assist credits match the box score.": "Ayrıca 82 maçta 300 isabetli saha içi şut, takımın şimdiye kadarki maçlarına oranlanarak; asistlerin maç istatistiğiyle uyuştuğu maçlarda sayılır."
+ "Also 300 made field goals over 82 games, in proportion to the club’s games so far, counted where the assist credits match the box score.": "Ayrıca 82 maçta 300 isabetli saha içi şut, takımın şimdiye kadarki maçlarına oranlanarak; asistlerin maç istatistiğiyle uyuştuğu maçlarda sayılır.",
+ "Lineups@board": "Kadrolar",
+ "Fives": "Beşliler",
+ "Pairs": "İkililer",
+ "Pair@stat": "İKİLİ",
+ "Pair": "İkili",
+ "Two teammates on the court together, over every five they shared.": "Sahada birlikte olan iki takım arkadaşı; paylaştıkları tüm beşliler üzerinden.",
+ "Lineups board": "Kadrolar listesi",
+ "The ten best units by net rating, equal ratings sharing a place. A five needs 6 minutes together for every game the clubs have played (the middle club’s count), up to 100; a pair 20, up to 400.": "Net reytinge göre en iyi on kadro; eşit reytingler aynı sırayı paylaşır. Bir beşli, takımların oynadığı her maç için (ortadaki takımın sayısı) birlikte 6 dakika ister, en fazla 100; bir ikili 20, en fazla 400.",
+ "No lineup qualifies yet.": "Henüz barajı geçen kadro yok."
 }
