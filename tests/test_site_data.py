@@ -16,7 +16,8 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "tests", "fixtures"))
 import site_fixture  # noqa: E402
 from rounding import rnd  # noqa: E402
-from site_data import HIGHS, RT, STATS, check_highs, check_ratings, game_score, write_lineups, write_ratings, write_site  # noqa: E402
+from site_data import (HIGHS, LEAGUE_FLOOR, RT, STATS, check_highs, check_league_lineups, check_ratings, game_score,  # noqa: E402
+                       write_league_lineups, write_lineups, write_ratings, write_site)
 
 checks = {}
 out = tempfile.mkdtemp()
@@ -86,6 +87,42 @@ checks["a game quarantined out of the lineups is taken off the box totals it is 
 units[0]["tov"] += 1   # a turnover the box score does not have
 write_lineups(out, teams, units)
 checks["the ratings gate fails when a club's lineups do not"] = not gate()
+write_lineups(out, teams, units)
+write_league_lineups(out, teams)
+lg, clubs = load("lineups/league.json"), {t["code"]: load(f"lineups/{t['code']}.json") for t in idx["teams"]}
+mid = sorted(len(c["games"]) for c in clubs.values())[14]
+checks["the league units' floor rises with the middle club's games played, up to its cap"] = (
+    lg["games"] == mid and lg["floor"] == {str(n): min(per * mid, cap) for n, (per, cap) in LEAGUE_FLOOR.items()})
+checks["the league board has fives and pairs, every one at or above its floor"] = lg["fives"] and lg["pairs"] and all(
+    r[3] >= 600 * lg["floor"][n] and len(r[1]) == int(n) for key, n in (("fives", "5"), ("pairs", "2")) for r in lg[key])
+five_tot = {(r[0], tuple(r[1])): r[3:] for r in lg["fives"]}
+checks["a league five is its club's rows for that five, summed"] = all(
+    v == [sum(r[2 + j] for r in clubs[c]["rows"] if clubs[c]["fives"][r[1]] == list(k)) for j in range(len(v))] for (c, k), v in five_tot.items())
+checks["a pair has at least the minutes of every listed five it is in"] = all(
+    p[3] >= f[3] for p in lg["pairs"] for f in lg["fives"] if f[0] == p[0] and set(p[1]) <= set(f[1]))
+
+
+def league_gate():
+    try:
+        check_league_lineups(out, teams)
+        return True
+    except ValueError:
+        return False
+
+
+checks["the league lineups gate passes on the club files"] = league_gate()
+bad = json.loads(json.dumps(lg))
+bad["pairs"][0][4] += 1   # a point the club rows do not have
+json.dump(bad, open(os.path.join(out, "lineups", "league.json"), "w"))
+checks["the league lineups gate fails on a unit that is not its club's rows"] = not league_gate()
+bad = json.loads(json.dumps(lg))
+bad["fives"].pop()        # a five over the floor left off
+json.dump(bad, open(os.path.join(out, "lineups", "league.json"), "w"))
+checks["the league lineups gate fails when a unit over the floor is left off"] = not league_gate()
+bad = json.loads(json.dumps(lg))
+bad["floor"]["5"] += 1    # a floor that does not follow the games played
+json.dump(bad, open(os.path.join(out, "lineups", "league.json"), "w"))
+checks["the league lineups gate fails on a floor that does not follow the games played"] = not league_gate()
 night, last = load("night.json"), finals[-1]["date"]
 best = sorted(((game_score(x), x["name"], x["pid"], b["gid"]) for b in boxes.values() if b["date"] == last
                for side in b["box"].values() for x in side if x["sec"] > 0), key=lambda r: (-r[0], r[1], r[2]))[:5]
