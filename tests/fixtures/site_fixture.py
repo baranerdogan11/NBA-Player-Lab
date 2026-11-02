@@ -11,7 +11,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 sys.path.insert(0, ROOT)
 from assists import write_assists  # noqa: E402
 from shots import write_shots, zone  # noqa: E402
-from site_data import RT, STATS, load_teams, period_start, rotation, write_lineups, write_ratings, write_site  # noqa: E402
+from site_data import RT, STATS, load_teams, period_start, rotation, write_league_lineups, write_lineups, write_ratings, write_site  # noqa: E402
 
 SEASON, LABEL, BUILT = "2026-27", "2026-27", "2026-10-26T06:00:00Z"
 FIRST = ["Jalen", "Marcus", "Tyrese", "Luka", "Devin", "Andre", "Cole", "Isaiah", "Malik", "Darius", "Evan", "Kobe"]
@@ -215,6 +215,7 @@ if __name__ == "__main__":
     shots = spots(random.Random(13), games, lines)
     write_shots(out, teams, shots)
     write_lineups(out, teams, units)
+    write_league_lineups(out, teams)
     write_assists(out, teams, makes(shots, assists))
     write_ratings(out, teams, team_lines(games, lines))
     print(f"fixture league written to {out}")
