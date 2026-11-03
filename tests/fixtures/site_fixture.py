@@ -197,6 +197,21 @@ def team_lines(games, lines):
     return out
 
 
+def write_similar(out, players, lines):
+    """similar.json from the made-up box lines through profiles.py and similar.py; the league is a few games old, so
+    the floors are lowered to one game and ten minutes."""
+    import json
+    import pandas as pd
+    import profiles
+    import similar
+    pos = {p["pid"]: p["pos"] for p in players}
+    box = pd.DataFrame([{"game": x["gid"], "player": int(x["pid"]), "team": x["team"], "position": pos[x["pid"]] if x["start"] else "",
+                         "starter": x["start"], "seconds": float(x["sec"]), **{k: x[k] for k in profiles.STATS}} for x in lines])
+    similar.MIN_GAMES, similar.MIN_MPG = 1, 10.0
+    with open(os.path.join(out, "similar.json"), "w") as f:
+        json.dump(similar.document(profiles.profiles(box)), f)
+
+
 def hits(rng, n, p):
     return sum(rng.random() < p for _ in range(n))
 
@@ -218,4 +233,5 @@ if __name__ == "__main__":
     write_league_lineups(out, teams)
     write_assists(out, teams, makes(shots, assists))
     write_ratings(out, teams, team_lines(games, lines))
+    write_similar(out, players, lines)
     print(f"fixture league written to {out}")
