@@ -13,6 +13,9 @@ Percentiles are against the eligible players of the same group (at least MIN_GAM
 game, and at least MIN_POOL such players in the group): the share of them below the player, so 90 means better than
 nine in ten; for turnovers lower is better. Values are stored unrounded; the page rounds once, with the site's rule.
 
+Only the box lines the site counts are read: regular-season finals, less a game whose box score is quarantined
+(quarantine.py), so a profile's games and minutes are those of leaders.json.
+
 usage: python profiles.py [season]     # warehouse/<season>/box.parquet -> warehouse/<season>/profiles.parquet
 """
 import os
@@ -115,7 +118,10 @@ if __name__ == "__main__":
     from season import season
     s = season()
     w = os.path.join(os.path.dirname(os.path.abspath(__file__)), "warehouse", s)
-    box = pd.read_parquet(os.path.join(w, "box.parquet"))
+    import duckdb
+    import quarantine
+    box = duckdb.connect().execute(f"select b.* from read_parquet('{os.path.join(w, 'box.parquet')}') b "
+                                   f"join {quarantine.games_sql(w)} g using (game) where g.game_type = 'regular' and g.final").df()
     oo_path = os.path.join(w, "onoff.parquet")
     out = profiles(box, pd.read_parquet(oo_path) if os.path.exists(oo_path) else None)
     out.to_parquet(os.path.join(w, "profiles.parquet"), index=False)
