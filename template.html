@@ -591,11 +591,11 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <a class="lgb" id="lg-badge" href="#league" hidden></a>
     <div class="pick"><select id="team" data-kind="team" aria-label="Team" data-ta="Team"></select><select id="from" data-kind="country" aria-label="From" data-ta="From"></select><select id="player" data-kind="player" aria-label="Player" data-ta="Player"></select><a class="arr" id="prev" aria-label="Previous player" data-ta="Previous player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="arr" id="next" aria-label="Next player" data-ta="Next player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 5.5 6.5 6.5-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
     <div class="tiles" id="tiles"></div>
-    <details class="panel" id="sc" open><summary><h2 data-t="Shot chart">Shot chart</h2></summary><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div><div class="fm-h unast" id="sc-unast" hidden></div><div class="scroll zones" id="sc-zones"></div></details>
-    <details class="panel" id="lu" open hidden><summary><h2 data-t="Lineups">Lineups</h2></summary><div class="scroll"><table class="tbl" id="onoff"></table></div><div class="scroll"><table class="tbl" id="fives"></table></div></details>
-    <details class="panel" id="duo" open hidden><summary><h2 data-t="Duos">Duos</h2></summary><div class="fives" id="duo-cols"></div></details>
-    <details class="panel" id="sim" open hidden><summary><h2 data-t="Similar role">Similar role</h2></summary><div class="sims" id="sims"></div></details>
-    <details class="panel" id="log-sec" open><summary><h2 data-t="Game log">Game log</h2></summary><div class="gform" id="form" hidden></div><div class="scroll"><table class="tbl" id="log"></table></div></details>
+    <details class="panel" id="sc"><summary><h2 data-t="Shot chart">Shot chart</h2></summary><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div><div class="fm-h unast" id="sc-unast" hidden></div><div class="scroll zones" id="sc-zones"></div></details>
+    <details class="panel" id="lu" hidden><summary><h2 data-t="Lineups">Lineups</h2></summary><div class="scroll"><table class="tbl" id="onoff"></table></div><div class="scroll"><table class="tbl" id="fives"></table></div></details>
+    <details class="panel" id="duo" hidden><summary><h2 data-t="Duos">Duos</h2></summary><div class="fives" id="duo-cols"></div></details>
+    <details class="panel" id="sim" hidden><summary><h2 data-t="Similar role">Similar role</h2></summary><div class="sims" id="sims"></div></details>
+    <details class="panel" id="log-sec"><summary><h2 data-t="Game log">Game log</h2></summary><div class="gform" id="form" hidden></div><div class="scroll"><table class="tbl" id="log"></table></div></details>
   </section>
   <section class="pg" id="pg-compare" hidden>
     <div class="pick"><select id="cmp-a" data-kind="player" aria-label="First player" data-ta="First player"></select><select id="cmp-b" data-kind="player" aria-label="Second player" data-ta="Second player"></select></div>
@@ -995,6 +995,8 @@ const country = c => t(c + '@country');
 async function renderPlayer(code, pid, my, gid) {
   const [data, L] = await Promise.all([get(`${code}.json`), get('leaders.json').then(d => d.players).catch(() => [])]);
   if (stale(my)) return;
+  // every section starts closed when the page is opened; moving from player to player keeps them as the reader left them
+  if (document.body.dataset.page !== 'player') for (const d of $$('#pg-player details.panel')) d.open = false;
   const jersey = p => p.jersey && /^\d+$/.test(p.jersey) ? [Number(p.jersey), p.jersey.length] : [Infinity, 0];
   const ps = data.players.map(p => ({...p, s: sum(p.log)})).sort((x, y) => { const a = jersey(x), b = jersey(y); return (a[0] - b[0]) || (a[1] - b[1]) || x.name.localeCompare(y.name); });
   const p = ps.find(x => x.pid === pid) || ps[0];
@@ -1065,6 +1067,7 @@ async function renderPlayer(code, pid, my, gid) {
   const made = asts.every(f => f && f.made) ? asts.flatMap(f => f.made.filter(r => r[1] === p.pid).map(r => [f.games[r[0]], r[2], r[3], r[4]])) : null;
   SC = {pid: p.pid, code, shots: files.flatMap(f => f && f.players[p.pid] ? f.players[p.pid].map(s => [f.games[s[0]], s[1], s[2], s[3], s[4]]) : []), club: Object.fromEntries(played.map(x => [x.gid, x.team])), league, made};
   const at = played.some(x => x.gid === gid) ? gid : '';
+  if (at) $('#sc').open = true;   // a link to his night opens on that game's shot chart
   $('#sc-game').innerHTML = `<option value="" data-c="${esc(code)}"${at ? '' : ' selected'}>${t('Season')}</option>${played.map(x => `<option value="${esc(x.gid)}" data-c="${esc(x.opp)}"${x.gid === at ? ' selected' : ''}>${fmtDate(x.date)} ${x.home ? t('vs') : '@'} ${esc(x.opp)}</option>`).join('')}`;
   $('#sc').hidden = false;
   drawShots();
@@ -1104,8 +1107,8 @@ $('#from').addEventListener('change', async e => {
   const tm = x => IDX.teams.findIndex(y => y.code === x.team), x = L.sort((a, b) => tm(a) - tm(b) || a.name.localeCompare(b.name))[0];
   location.hash = `${x.team}/${x.pid}`;
 });
-// each section of the profile, and the Game page's Duos, opens and closes, and stays as the reader left it
-for (const [id, key] of Object.entries({sc: 'pl-shots', lu: 'pl-lineups', duo: 'pl-duos', sim: 'pl-sim', 'log-sec': 'pl-log', 'gm-duo': 'pl-gm-duos'})) {
+// the Game page's Duos opens and closes, and stays as the reader left it
+for (const [id, key] of Object.entries({'gm-duo': 'pl-gm-duos'})) {
   const d = $('#' + id);
   try { if (localStorage.getItem(key) === 'closed') d.open = false; } catch (e) {}
   d.addEventListener('toggle', () => { try { localStorage.setItem(key, d.open ? 'open' : 'closed'); } catch (e) {} });

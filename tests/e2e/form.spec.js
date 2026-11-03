@@ -24,6 +24,7 @@ test('the form strip is his last ten Game Scores from the box scores, over his s
   expect(bars.map(b => b[0])).toEqual(log.slice(0, 10).reverse());
   const all = await page.evaluate(async p => (await fetch(`${META.base}leaders.json`).then(r => r.json())).players.find(x => x.pid === p), pid);
   expect(await page.textContent('#form-avg')).toBe(show(tenths(all.gs, 10 * all.gp)));
+  await page.click('#log-sec summary');   // the Game log, and the strip with it, is closed when the page opens
   await page.click('#form .fm-plot a:last-child');
   await page.waitForFunction(g => document.body.dataset.page === 'game' && location.hash === `#game/${g}`, bars.at(-1)[0]);
   expect(problems, 'the page reported errors').toEqual([]);

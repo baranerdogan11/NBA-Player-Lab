@@ -189,25 +189,59 @@ test.describe('roster', () => {
 
 test.describe('profile sections', () => {
   test.use(DESKTOP);
-  for (const [id, body, key] of [['sc', '#sc-court', 'pl-shots'], ['lu', '#onoff', 'pl-lineups'], ['duo', '#duo-cols', 'pl-duos'], ['log-sec', '#log', 'pl-log']]) {
-    test(`the ${id} heading closes and opens its section, and the choice is kept across visits`, async ({page}) => {
+  const SECS = ['sc', 'lu', 'duo', 'sim', 'log-sec'];
+  const states = page => page.evaluate(() => [...document.querySelectorAll('#pg-player details.panel')].map(d => [d.id, d.open]));
+  test('every section of the profile starts closed when the page is opened', async ({page}) => {
+    const problems = await prepare(page);
+    await page.goto('./?l#BOS');
+    await settled(page);
+    await page.waitForFunction(() => !document.querySelector('#lu').hidden);
+    expect((await states(page)).map(([id]) => id)).toEqual(SECS);
+    expect((await states(page)).filter(([, o]) => o)).toEqual([]);
+    expect(await page.locator('#sc-court').isVisible()).toBe(false);
+    expect(problems, 'the page reported errors').toEqual([]);
+  });
+  test('a link to one of his games opens on that game\'s shot chart, the rest closed', async ({page}) => {
+    const problems = await prepare(page);
+    await page.goto('./?l#BOS');
+    await settled(page);
+    await page.waitForFunction(() => document.querySelectorAll('#sc-game option').length > 1);
+    const [pid, gid] = await page.evaluate(() => [document.querySelector('#player').value, document.querySelector('#sc-game option[value]:not([value=""])').value]);
+    await page.goto(`./?l#BOS/${pid}/${gid}`);
+    await settled(page);
+    await page.waitForFunction(g => document.querySelector('#sc-game').value === g, gid);
+    expect((await states(page)).filter(([, o]) => o).map(([id]) => id)).toEqual(['sc']);
+    expect(await page.locator('#sc-court').isVisible()).toBe(true);
+    expect(problems, 'the page reported errors').toEqual([]);
+  });
+  for (const [id, body] of [['sc', '#sc-court'], ['lu', '#onoff'], ['duo', '#duo-cols'], ['sim', '#sims'], ['log-sec', '#log']]) {
+    test(`the ${id} heading opens and closes its section, kept from player to player, closed again on the next visit`, async ({page}) => {
       const problems = await prepare(page);
       await page.goto('./?l#BOS');
       await settled(page);
       await page.waitForFunction(i => !document.getElementById(i).hidden, id);
       const isOpen = () => page.evaluate(i => document.getElementById(i).open, id);
-      expect(await isOpen()).toBe(true);
-      await page.click(`#${id} summary`);
-      expect(await isOpen()).toBe(false);
-      expect(await page.locator(body).isVisible()).toBe(false);
-      await page.waitForFunction(k => localStorage.getItem(k) === 'closed', key);   // the toggle event is queued, not synchronous
-      await page.reload();
-      await settled(page);
       expect(await isOpen()).toBe(false);
       await page.focus(`#${id} summary`);
       await page.keyboard.press('Enter');
       expect(await isOpen()).toBe(true);
       expect(await page.locator(body).isVisible()).toBe(true);
+      const first = await page.evaluate(() => document.querySelector('#player').value);
+      await page.click('#next');
+      await page.waitForFunction(p => document.querySelector('#player').value !== p, first);
+      expect(await isOpen()).toBe(true);
+      await page.click(`#${id} summary`);
+      expect(await isOpen()).toBe(false);
+      await page.click(`#${id} summary`);
+      await page.evaluate(() => { location.hash = '#standings'; });
+      await page.waitForFunction(() => document.body.dataset.page === 'standings');
+      await page.evaluate(() => { location.hash = '#BOS'; });
+      await page.waitForFunction(() => document.body.dataset.page === 'player');
+      expect(await isOpen()).toBe(false);
+      await page.reload();
+      await settled(page);
+      await page.waitForFunction(i => !document.getElementById(i).hidden, id);
+      expect(await isOpen()).toBe(false);
       expect(problems, 'the page reported errors').toEqual([]);
     });
   }
