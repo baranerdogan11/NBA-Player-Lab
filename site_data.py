@@ -32,7 +32,9 @@ Files under <out>/ (out is teams/<season>/):
                     holds it to the game box scores
   leaders.json      every player's season totals, under his current club, his clubs' totals over the same games
                     (tm_fga, tm_fta, tm_tov, tm_sec, for usage), his country and rookie flag, his RAPM, O-RAPM and D-RAPM (null without one), and
-                    for form his Game Score total gs and gs5 and sec5 over his last five games played
+                    for form his Game Score total gs and gs5 and sec5 over his last five games played, and his season's
+                    double-doubles dd, triple-doubles td and streaks run: {key: [active, longest]} for each of STREAKS
+                    (streaks()); check_streaks() holds them to the game box scores
   cal/<CODE>.ics    the club's schedule as an iCalendar feed (write_calendars()): one event per game, tip-off in UTC, a
                     UID per gid so a moved game moves in subscribed calendars, the final score once there is one
 
@@ -222,7 +224,8 @@ def write_site(out, season, label, built, teams, players, games, lines):
                         "sec": sum(x["sec"] for x in played), **{k: sum(x[k] for x in played) for k in STATS},
                         **{f"tm_{k}": sum(team_tot[(x["gid"], x["team"])][k] for x in played) for k in ("fga", "fta", "tov", "sec")},
                         "rapm": rnd(o + d) if has else None, "orapm": rnd(o) if has else None, "drapm": rnd(d) if has else None,
-                        "gs": sum(x["gs"] for x in played), "gs5": sum(x["gs"] for x in last5), "sec5": sum(x["sec"] for x in last5)})
+                        "gs": sum(x["gs"] for x in played), "gs5": sum(x["gs"] for x in last5), "sec5": sum(x["sec"] for x in last5),
+                        **streaks(played)})
     for t in teams:
         _dump(os.path.join(out, f"{t['code']}.json"), {"code": t["code"], "players": roster.get(t["code"], [])})
     _dump(os.path.join(out, "leaders.json"), {"players": leaders})
@@ -240,6 +243,7 @@ def write_site(out, season, label, built, teams, players, games, lines):
         for x in sorted((x for x in played if x[k] > 0), key=lambda x: (-x[k], final[x["gid"]]["time"], x["gid"], name[x["pid"]], x["pid"]))[:10]]
         for k in HIGHS}})
     check_highs(out, final)
+    check_streaks(out)
     write_calendars(out, teams, games)
 
 
@@ -296,6 +300,52 @@ def check_highs(out, gids):
         over = [key for key, x in box.items() if x[k] > floor and key not in shown]
         if over:
             raise ValueError(f"highs.json {k}: {len(over)} box-score lines beat the board, {over[0]} among them")
+
+
+# double-doubles: ten or more in two of these (three for a triple-double)
+DOUBLES = ("pts", "reb", "ast", "stl", "blk")
+# streaks: consecutive games played meeting the test, this season only. A game he sat out (no line, or 0 seconds) does
+# not break a run, as Basketball-Reference counts them
+STREAKS = {"p20": lambda x: x["pts"] >= 20, "p10": lambda x: x["pts"] >= 10,
+           "dd": lambda x: doubles(x) >= 2, "t3": lambda x: x["fg3m"] >= 1}
+
+
+def doubles(x):
+    """How many of DOUBLES the line reached ten in."""
+    return sum(x[k] >= 10 for k in DOUBLES)
+
+
+def streaks(played):
+    """played: a player's lines with seconds, oldest first. {dd, td, run: {key: [active, longest]}}: his double-doubles
+    and triple-doubles (a triple-double is a double-double too), and for each of STREAKS the run he is on now and his
+    season's longest."""
+    run = {}
+    for k, test in STREAKS.items():
+        cur = best = 0
+        for x in played:
+            cur = cur + 1 if test(x) else 0
+            best = max(best, cur)
+        run[k] = [cur, best]
+    return {"dd": sum(doubles(x) >= 2 for x in played), "td": sum(doubles(x) >= 3 for x in played), "run": run}
+
+
+def check_streaks(out):
+    """Raises unless every player's dd, td and streaks in leaders.json are those of his box-score lines in the finals'
+    game files (games/<gid>.json), counted over his games played in tip-off order."""
+    sched = json.load(open(os.path.join(out, "games.json")))["games"]
+    lines = {}
+    for g in sched:   # games.json lists the schedule in tip-off order; a final has its score
+        if g["hs"] is None:
+            continue
+        for side in json.load(open(os.path.join(out, "games", f"{g['gid']}.json")))["box"].values():
+            for x in side:
+                if x["sec"] > 0:
+                    lines.setdefault(x["pid"], []).append(x)
+    for p in json.load(open(os.path.join(out, "leaders.json")))["players"]:
+        want = streaks(lines.get(p["pid"], []))
+        got = {k: p.get(k) for k in want}
+        if got != want:
+            raise ValueError(f"leaders.json: {p['name']} has {got}, his box scores say {want}")
 
 
 LU_COUNTS = ("fga", "oreb", "tov", "fta")
