@@ -40,6 +40,11 @@ A port of [Euroleague Player Lab](https://github.com/baranerdogan11/Euroleague-P
   made field goals per game and shot zone with how many were assisted (unassisted makes include putbacks), and
   `assists/league.json` the league's counts by zone and by player; each player's makes in a game must equal his
   box-score FGM and his three-point zones his 3PM, or the game is left out
+- `profiles.py` and `similar.py`: `profiles.py` turns each player's season box-score lines into role rates (usage,
+  assist, turnover, rebound, steal and block percentages, three-point and free-throw rates) and a position group;
+  `similar.py` writes `teams/<season>/similar.json`, each regular's three nearest players by those role rates alone
+  (no efficiency), from his own position group first, for the Player page's Similar role row. Only players with five
+  games and 15 minutes a game get comps or are one, and every one of them must match `leaders.json`'s games and seconds
 - `tests/fixtures/site_fixture.py`: a made-up, self-consistent league the browser tests run against
 - `tests/`: Python self-tests (`tests/run_all.py` runs every `tests/test_*.py`), the Playwright browser tests
   (`tests/e2e/`) and the lint and type-check setup for the page's script (`tests/lint/`)

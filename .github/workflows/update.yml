@@ -131,6 +131,10 @@ jobs:
         if: hashFiles('warehouse.py') != ''
         run: python assists.py
 
+      - name: Similar role (profiles.py role rates, then teams/<season>/similar.json; every comp clears the floors and matches leaders.json)
+        if: hashFiles('warehouse.py') != ''
+        run: python profiles.py && python similar.py
+
       - name: Build site
         run: python build.py
 
