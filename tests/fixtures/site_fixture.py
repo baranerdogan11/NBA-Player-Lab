@@ -197,6 +197,29 @@ def team_lines(games, lines):
     return out
 
 
+def write_similar(out, players, lines):
+    """similar.json in similar.py's shape, without pandas (the browser job has none): every player with two games is
+    matched to the three nearest of his position by points, rebounds and assists per minute (pid breaks ties); a
+    player with fewer games has no comps, so the page's hidden case is covered too."""
+    import json
+    tot = {}
+    for x in lines:
+        if x["sec"] > 0:
+            t = tot.setdefault(x["pid"], [0, 0, 0, 0, 0])
+            t[0] += 1
+            for i, k in enumerate(("sec", "pts", "reb", "ast"), 1):
+                t[i] += x[k]
+    pos = {p["pid"]: p["pos"] for p in players}
+    rate = {pid: [v / t[1] * 60 for v in t[2:]] for pid, t in tot.items() if t[0] >= 2}
+    comps = {}
+    for pid, r in sorted(rate.items()):
+        near = sorted((q for q in rate if q != pid and pos[q] == pos[pid]), key=lambda q: (sum((a - b) ** 2 for a, b in zip(r, rate[q])), q))
+        if len(near) >= 3:
+            comps[pid] = near[:3]
+    with open(os.path.join(out, "similar.json"), "w") as f:
+        json.dump({"keys": ["pts", "reb", "ast"], "games": 2, "mpg": 0, "players": comps}, f)
+
+
 def hits(rng, n, p):
     return sum(rng.random() < p for _ in range(n))
 
@@ -218,4 +241,5 @@ if __name__ == "__main__":
     write_league_lineups(out, teams)
     write_assists(out, teams, makes(shots, assists))
     write_ratings(out, teams, team_lines(games, lines))
+    write_similar(out, players, lines)
     print(f"fixture league written to {out}")
