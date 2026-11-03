@@ -16,7 +16,8 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "tests", "fixtures"))
 import site_fixture  # noqa: E402
 from rounding import rnd  # noqa: E402
-from site_data import (HIGHS, LEAGUE_FLOOR, RT, STATS, check_highs, check_league_lineups, check_ratings, game_score,  # noqa: E402
+from site_data import (HIGHS, LEAGUE_FLOOR, RT, STATS, STREAKS, check_highs, check_league_lineups, check_ratings, check_streaks,  # noqa: E402
+                       doubles, game_score, streaks,
                        write_league_lineups, write_lineups, write_ratings, write_site)
 
 checks = {}
@@ -155,6 +156,48 @@ hs["stats"]["pts"][0]["v"] -= 1
 hs["stats"]["reb"].pop(0)        # a better line left off the board
 json.dump(hs, open(os.path.join(out, "highs.json"), "w"))
 checks["the season highs gate fails when a better line is left off"] = not highs_gate()
+def run_of(rows, test):
+    """The active run and the longest, counted from scratch the long way: lengths of the blocks of passing games."""
+    blocks = "".join("1" if test(r) else "0" for r in rows).split("0")
+    return [len(blocks[-1]), max(len(b) for b in blocks)]
+
+
+played_of = {p["pid"]: [r for r in logs[p["pid"]] if r["sec"] > 0] for p in lead}
+cnt = lambda r, n: sum(r[k] >= 10 for k in ("pts", "reb", "ast", "stl", "blk")) >= n  # noqa: E731
+checks["double- and triple-double counts are his games with ten in two and three of PTS, REB, AST, STL, BLK"] = all(
+    p["dd"] == sum(cnt(r, 2) for r in played_of[p["pid"]]) and p["td"] == sum(cnt(r, 3) for r in played_of[p["pid"]]) for p in lead)
+checks["the fixture has double-doubles and a triple-double"] = sum(p["dd"] for p in lead) > 0 and sum(p["td"] for p in lead) > 0
+checks["every streak is his active run and season's longest over his games played (a game he sat out is skipped)"] = all(
+    p["run"] == {k: run_of(played_of[p["pid"]], t) for k, t in STREAKS.items()} for p in lead)
+checks["the fixture has active streaks of several games"] = all(max(p["run"][k][0] for p in lead) >= 3 for k in STREAKS)
+hot = {"pts": 25, "reb": 0, "ast": 0, "stl": 0, "blk": 0, "fg3m": 0}
+checks["a game played under the mark ends a run"] = (
+    streaks([hot, hot])["run"]["p20"] == [2, 2] and streaks([hot, {**hot, "pts": 19}, hot])["run"]["p20"] == [1, 1])
+checks["a triple-double is a double-double too"] = streaks([{**hot, "reb": 10, "ast": 12}]) == {
+    "dd": 1, "td": 1, "run": {"p20": [1, 1], "p10": [1, 1], "dd": [1, 1], "t3": [0, 0]}} and doubles({**hot, "stl": 10}) == 2
+
+
+def streaks_gate():
+    try:
+        check_streaks(out)
+        return True
+    except ValueError:
+        return False
+
+
+checks["the streaks gate passes on the box scores"] = streaks_gate()
+ld = load("leaders.json")
+keep = json.dumps(ld)
+ld["players"][0]["dd"] += 1   # a double-double the box scores do not have
+json.dump(ld, open(os.path.join(out, "leaders.json"), "w"))
+checks["the streaks gate fails on a double-double count the box scores do not have"] = not streaks_gate()
+ld = json.loads(keep)
+top = max(ld["players"], key=lambda p: p["run"]["p20"][0])
+top["run"]["p20"][0] += 1     # a run one game longer than the box scores
+json.dump(ld, open(os.path.join(out, "leaders.json"), "w"))
+checks["the streaks gate fails on a run the box scores do not have"] = not streaks_gate()
+open(os.path.join(out, "leaders.json"), "w").write(keep)
+
 checks["Game Score is Hollinger's, in tenths"] = game_score(
     {"pts": 30, "fgm": 11, "fga": 20, "fta": 8, "ftm": 6, "oreb": 2, "dreb": 8, "stl": 2, "ast": 7, "blk": 1, "pf": 3, "tov": 4}) == 258
 

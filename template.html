@@ -261,6 +261,8 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 
 /* the tale of the tape: the season's numbers in a strip of ink-ruled boxes */
 .tiles{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));margin-top:22px;border-top:4px solid var(--ink);border-bottom:2px solid var(--ink)}
+.hero .runs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.hero .run{padding:5px 9px;border:2px solid var(--ink);background:var(--riso-yellow);color:#1a1a1a;font:900 12px/1 var(--sans);text-transform:uppercase;letter-spacing:.08em;box-shadow:3px 3px 0 var(--ink)}
 .tile{padding:12px 10px 10px;border-right:1px solid var(--ink);border-bottom:1px dashed var(--line)}
 .tile:nth-child(6n){border-right:0}
 .tile b{display:block;font:900 34px/1 var(--sans);letter-spacing:-.04em;color:var(--A)}
@@ -648,6 +650,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
       <section class="panel"><h2 data-t="Trending down" data-def="trend floor-trend" tabindex="0">Trending down</h2><div class="scroll"><table class="tbl trend" id="ld-down"></table></div></section>
     </div>
     <div class="trio" id="ld-highs" hidden></div>
+    <div class="trio" id="ld-runs" hidden></div>
   </section>
   <section class="pg" id="pg-privacy" hidden>
     <section class="panel"><h2 data-t="Privacy">Privacy</h2><div class="prose">
@@ -1028,8 +1031,8 @@ async function renderPlayer(code, pid, my, gid) {
   }
   remember(`${code}/${p.pid}`);
   leagueBadge(p.pid);
-  const s = p.s, a = age(p.born);
-  hero.innerHTML = `<div class="badge">${face(p.pid, p.name, true)}</div><div class="who"><div class="tag"><a href="#team/${esc(code)}">${logo(code, 'mark')}${EN(tname(code))}</a>${p.pos ? ` · ${esc(p.pos)}` : ''}${p.rookie ? ` · <span class="rook">${t('Rookie')}</span>` : ''}</div><h1>${EN(p.name)}</h1><div class="facts">${p.country ? `<span data-k="from">${t('From')} <b>${esc(country(p.country))}</b></span>` : ''}${p.height ? `<span>${t('Height')} <b>${esc(p.height)}</b></span>` : ''}${a != null ? `<span>${t('Age')} <b>${a}</b></span>` : ''}<span${def('gp')}>${t('Games')} <b>${s.gp}</b></span><span${def('min')}>${t('Minutes')} <b>${mpg(s.sec, s.gp)}</b></span></div></div>${p.jersey !== '' && p.jersey != null ? `<div class="num" aria-hidden="true">${esc(p.jersey)}</div>` : ''}${STAR_BTN(p.pid)}${SHARE_BTN('player')}`;
+  const s = p.s, a = age(p.born), me = L.find(x => x.pid === p.pid);
+  hero.innerHTML = `<div class="badge">${face(p.pid, p.name, true)}</div><div class="who"><div class="tag"><a href="#team/${esc(code)}">${logo(code, 'mark')}${EN(tname(code))}</a>${p.pos ? ` · ${esc(p.pos)}` : ''}${p.rookie ? ` · <span class="rook">${t('Rookie')}</span>` : ''}</div><h1>${EN(p.name)}</h1><div class="facts">${p.country ? `<span data-k="from">${t('From')} <b>${esc(country(p.country))}</b></span>` : ''}${p.height ? `<span>${t('Height')} <b>${esc(p.height)}</b></span>` : ''}${a != null ? `<span>${t('Age')} <b>${a}</b></span>` : ''}<span${def('gp')}>${t('Games')} <b>${s.gp}</b></span><span${def('min')}>${t('Minutes')} <b>${mpg(s.sec, s.gp)}</b></span>${me && me.run ? `<span data-k="dd"${def('dd')}>${t('DD@stat')} <b>${me.dd}</b></span><span data-k="td"${def('td')}>${t('TD@stat')} <b>${me.td}</b></span>` : ''}</div>${runChips(me)}</div>${p.jersey !== '' && p.jersey != null ? `<div class="num" aria-hidden="true">${esc(p.jersey)}</div>` : ''}${STAR_BTN(p.pid)}${SHARE_BTN('player')}`;
   const tiles = [['PTS', avg(s.pts, s.gp)], ['REB', avg(s.reb, s.gp)], ['AST', avg(s.ast, s.gp)], ['STL', avg(s.stl, s.gp)], ['BLK', avg(s.blk, s.gp)], ['TOV', avg(s.tov, s.gp)],
     ['FG%', pct(s.fgm, s.fga)], ['3P%', pct(s.fg3m, s.fg3a)], ['FT%', pct(s.ftm, s.fta)], ['TS%', ts(s.pts, s.fga, s.fta)], ['+/-', N(signed(rdiv(s.pm, s.gp)))], ['MIN', mpg(s.sec, s.gp)]];
   // the picture: the game picked on the shot chart, as its log row shows it (and its fouls, from the box score), or the season's tiles
@@ -1068,6 +1071,12 @@ async function renderPlayer(code, pid, my, gid) {
   setTimeout(() => prime('player'));
   document.title = `${p.name} · NBA Player Lab`;
 }
+// ---- On a run: his active streaks of three games or more (leaders.json), double-doubles first, at most two
+const RUN_MIN = 3;
+const runChips = me => {
+  const on = me && me.run ? ['dd', 'p20', 't3', 'p10'].filter(k => me.run[k][0] >= RUN_MIN).slice(0, 2) : [];
+  return on.length ? `<div class="runs">${on.map(k => `<span class="run" data-run="${k}" data-n="${me.run[k][0]}"${def('runs')}>${t((RUNS.find(r => r[0] === k) || [])[2])} · ${t('{n} straight', {n: me.run[k][0]})}</span>`).join('')}</div>` : '';
+};
 // ---- Form: his last ten games played, oldest first, as bars of Game Score (gs, in tenths, written by site_data.py) from
 // zero, over a dashed line at his season average; filled above the average, outlined below; each bar opens its game
 function drawForm(played, code) {
@@ -1769,20 +1778,22 @@ const board = (L, stat) => {
 async function renderLeaders(stat, my, rookies, size) {
   let L = (await get('leaders.json')).players;
   if (stale(my)) return;
-  if (!LEAD[stat] && stat !== 'form' && stat !== 'highs' && stat !== 'lineups') stat = 'pts';
+  if (!LEAD[stat] && stat !== 'form' && stat !== 'highs' && stat !== 'lineups' && stat !== 'streaks') stat = 'pts';
   const wide = stat === 'highs' || stat === 'lineups';
   rookies = rookies && !wide;
   if (rookies) L = L.filter(p => p.rookie);
-  $('#ld-tabs').innerHTML = [...Object.entries(LEAD), ['form', ['Trending']], ['lineups', ['Lineups@board']], ['highs', ['Season highs']]].map(([k, [l]]) => `<a href="#leaders/${k}${rookies && k !== 'highs' && k !== 'lineups' ? '/rookies' : ''}" aria-current="${k === stat}" data-def="${LEAD_DEF[k]}">${t(l)}</a>`).join('');
+  $('#ld-tabs').innerHTML = [...Object.entries(LEAD), ['form', ['Trending']], ['lineups', ['Lineups@board']], ['streaks', ['Streaks']], ['highs', ['Season highs']]].map(([k, [l]]) => `<a href="#leaders/${k}${rookies && k !== 'highs' && k !== 'lineups' ? '/rookies' : ''}" aria-current="${k === stat}" data-def="${LEAD_DEF[k]}">${t(l)}</a>`).join('');
   const rk = $('#ld-rook');
   rk.parentElement.hidden = wide;
   rk.setAttribute('aria-pressed', String(rookies));
   rk.dataset.stat = stat;
-  $('#ld-sec').hidden = stat === 'form' || wide;
+  $('#ld-sec').hidden = stat === 'form' || stat === 'streaks' || wide;
   $('#ld-form').hidden = stat !== 'form';
   $('#ld-highs').hidden = stat !== 'highs';
+  $('#ld-runs').hidden = stat !== 'streaks';
   $('#ld-size').hidden = $('#ld-lu').hidden = stat !== 'lineups';
   if (stat === 'form') return drawTrend(L);
+  if (stat === 'streaks') return drawRuns(L);
   if (stat === 'lineups') return drawUnits(L, await get('lineups/league.json').catch(() => null), size, my);
   if (stat === 'highs') return drawHighs(await get('highs.json').catch(() => ({stats: {}})), my);
   // the unassisted board counts makes from the assist credits (assists/league.json: pid -> [assisted, makes])
@@ -1850,6 +1861,29 @@ function drawHighs(H, my) {
       if (!i || x.v !== rows[i - 1].v) rank = i + 1;
       return `<a href="#${esc(x.club)}/${esc(x.pid)}/${esc(x.gid)}" data-pid="${esc(x.pid)}" data-gid="${esc(x.gid)}"><span class="rk">${rank}</span>${face(x.pid, x.name)}<span class="nm">${EN(x.name)}<small>${fmtDate(x.date, true)} · ${x.home ? t('vs') : '@'} ${esc(x.opp)}</small></span>${logo(x.team)}<b class="v">${k === 'gs' ? N(rdiv(x.v, 10)) : x.v}<small>${t(unit + '@stat')}</small></b></a>`;
     }).join('') : `<p class="empty">${t('No games played yet.')}</p>`}</div></section>`;
+  }).join('');
+}
+
+// ---- Streaks (leaders.json, site_data.streaks()): each run's active streaks of two games or more, longest first, then the
+// season's longest, then the name; and the season's double-doubles and triple-doubles. Runs count games played this
+// season, so a game sat out does not end one
+const RUNS = [['p20', '20+ points', '20+ points'], ['p10', '10+ points', '10+ points'], ['dd', 'Double-double run', 'Double-doubles'], ['t3', 'A three made', 'A three made']];
+const DOUBLE = [['dd', 'Double-doubles', 'DD@stat'], ['td', 'Triple-doubles', 'TD@stat']];
+function drawRuns(L) {
+  const panel = (k, label, ids, rows, v, sub, unit) => {
+    let rank = 0;
+    return `<section class="panel" data-stat="${k}"><h2${def(ids)}>${t(label)}</h2><div class="list best">${rows.length ? rows.slice(0, 10).map((p, i) => {
+      if (!i || v(p) !== v(rows[i - 1])) rank = i + 1;
+      return `<a href="#${esc(p.team)}/${esc(p.pid)}" data-pid="${esc(p.pid)}"><span class="rk">${rank}</span>${face(p.pid, p.name)}<span class="nm">${EN(p.name)}<small>${sub(p)}</small></span>${logo(p.team)}<b class="v">${v(p)}<small>${unit}</small></b></a>`;
+    }).join('') : `<p class="empty">${t('No player qualifies yet.')}</p>`}</div></section>`;
+  };
+  const has = L.filter(p => p.run);
+  $('#ld-runs').innerHTML = RUNS.map(([k, label]) => {
+    const rows = has.filter(p => p.run[k][0] >= 2).sort((x, y) => y.run[k][0] - x.run[k][0] || y.run[k][1] - x.run[k][1] || x.name.localeCompare(y.name));
+    return panel(`run-${k}`, label, 'runs', rows, p => p.run[k][0], p => t('Season best {n}', {n: p.run[k][1]}), t('straight'));
+  }).join('') + DOUBLE.map(([k, label, unit]) => {
+    const rows = has.filter(p => p[k] > 0).sort((x, y) => y[k] - x[k] || x.gp - y.gp || x.name.localeCompare(y.name));
+    return panel(k, label, k, rows, p => p[k], p => p.gp === 1 ? t('1 game') : t('{n} games', {n: p.gp}), t(unit));
   }).join('');
 }
 
@@ -2175,6 +2209,9 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['trend', '', 'Trending', 'The Game Score average of the last five games played less the season’s.', 'Last 5 − Season'],
     ['l5min', 'L5 MIN@stat', 'Minutes over the last five', 'Minutes per game over the last five games played.', ''],
     ['best', '', 'Best performances', 'The latest night’s five best lines by Game Score.', ''],
+    ['dd', 'DD@stat', 'Double-double', 'Ten or more in two of points, rebounds, assists, steals and blocks in one game.', ''],
+    ['td', 'TD@stat', 'Triple-double', 'Ten or more in three of points, rebounds, assists, steals and blocks in one game; it counts as a double-double too.', ''],
+    ['runs', '', 'Streaks', 'Games in a row meeting the mark, this season only. Only games played count, as Basketball-Reference counts them: a game sat out does not end a run, one played under the mark does. The boards list runs of two games or more and the player page flags one of three or more.', ''],
     ['highs', '', 'Season highs', 'Each stat’s ten best single games of the season; equal values share a place. The game log marks a player’s own highs once two games are in.', ''],
   ]],
   ['Game flow', [
@@ -2211,7 +2248,7 @@ const defBody = r => `<span>${esc(t(r[3]))}</span>${r[4] ? `<code>${esc(t(r[4]))
 // the Leaders boards: each one's stat and its floor
 const LEAD_DEF = {pts: 'pts floor-pg', reb: 'reb floor-pg', ast: 'ast floor-pg', stl: 'stl floor-pg', blk: 'blk floor-pg', fg3m: 'fg3 floor-pg', min: 'min floor-pg',
   fg: 'fgp floor-pg floor-fg', fg3: 'fg3p floor-pg floor-fg3', ft: 'ftp floor-pg floor-ft', ts: 'ts floor-pg floor-fg', usg: 'usg floor-pg floor-busy', uast: 'unast floor-pg floor-unast',
-  rapm: 'rapm floor-pg floor-busy', orapm: 'orapm floor-pg floor-busy', drapm: 'drapm floor-pg floor-busy', form: 'trend floor-trend', lineups: 'lineup pair floor-units', highs: 'highs'};
+  rapm: 'rapm floor-pg floor-busy', orapm: 'orapm floor-pg floor-busy', drapm: 'drapm floor-pg floor-busy', form: 'trend floor-trend', lineups: 'lineup pair floor-units', streaks: 'runs dd td', highs: 'highs'};
 // a stat label (as tiles and table headings name it) and its entry
 const STAT_DEF = {PTS: 'pts', REB: 'reb', OREB: 'oreb', DREB: 'dreb', AST: 'ast', STL: 'stl', BLK: 'blk', TOV: 'tov', PF: 'pf', FG: 'fg', '3P': 'fg3', FT: 'ft',
   'FG%': 'fgp', '3P%': 'fg3p', 'FT%': 'ftp', 'TS%': 'ts', '+/-': 'pm', MIN: 'min', GP: 'gp', Result: 'result',
