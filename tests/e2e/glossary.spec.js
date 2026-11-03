@@ -130,6 +130,7 @@ const ROUTES = [
   ['#leaders/fg', () => document.querySelectorAll('#ld tbody tr').length > 0],
   ['#leaders/form', () => document.querySelectorAll('#ld-up tbody tr').length > 0],
   ['#leaders/highs', () => document.querySelectorAll('#ld-highs .panel a').length > 0],
+  ['#leaders/streaks', () => document.querySelectorAll('#ld-runs .panel a').length > 0],
   ['#home', () => document.querySelectorAll('#hm-leaders .panel').length === 3],
 ];
 test.describe('every stat has a definition', () => {
