@@ -518,5 +518,18 @@
  "Ten or more in two of points, rebounds, assists, steals and blocks in one game.": "Bir maçta sayı, ribaund, asist, top çalma ve bloktan ikisinde 10 ve üzeri.",
  "Ten or more in three of points, rebounds, assists, steals and blocks in one game; it counts as a double-double too.": "Bir maçta sayı, ribaund, asist, top çalma ve bloktan üçünde 10 ve üzeri; double-double olarak da sayılır.",
  "Games in a row meeting the mark, this season only. Only games played count, as Basketball-Reference counts them: a game sat out does not end a run, one played under the mark does. The boards list runs of two games or more and the player page flags one of three or more.": "Barajı üst üste geçtiği maçlar, yalnızca bu sezon. Basketball-Reference'taki gibi yalnızca oynadığı maçlar sayılır: oynamadığı maç seriyi bitirmez, barajın altında kaldığı maç bitirir. Listeler iki maç ve üzeri serileri gösterir, oyuncu sayfası üç maç ve üzerini işaretler.",
+ "Shot type": "Şut türü",
+ "Shot types": "Şut türleri",
+ "Pull-ups and step-backs": "Pull-up ve step-back",
+ "Other jumpers": "Diğer jump şutlar",
+ "Floaters": "Floater",
+ "Drives and layups": "Penetre ve turnike",
+ "Hooks": "Kanca",
+ "Cuts and alley-oops": "Kesme ve alley-oop",
+ "Putbacks and tips": "Dönüş ve tip-in",
+ "Dunks": "Smaç",
+ "How each attempt came, from the play-by-play’s description of the shot: pull-ups and step-backs, other jumpers, floaters, drives and layups, hooks, cuts and alley-oops, putbacks and tips, and dunks. Every attempt has one type, so they add up to the box score’s FG. Jump shots the play-by-play describes no further are other jumpers; it does not say which were catch-and-shoot.": "Her denemenin nasıl geldiği, oyun akışındaki şut tanımından: pull-up ve step-back, diğer jump şutlar, floater, penetre ve turnike, kanca, kesme ve alley-oop, dönüş ve tip-in, smaç. Her denemenin tek bir türü vardır, bu yüzden türler kutu skordaki FG'yi verir. Oyun akışının başka bir şey söylemediği jump şutlar diğer jump şutlardır; hangilerinin catch-and-shoot olduğunu söylemez.",
+ "League by shot type": "Şut türüne göre lig",
+ "The whole league’s FG% on that shot type over the season.": "Tüm ligin sezon boyunca o şut türündeki FG%'si.",
  "5-game avg": "5 maç ort."
 }
