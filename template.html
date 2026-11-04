@@ -339,6 +339,30 @@ html[data-theme="dark"] .board .score span{color:var(--ink)}
 .fm-avg{position:absolute;left:0;right:0;border-top:2px dashed var(--ink);pointer-events:none}
 .fm-zero{position:absolute;left:0;right:0;border-top:1px solid var(--line);pointer-events:none}
 .fm-x{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;margin-top:5px;font:700 9.5px/1.15 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:center}
+/* season: every game of his season as a bar in the club's inks, the five-game average a solid line, the season's dashed; a missed game an empty slot */
+.season{margin:2px 0 18px}
+.sea-h{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 18px;margin-bottom:12px}
+.sea-h .pick{margin:0;flex:0 1 220px}
+.sea-key{display:flex;flex-wrap:wrap;gap:8px 16px;font:900 10.5px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase}
+.sea-key span{display:flex;align-items:center;gap:7px;white-space:nowrap}
+.sea-key i{display:inline-block;width:24px;border-top:3px solid var(--ink)}
+.sea-key .k-avg i{border-top:2px dashed var(--ink)}
+.sea-key b{font-size:13px;letter-spacing:0;color:var(--A)}
+.sea-plot{position:relative;height:150px;display:grid;border-bottom:2px solid var(--ink)}
+.sea-plot>a,.sea-plot>.gap{position:relative;display:block;min-width:0;color:var(--ink);text-decoration:none;border-radius:0}
+.sea-plot>a i{position:absolute;left:14%;right:14%;background:var(--A);box-shadow:2px 1px 0 var(--B);mix-blend-mode:var(--blend)}
+.sea-plot>a.on i{background:var(--ink);box-shadow:none;mix-blend-mode:normal}
+.sea-plot>a:focus-visible{outline:3px solid var(--A);outline-offset:1px}
+.sea-plot>.gap i{position:absolute;left:50%;bottom:4px;width:6px;height:6px;margin-left:-3px;border:1.5px solid var(--muted)}
+.sea-plot svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.sea-plot polyline{fill:none;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
+.sea-y{position:absolute;left:0;right:0;border-top:1px solid var(--line);pointer-events:none}
+.sea-y span{position:absolute;left:0;bottom:2px;font:700 9px/1 var(--sans);color:var(--muted)}
+.sea-avg{position:absolute;left:0;right:0;border-top:2px dashed var(--ink);pointer-events:none}
+.sea-x{position:relative;height:16px;margin-top:4px;font:700 9.5px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.sea-x span{position:absolute;top:0;padding-left:3px;border-left:1px solid var(--line);white-space:nowrap}
+.sea-tip{min-height:18px;margin-top:6px;font:700 12px/1.4 var(--sans)}
+.sea-tip b{font-weight:900}
 .trend .up{color:var(--good);font-weight:900}.trend .dn{color:var(--bad);font-weight:900}
 @media (max-width:600px){.trend th,.trend td{padding-left:4px;padding-right:4px}.trend th{letter-spacing:.06em}.trend .chip{display:none}}
 .flow{position:relative;height:160px;margin:4px 0 0;touch-action:pan-y;cursor:crosshair;-webkit-user-select:none;user-select:none}
@@ -595,7 +619,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <details class="panel" id="lu" hidden><summary><h2 data-t="Lineups">Lineups</h2></summary><div class="scroll"><table class="tbl" id="onoff"></table></div><div class="scroll"><table class="tbl" id="fives"></table></div></details>
     <details class="panel" id="duo" hidden><summary><h2 data-t="Duos">Duos</h2></summary><div class="fives" id="duo-cols"></div></details>
     <details class="panel" id="sim" hidden><summary><h2 data-t="Similar role">Similar role</h2></summary><div class="sims" id="sims"></div></details>
-    <details class="panel" id="log-sec"><summary><h2 data-t="Game log">Game log</h2></summary><div class="gform" id="form" hidden></div><div class="scroll"><table class="tbl" id="log"></table></div></details>
+    <details class="panel" id="log-sec"><summary><h2 data-t="Game log">Game log</h2></summary><div class="season" id="season" hidden><div class="sea-h"><div class="pick"><select id="sea-stat" data-kind="stat" aria-label="Stat" data-ta="Stat"></select></div><div class="sea-key" id="sea-key"></div></div><div class="scroll"><div class="sea-in" id="sea-in"></div></div><div class="sea-tip" id="sea-tip" aria-live="polite"></div></div><div class="gform" id="form" hidden></div><div class="scroll"><table class="tbl" id="log"></table></div></details>
   </section>
   <section class="pg" id="pg-compare" hidden>
     <div class="pick"><select id="cmp-a" data-kind="player" aria-label="First player" data-ta="First player"></select><select id="cmp-b" data-kind="player" aria-label="Second player" data-ta="Second player"></select></div>
@@ -1062,7 +1086,7 @@ async function renderPlayer(code, pid, my, gid) {
   const played = log.filter(x => x.sec > 0), clubs = [...new Set([code, ...played.map(x => x.team)])];
   drawForm(played, code);
   const [files, league, asts] = await Promise.all([Promise.all(clubs.map(c => get(`shots/${c}.json`).catch(() => null))), get('shots/league.json').then(d => d.zones).catch(() => null),
-    Promise.all(clubs.map(c => get(`assists/${c}.json`).catch(() => null))), drawLineups(p, code, clubs, my), drawDuos(p, clubs, my), drawSimilar(p, L, my)]);
+    Promise.all(clubs.map(c => get(`assists/${c}.json`).catch(() => null))), drawLineups(p, code, clubs, my), drawDuos(p, clubs, my), drawSimilar(p, L, my), drawSeason(p, code, my)]);
   if (stale(my)) return;
   const made = asts.every(f => f && f.made) ? asts.flatMap(f => f.made.filter(r => r[1] === p.pid).map(r => [f.games[r[0]], r[2], r[3], r[4]])) : null;
   SC = {pid: p.pid, code, shots: files.flatMap(f => f && f.players[p.pid] ? f.players[p.pid].map(s => [f.games[s[0]], s[1], s[2], s[3], s[4]]) : []), club: Object.fromEntries(played.map(x => [x.gid, x.team])), league, made};
@@ -1097,6 +1121,81 @@ function drawForm(played, code) {
     + `<div class="fm-plot">${lo < 0 ? `<span class="fm-zero" style="bottom:${f(y(0))}%"></span>` : ''}<span class="fm-avg" style="bottom:${f(y(sa))}%"></span>${ten.map(bar).join('')}</div>`
     + `<div class="fm-x" aria-hidden="true">${ten.map(x => `<span>${x.home ? '' : '@'}${esc(x.opp)}</span>`).join('')}</div>`;
 }
+// ---- Season: every final of his clubs since his first game for each, in schedule order, as a bar of the stat picked from his
+// log line (so it reads as the game log does), with the average of his last five games played as a solid line from his fifth
+// game, his season average dashed; a game he missed (not in the box, or no minutes) is an empty slot; each bar opens its game
+const SEA_STATS = [['pts', 'PTS@stat'], ['reb', 'REB@stat'], ['ast', 'AST@stat'], ['fg3m', '3PM@stat'], ['gs', 'GmSc@stat'], ['sec', 'MIN@stat']];
+const SEA_MIN = 5;
+let SEA = null, SEA_K = 'pts';
+async function drawSeason(p, code, my) {
+  const G = await get('games.json').then(d => d.games).catch(() => []);
+  if (stale(my)) return;
+  const at = new Map(G.map((g, i) => [g.gid, i])), mine = new Set(p.log.map(x => x.gid)), span = {};
+  for (const x of p.log) {
+    const i = at.get(x.gid);
+    if (i == null) continue;
+    const s = span[x.team] || (span[x.team] = [i, i]);
+    s[0] = Math.min(s[0], i); s[1] = Math.max(s[1], i);
+  }
+  if (span[code]) span[code][1] = Infinity;   // still his club: every final since
+  const on = (c, i) => span[c] && i >= span[c][0] && i <= span[c][1];
+  const missed = G.flatMap((g, i) => {
+    if (g.hs == null || mine.has(g.gid)) return [];
+    const c = on(g.home, i) ? g.home : on(g.away, i) ? g.away : null;
+    return c ? [{gid: g.gid, date: g.date, team: c, opp: c === g.home ? g.away : g.home, home: c === g.home, sec: 0}] : [];
+  });
+  const slots = [...p.log, ...missed].sort((x, y) => x.date.localeCompare(y.date) || (at.get(x.gid) ?? 1e9) - (at.get(y.gid) ?? 1e9));
+  SEA = {code, slots, played: p.log.filter(x => x.sec > 0)};
+  drawSeasonChart();
+}
+function drawSeasonChart() {
+  const el = $('#season'), {code, slots, played} = SEA;
+  el.hidden = played.length < SEA_MIN;
+  if (el.hidden) { $('#sea-in').innerHTML = $('#sea-key').innerHTML = $('#sea-tip').innerHTML = ''; return; }
+  const k = SEA_STATS.some(s => s[0] === SEA_K) ? SEA_K : 'pts', lab = t(SEA_STATS.find(s => s[0] === k)[1]);
+  $('#sea-stat').innerHTML = SEA_STATS.map(([v, l]) => `<option value="${v}"${v === k ? ' selected' : ''}>${t(l)}</option>`).join('');
+  // values in the log's own units: Game Score in tenths, minutes in seconds; written out as the log and the hero write them
+  const val = x => x.sec > 0 && x[k] != null ? x[k] : null;
+  const show = v => k === 'gs' ? N(fq(v)) : k === 'sec' ? clock(v) : String(v);
+  const mean = (sum, n) => k === 'gs' ? N(fq(rq(sum, 10 * n))) : k === 'sec' ? mpg(sum, n) : avg(sum, n);
+  const got = played.filter(x => x[k] != null), total = got.reduce((n, x) => n + x[k], 0), sa = total / got.length;
+  const roll = new Map();   // gid -> sum of his last five games played up to it
+  got.forEach((x, i) => { if (i >= 4) roll.set(x.gid, got.slice(i - 4, i + 1).reduce((n, y) => n + y[k], 0)); });
+  const vs = got.map(x => x[k]), unit = k === 'gs' ? 10 : k === 'sec' ? 60 : 1, floor = {pts: 10, reb: 5, ast: 5, fg3m: 3, gs: 100, sec: 600}[k];
+  const lo = Math.min(0, ...vs), hi = Math.max(floor, sa, ...vs), base = lo < 0 ? 14 : 0, y = v => base + (92 - base) * (v - lo) / (hi - lo), f = n => n.toFixed(2);
+  const n = slots.length, mid = i => f(i + 0.5), when = x => `${fmtDate(x.date)} ${x.home ? t('vs') : '@'} ${x.opp}`;
+  const step = [1, 2, 5, 10, 20, 50].find(s => (hi - Math.max(lo, 0)) / unit / s <= 4) || 100, ticks = [];
+  for (let v = step; v * unit <= hi; v += step) ticks.push(v);
+  const bar = (x, i) => {
+    const v = val(x);
+    if (v == null) return `<span class="gap" data-gid="${esc(x.gid)}" data-i="${i}" aria-label="${esc(`${when(x)} · ${t('Did not play')}`)}"><i></i></span>`;
+    const top = y(Math.max(0, v)), bot = y(Math.min(0, v));
+    return `<a href="#game/${esc(x.gid)}" data-gid="${esc(x.gid)}" data-i="${i}" data-v="${esc(show(v))}" aria-label="${esc(`${when(x)} · ${show(v)} ${lab}`)}"><i style="bottom:${f(bot)}%;height:${f(Math.max(top - bot, 0.6))}%"></i></a>`;
+  };
+  const pts = slots.map((x, i) => roll.has(x.gid) && val(x) != null ? `${mid(i)},${f(100 - y(roll.get(x.gid) / 5))}` : '').filter(Boolean).join(' ');
+  const months = slots.map((x, i) => [x.date.slice(0, 7), i]).filter(([m], i, a) => !i || m !== a[i - 1][0]);
+  const last = got.at(-1), lastRoll = roll.has(last.gid) ? mean(roll.get(last.gid), 5) : null;
+  el.setAttribute('style', tc(code));
+  $('#sea-key').innerHTML = `${lastRoll != null ? `<span class="k-roll"><i></i>${t('5-game avg')} <b id="sea-roll">${lastRoll}</b></span>` : ''}<span class="k-avg"><i></i>${t('Season')} <b id="sea-avg">${mean(total, got.length)}</b></span>`;
+  $('#sea-in').style.minWidth = `${n * 12}px`;
+  $('#sea-in').innerHTML = `<div class="sea-plot" style="grid-template-columns:repeat(${n},1fr)">${ticks.map(v => `<span class="sea-y" style="bottom:${f(y(v * unit))}%"><span>${v}</span></span>`).join('')}${lo < 0 ? `<span class="sea-y" style="bottom:${f(y(0))}%"></span>` : ''}`
+    + `${slots.map(bar).join('')}<span class="sea-avg" style="bottom:${f(y(sa))}%"></span>`
+    + `${pts ? `<svg viewBox="0 0 ${n} 100" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}" stroke="var(--paper)" stroke-width="5"/><polyline id="sea-line" points="${pts}" stroke="var(--ink)" stroke-width="2.5"/></svg>` : ''}</div>`
+    + `<div class="sea-x" aria-hidden="true">${months.map(([m, i]) => `<span style="left:${f(100 * i / n)}%">${new Intl.DateTimeFormat(loc(), {month: 'short', timeZone: 'UTC'}).format(new Date(`${m}-15T12:00:00Z`))}</span>`).join('')}</div>`;
+  const tip = x => {
+    const v = val(x);
+    for (const a of $$('#sea-in a.on')) a.classList.remove('on');
+    const a = $(`#sea-in a[data-gid="${x.gid}"]`); if (a) a.classList.add('on');
+    $('#sea-tip').innerHTML = `${esc(when(x))} · ${v == null ? t('Did not play') : `<b>${show(v)}</b> ${lab}${roll.has(x.gid) ? ` · ${t('5-game avg')} <b>${mean(roll.get(x.gid), 5)}</b>` : ''}`}`;
+  };
+  SEA.tip = tip; SEA.last = last;
+  tip(last);
+}
+$('#sea-stat').addEventListener('change', e => { SEA_K = e.target.value; if (SEA) drawSeasonChart(); });
+const seaTip = e => { const s = e.target.closest('[data-i]'); if (s && SEA) SEA.tip(SEA.slots[Number(s.dataset.i)]); };
+$('#sea-in').addEventListener('mouseover', seaTip);
+$('#sea-in').addEventListener('focusin', seaTip);
+$('#sea-in').addEventListener('mouseleave', () => { if (SEA) SEA.tip(SEA.last); });
 $('#team').addEventListener('change', e => { setFrom(''); location.hash = e.target.value; });
 // picking a country opens its first player, by club, unless the one shown is from there
 $('#from').addEventListener('change', async e => {
@@ -2345,7 +2444,7 @@ $('#theme').addEventListener('click', () => {
 // ---- pickers: a button in the select's place and one shared menu; the select keeps the options, the value and the change event
 const MENU = $('#menu'), VEIL = $('#veil'), Q = $('#menu input'), LIST = $('#menu ul');
 let OPEN = null;
-const icon = (sel, o) => sel.dataset.kind === 'country' ? '' : sel.dataset.kind === 'team' ? logo(o.value) : sel.dataset.kind === 'game' ? logo(o.dataset.c) : face(o.value, o.textContent);
+const icon = (sel, o) => sel.dataset.kind === 'country' || sel.dataset.kind === 'stat' ? '' : sel.dataset.kind === 'team' ? logo(o.value) : sel.dataset.kind === 'game' ? logo(o.dataset.c) : face(o.value, o.textContent);
 // the header's search: every player in leaders.json, under his current club, in the shared menu; choosing one opens his page
 const FIND = /** @type {HTMLSelectElement} */ ($('#find')), FIND_BTN = $('#find-btn');
 const label = (sel, o) => `${icon(sel, o)}${o.dataset.j ? `<i class="j">${esc(o.dataset.j)}</i>` : ''}<span>${esc(o.textContent)}</span>${sel === FIND ? logo(o.dataset.c) : ''}`;
