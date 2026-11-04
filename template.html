@@ -591,7 +591,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <a class="lgb" id="lg-badge" href="#league" hidden></a>
     <div class="pick"><select id="team" data-kind="team" aria-label="Team" data-ta="Team"></select><select id="from" data-kind="country" aria-label="From" data-ta="From"></select><select id="player" data-kind="player" aria-label="Player" data-ta="Player"></select><a class="arr" id="prev" aria-label="Previous player" data-ta="Previous player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="arr" id="next" aria-label="Next player" data-ta="Next player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 5.5 6.5 6.5-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
     <div class="tiles" id="tiles"></div>
-    <details class="panel" id="sc"><summary><h2 data-t="Shot chart">Shot chart</h2></summary><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div><div class="fm-h unast" id="sc-unast" hidden></div><div class="scroll zones" id="sc-zones"></div></details>
+    <details class="panel" id="sc"><summary><h2 data-t="Shot chart">Shot chart</h2></summary><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div><div class="fm-h unast" id="sc-unast" hidden></div><div class="scroll zones" id="sc-zones"></div><div class="scroll zones" id="sc-types" hidden></div></details>
     <details class="panel" id="lu" hidden><summary><h2 data-t="Lineups">Lineups</h2></summary><div class="scroll"><table class="tbl" id="onoff"></table></div><div class="scroll"><table class="tbl" id="fives"></table></div></details>
     <details class="panel" id="duo" hidden><summary><h2 data-t="Duos">Duos</h2></summary><div class="fives" id="duo-cols"></div></details>
     <details class="panel" id="sim" hidden><summary><h2 data-t="Similar role">Similar role</h2></summary><div class="sims" id="sims"></div></details>
@@ -828,6 +828,8 @@ const light = hex => { const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i
 // The five zones of shots.py (ZONES), as court areas: a zone hotter than the league prints in fluoro pink, a colder one in
 // riso blue, once it has ZMIN attempts
 const ZN = ['Restricted area', 'Paint', 'Mid-range', 'Corner 3', 'Above the break 3'], ZMIN = 5;
+// shot types (shots.py TYPES, the shot row's sixth field): how the shot came, from the feed's subType and descriptor
+const TN = ['Pull-ups and step-backs', 'Other jumpers', 'Floaters', 'Drives and layups', 'Hooks', 'Cuts and alley-oops', 'Putbacks and tips', 'Dunks'];
 const ZD = ['M-40 52.5V0A40 40 0 0 1 40 0V52.5Z', 'M-80 52.5V-137.5H80V52.5ZM-40 52.5V0A40 40 0 0 1 40 0V52.5Z',
   'M-220 52.5V-89.5A237.5 237.5 0 0 1 220-89.5V52.5ZM-80 52.5V-137.5H80V52.5Z', 'M-250 52.5V-89.5H-220V52.5ZM250 52.5V-89.5H220V52.5Z',
   'M-250-89.5H-220A237.5 237.5 0 0 1 220-89.5H250V-417.5H-250Z'];
@@ -855,11 +857,14 @@ function court(code, shots, heat = []) {
 // the Player page's chart: his season, or one game picked from his log, on the court of the club he shot for
 // with his zones against the league's below it (the season's league totals, for a game too)
 // and, from the assist credits (assists.py: made rows [gid, zone, assisted, makes]), the share of his makes a team-mate set up
-let SC = {pid: '', code: '', shots: [], club: {}, league: null, made: null};
+// and his shots by type against the league's (shots/league.json types), most attempts first
+let SC = {pid: '', code: '', shots: [], club: {}, league: null, types: null, made: null};
+const typeFg = shots => TN.map((_, k) => shots.reduce((a, s) => s[5] === k ? [a[0] + s[3], a[1] + 1] : a, [0, 0]));
 const zoneAst = made => ZN.map((_, z) => made.reduce((a, r) => r[1] === z ? [a[0] + r[2], a[1] + r[3]] : a, [0, 0]));
 const scPick = () => { const g = $('#sc-game').value, shots = g ? SC.shots.filter(s => s[0] === g) : SC.shots, lg = SC.league && SC.shots.every(s => s[4] != null) ? SC.league : null;
   const zf = lg ? zoneFg(shots) : null, za = lg && SC.made ? zoneAst(g ? SC.made.filter(r => r[0] === g) : SC.made) : null;
-  return {code: g ? SC.club[g] : SC.code, shots, lg, zf, za, heat: lg ? zoneHeat(zf, lg) : []}; };
+  const tl = SC.types && SC.shots.every(s => s[5] != null) ? SC.types : null;
+  return {code: g ? SC.club[g] : SC.code, shots, lg, zf, za, heat: lg ? zoneHeat(zf, lg) : [], tl, tf: tl ? typeFg(shots) : null}; };
 const shotsSvg = () => { const k = scPick(); return court(k.code, k.shots, k.heat); };
 const drawShots = () => {
   const k = scPick();
@@ -870,6 +875,10 @@ const drawShots = () => {
   $('#sc-zones').hidden = !k.lg;
   $('#sc-zones').innerHTML = k.lg ? `<table class="tbl" style="${tc(k.code)}"><thead><tr><th class="l"${def('zones heat')}>${t('Zone')}</th><th${def('fg')}>${t('FG@stat')}</th><th${def('fgp')}>${t('FG%@stat')}</th><th${def('league')}>${t('League')}</th>${k.za ? `<th${def('astd')}>${t('AST’D%@stat')}</th>` : ''}</tr></thead><tbody>${k.zf.map(([m, n], z) =>
     `<tr data-z="${z}"><td class="l"><i class="${k.heat[z] || ''}"></i>${t(ZN[z])}</td><td>${m}-${n}</td><td class="k">${n ? pct(m, n) : '–'}</td><td>${pct(...k.lg[z])}</td>${k.za ? `<td class="astd">${k.za[z][1] ? pct(...k.za[z]) : '–'}</td>` : ''}</tr>`).join('')}</tbody></table>` : '';
+  const ty = k.tf ? k.tf.map((c, i) => [i, ...c]).filter(r => r[2]).sort((a, b) => b[2] - a[2] || a[0] - b[0]) : [];
+  $('#sc-types').hidden = !ty.length;
+  $('#sc-types').innerHTML = ty.length ? `<table class="tbl" style="${tc(k.code)}"><thead><tr><th class="l"${def('stype')}>${t('Shot type')}</th><th${def('fg')}>${t('FG@stat')}</th><th${def('fgp')}>${t('FG%@stat')}</th><th${def('tleague')}>${t('League')}</th></tr></thead><tbody>${ty.map(([i, m, n]) =>
+    `<tr data-type="${i}"><td class="l">${t(TN[i])}</td><td>${m}-${n}</td><td class="k">${pct(m, n)}</td><td>${k.tl[i][1] ? pct(...k.tl[i]) : '–'}</td></tr>`).join('')}</tbody></table>` : '';
 };
 $('#sc-game').addEventListener('change', () => { drawShots(); prime('player'); });
 
@@ -1061,11 +1070,12 @@ async function renderPlayer(code, pid, my, gid) {
   }).join('') : `<tr><td class="empty l" colspan="${head.length}">${t('No games played yet.')}</td></tr>`}</tbody>`;
   const played = log.filter(x => x.sec > 0), clubs = [...new Set([code, ...played.map(x => x.team)])];
   drawForm(played, code);
-  const [files, league, asts] = await Promise.all([Promise.all(clubs.map(c => get(`shots/${c}.json`).catch(() => null))), get('shots/league.json').then(d => d.zones).catch(() => null),
+  const [files, league, asts] = await Promise.all([Promise.all(clubs.map(c => get(`shots/${c}.json`).catch(() => null))), get('shots/league.json').catch(() => null),
     Promise.all(clubs.map(c => get(`assists/${c}.json`).catch(() => null))), drawLineups(p, code, clubs, my), drawDuos(p, clubs, my), drawSimilar(p, L, my)]);
   if (stale(my)) return;
   const made = asts.every(f => f && f.made) ? asts.flatMap(f => f.made.filter(r => r[1] === p.pid).map(r => [f.games[r[0]], r[2], r[3], r[4]])) : null;
-  SC = {pid: p.pid, code, shots: files.flatMap(f => f && f.players[p.pid] ? f.players[p.pid].map(s => [f.games[s[0]], s[1], s[2], s[3], s[4]]) : []), club: Object.fromEntries(played.map(x => [x.gid, x.team])), league, made};
+  SC = {pid: p.pid, code, shots: files.flatMap(f => f && f.players[p.pid] ? f.players[p.pid].map(s => [f.games[s[0]], s[1], s[2], s[3], s[4], s[5]]) : []), club: Object.fromEntries(played.map(x => [x.gid, x.team])),
+    league: league && league.zones, types: league && league.types && league.types.length === TN.length ? league.types : null, made};
   const at = played.some(x => x.gid === gid) ? gid : '';
   if (at) $('#sc').open = true;   // a link to his night opens on that game's shot chart
   $('#sc-game').innerHTML = `<option value="" data-c="${esc(code)}"${at ? '' : ' selected'}>${t('Season')}</option>${played.map(x => `<option value="${esc(x.gid)}" data-c="${esc(x.opp)}"${x.gid === at ? ' selected' : ''}>${fmtDate(x.date)} ${x.home ? t('vs') : '@'} ${esc(x.opp)}</option>`).join('')}`;
@@ -2206,6 +2216,8 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['zgrade', '', 'Club zones', 'On the club page, each zone’s FG% on offense and the FG% opponents shoot there on defense, shaded against the league’s: pink where the club does better, blue where it does worse, deeper at 1.5, 4 and 8 points apart.', ''],
     ['astd', 'AST’D%@stat', 'Assisted share', 'The share of the player’s makes in the zone that a team-mate is credited with an assist on.', 'Assisted makes ÷ FGM'],
     ['unast', '', 'Unassisted makes', 'Makes with no assist credited: off the dribble, in the post, and putbacks too.', 'FGM − assisted makes'],
+    ['stype', '', 'Shot types', 'How each attempt came, from the play-by-play’s description of the shot: pull-ups and step-backs, other jumpers, floaters, drives and layups, hooks, cuts and alley-oops, putbacks and tips, and dunks. Every attempt has one type, so they add up to the box score’s FG. Jump shots the play-by-play describes no further are other jumpers; it does not say which were catch-and-shoot.', ''],
+    ['tleague', '', 'League by shot type', 'The whole league’s FG% on that shot type over the season.', ''],
   ]],
   ['Form and trends', [
     ['form', '', 'Form', 'The last ten games played as Game Score bars, oldest first, over a dashed line at the season average; a filled bar is at or above it.', ''],
