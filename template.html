@@ -657,6 +657,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <div class="pick"><select id="tm-pick" data-kind="team" aria-label="Team" data-ta="Team"></select></div>
     <div class="tiles" id="tm-tiles"></div>
     <details class="panel" id="tm-next-sec"><summary><h2><span data-t="Up next">Up next</span><a class="more" id="tm-cal" data-t="Add to calendar">Add to calendar</a></h2></summary><div class="cards" id="tm-next"></div></details>
+    <details class="panel" id="tm-past-sec"><summary><h2 data-t="Results">Results</h2></summary><div class="scroll"><table class="tbl" id="tm-past"></table></div></details>
     <details class="panel" id="tm-roster-sec"><summary><h2 data-t="Roster">Roster</h2></summary><div class="scroll"><table class="tbl" id="tm-roster"></table></div></details>
     <details class="panel" id="tm-rt-sec"><summary><h2 data-t="Ratings">Ratings</h2></summary><div class="scroll"><table class="tbl rt" id="tm-rt"></table></div></details>
     <details class="panel" id="tm-ff-sec"><summary><h2 data-t="Four Factors">Four Factors</h2></summary><div class="scroll"><table class="tbl rt" id="tm-ff"></table></div></details>
@@ -1428,6 +1429,17 @@ async function renderTeam(code, my) {
   const ics = new URL(`${META.base}cal/${code}.ics`, location.href).href.replace(/^https?:/, 'webcal:'), apple = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
   Object.assign($('#tm-cal'), apple ? {href: ics, target: '', rel: ''} : {href: `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(ics)}`, target: '_blank', rel: 'noopener'});
   $('#tm-next').innerHTML = next.length ? next.map(g => `<div class="up" data-gid="${esc(g.gid)}"><div class="up-h"><span>${tipDay(g)}</span>${restTag(restDays(G, g, code))}</div>${gameCard(g)}</div>`).join('') : `<p class="empty">${t('No games to come.')}</p>`;
+  // every final so far, latest first: the score as the game page has it, and the record after it (the Standings count)
+  const past = G.filter(g => g.hs != null && (g.home === code || g.away === code));
+  let pw = 0, pl = 0;
+  const rows = past.map(g => {
+    const home = g.home === code, us = home ? g.hs : g.as, them = home ? g.as : g.hs, opp = home ? g.away : g.home, won = us > them, ot = g.periods && g.periods.length > 4 ? g.periods.length - 4 : 0;
+    if (won) pw++; else pl++;
+    return `<tr data-gid="${esc(g.gid)}"><td>${fmtDate(g.date)}</td><td class="l"><a href="#team/${esc(opp)}">${home ? t('vs') : '@'} ${logo(opp)}${esc(opp)}</a></td><td class="l"><a href="#game/${esc(g.gid)}" class="${won ? 'w' : 'lo'}">${won ? t('W') : t('L')} ${us}-${them}${ot ? ` <small>${ot > 1 ? ot : ''}${t('OT')}</small>` : ''}</a></td><td data-rec>${pw}-${pl}</td></tr>`;
+  }).reverse();
+  $('#tm-past').setAttribute('style', tc(code));
+  $('#tm-past').innerHTML = `<thead><tr><th class="l">${t('Date@stat')}</th><th class="l">${t('Opp@stat')}</th><th class="l"${def(STAT_DEF.Result)}>${t('Result@stat')}</th><th${def('rec')}>${t('Record@stat')}</th></tr></thead><tbody>${rows.length ? rows.join('')
+    : `<tr><td class="empty l" colspan="4">${t('No games played yet.')}</td></tr>`}</tbody>`;
   const ps = data.players.map(p => ({...p, s: sum(p.log)})).sort((x, y) => (+(y.s.gp > 0) - +(x.s.gp > 0)) || (y.s.pts * x.s.gp - x.s.pts * y.s.gp) || x.name.localeCompare(y.name));
   const head = ['Player', 'GP', 'MIN', 'PTS', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'FG%', '3P%', 'FT%', '+/-'];
   $('#tm-roster').setAttribute('style', tc(code));
@@ -2295,6 +2307,7 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['away', '', 'Away', 'Wins and losses on the road.', ''],
     ['l10', 'L10@stat', 'Last ten games', 'Wins and losses over the last ten games; the squares run oldest first.', ''],
     ['strk', 'STRK@stat', 'Streak', 'The current run of wins or losses.', ''],
+    ['rec', 'Record@stat', 'Win-loss record', 'Wins and losses after that game.', ''],
     ['ppg', 'PPG@stat', 'Points per game', 'Points scored per game.', ''],
     ['oppg', 'OPP PPG@stat', 'Opponent points per game', 'Points allowed per game.', ''],
     ['diff', 'DIFF@stat', 'Point differential', 'The average margin per game.', 'PPG − OPP PPG'],

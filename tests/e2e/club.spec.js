@@ -191,7 +191,7 @@ test('every section starts closed, opens and closes, and stays open from club to
   await settled(page);
   await page.waitForFunction(club, CODE);
   const open = () => page.evaluate(() => [...document.querySelectorAll('#pg-team details.panel')].map(d => [d.id, d.open]));
-  expect((await open()).length).toBe(6);
+  expect((await open()).length).toBe(7);
   expect((await open()).filter(([, o]) => o)).toEqual([]);
   await page.click('#tm-zones-sec > summary');
   await page.click('#tm-roster-sec > summary');
@@ -233,5 +233,28 @@ test('shot performance prints each zone\'s FG% for the club and its opponents, s
     }
   }
   expect(await page.locator('#tm-zones circle.made, #tm-zones .miss').count(), 'no dots or crosses').toBe(0);
+  expect(problems).toEqual([]);
+});
+
+test('its results are every final, latest first, with the score and record the game page and Standings show', async ({page}) => {
+  const problems = await prepare(page);
+  await page.goto(`./?l#team/${CODE}`);
+  await settled(page);
+  await page.waitForFunction(club, CODE);
+  expect(await page.evaluate(() => document.querySelector('#tm-past-sec').open)).toBe(false);
+  const G = await page.evaluate(() => get('games.json').then(d => d.games));
+  const past = G.filter(g => g.hs != null && (g.home === CODE || g.away === CODE)).reverse();
+  expect(past.length).toBeGreaterThan(1);
+  const rows = await page.evaluate(() => [...document.querySelectorAll('#tm-past tbody tr')].map(r => ({gid: r.dataset.gid, res: r.cells[2].textContent, rec: r.cells[3].textContent})));
+  expect(rows.map(r => r.gid)).toEqual(past.map(g => g.gid));
+  const tiles = await page.evaluate(() => ['W', 'L'].map(k => document.querySelector(`#tm-tiles .tile[data-k="${k}"] b`).textContent));
+  expect(rows[0].rec, 'the record after the latest final is the season record').toBe(tiles.join('-'));
+  await page.click('#tm-past-sec > summary [data-t="Results"]');
+  const g = past[past.length - 1];
+  await page.click(`#tm-past tr[data-gid="${g.gid}"] a[href^="#game/"]`);
+  await page.waitForFunction(gid => document.body.dataset.page === 'game' && location.hash === `#game/${gid}` && !document.querySelector('#gm-final').hidden, g.gid);
+  const home = g.home === CODE, us = home ? g.hs : g.as, them = home ? g.as : g.hs;
+  expect(rows[rows.length - 1].res.startsWith(`${us > them ? 'W' : 'L'} ${us}-${them}`)).toBe(true);
+  expect(rows[rows.length - 1].rec).toBe(us > them ? '1-0' : '0-1');
   expect(problems).toEqual([]);
 });
