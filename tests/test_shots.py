@@ -1,6 +1,6 @@
 """shots.py: the shot files read from the warehouse are the shot files written from the same shots directly, a
 player-game whose shots differ from his box-score line (FG or 3P) stops the build, and the zones split the FG column
-along the 3P column.
+along the 3P column and the shot types split it again.
 usage: python tests/test_shots.py
 """
 import filecmp
@@ -16,7 +16,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "tests", "fixtures"))
 import site_fixture  # noqa: E402
-from shots import ZONES, from_warehouse, write_shots, zone  # noqa: E402
+from shots import TYPES, ZONES, check_types, from_warehouse, kind, write_shots, zone  # noqa: E402
 
 teams, players, games, lines = site_fixture.make(random.Random(7))
 shots = site_fixture.spots(random.Random(13), games, lines)
@@ -32,8 +32,9 @@ tables = {
              "fg3a": x["fg3a"], "fg3m": x["fg3m"]} for x in lines]
     + [{"game": "0012600001", "player": int(lines[0]["pid"]), "status": "ACTIVE", "fga": 1, "fgm": 1, "fg3a": 0, "fg3m": 0}],
     "shots": [{"game": s["gid"], "action": i, "player": int(s["pid"]), "team": s["team"], "x": s["x"], "y": s["y"], "made": s["made"],
-               "pts": s["pts"], "area": s.get("area")} for i, s in enumerate(shots)]
-    + [{"game": "0012600001", "action": 1, "player": int(lines[0]["pid"]), "team": "BOS", "x": 0, "y": 10, "made": True, "pts": 2, "area": None}],
+               "pts": s["pts"], "area": s.get("area"), "sub_type": s["sub_type"], "descriptor": s["descriptor"]} for i, s in enumerate(shots)]
+    + [{"game": "0012600001", "action": 1, "player": int(lines[0]["pid"]), "team": "BOS", "x": 0, "y": 10, "made": True, "pts": 2, "area": None,
+        "sub_type": "DUNK", "descriptor": None}],
 }
 con = duckdb.connect()
 
@@ -68,6 +69,35 @@ for f in files:
             z[2] += r[3] if r[4] >= 3 else 0
             z[3] += r[4] >= 3
 box = {(x["gid"], x["pid"]): [x["fgm"], x["fga"], x["fg3m"], x["fg3a"]] for x in lines if x["fga"]}
+fg = {(x["gid"], x["pid"]): (x["fgm"], x["fga"]) for x in lines}
+
+
+def gate(change):
+    """check_types() on a copy of the read files with change(files, league) applied: the error, or None."""
+    tmp = tempfile.mkdtemp()
+    os.makedirs(os.path.join(tmp, "shots"))
+    fs, lg = json.loads(json.dumps(files)), json.loads(json.dumps(full))
+    change(fs, lg)
+    for f in fs:
+        json.dump(f, open(os.path.join(tmp, "shots", f"{f['code']}.json"), "w"))
+    json.dump(lg, open(os.path.join(tmp, "shots", "league.json"), "w"))
+    try:
+        check_types(tmp, fg)
+    except ValueError as e:
+        return str(e)
+
+
+def drop(fs, lg):
+    p = next(p for p in fs[0]["players"].values() if p)
+    p.pop()
+
+
+def untyped(fs, lg):
+    next(p for p in fs[0]["players"].values() if p)[0][5] = len(TYPES)
+
+
+def moved(fs, lg):
+    lg["types"][0][1] += 1
 checks = {
     "zones: a three by its shot value, then the feed's area, then the spot":
         [zone(3, "Left Corner 3", 0, 300), zone(3, "Above the Break 3", 230, 0), zone(3, "Backcourt", 0, 600), zone(3, None, -230, 40),
@@ -86,6 +116,20 @@ checks = {
             and zone(s["pts"], s.get("area"), s["x"], s["y"]) == z)] for z in range(len(ZONES))] for t in teams),
     "the feed's area wins over the spot": sum(r[4] == 2 for r in files[[t["code"] for t in teams].index(shots[first]["team"])]["players"][shots[first]["pid"]])
         == 1 + sum(zone(s["pts"], None, s["x"], s["y"]) == 2 for s in shots if s["pid"] == shots[first]["pid"]),
+    "types: dunks first, then putbacks and tips, cuts and alley-oops, floaters, pull-ups and step-backs, other jumpers, hooks, layups":
+        [kind("DUNK", "putback"), kind("Layup", "tip"), kind("Layup", "putback"), kind("Layup", "cutting finger roll"), kind("DUNK", "alley-oop"),
+         kind("Layup", "running alley-oop"), kind("Jump Shot", "driving floating bank"), kind("Jump Shot", "running pullup"),
+         kind("Jump Shot", "step back bank"), kind("Jump Shot", None), kind("Jump Shot", "fadeaway"), kind("shot", None), kind(None, None),
+         kind("Hook", "turnaround"), kind("Hook", "driving"), kind("Layup", "driving"), kind("Layup", "running reverse"), kind("Layup", None)]
+        == [7, 6, 6, 5, 7, 5, 2, 0, 0, 1, 1, 1, 1, 4, 4, 3, 3, 3],
+    "every shot has a type and every type has shots in the fixture": all(len(r) == 6 and 0 <= r[5] < len(TYPES) for r in rows) and all(n for _, n in full["types"]),
+    "the league file is every club's shots by type": full["types"] == [[sum(r[3] for r in rows if r[5] == k), sum(1 for r in rows if r[5] == k)]
+                                                                        for k in range(len(TYPES))],
+    "a shot's type is its feed subType and descriptor": sorted(r[5] for r in rows) == sorted(kind(s["sub_type"], s["descriptor"]) for s in shots),
+    "the type gate passes on the files as written": gate(lambda fs, lg: None) is None,
+    "a missing shot stops the type gate": "differ from the box score" in (gate(drop) or ""),
+    "a shot of no type stops the type gate": "of no type" in (gate(untyped) or ""),
+    "league types that do not add up to its zones stop the type gate": "do not add up" in (gate(moved) or ""),
     "warehouse tables give the same shot files" + (f" (differs: {diff[:5]})" if diff else ""): not diff and len(os.listdir(os.path.join(read, "shots"))) == 31,
     "a player's shots in a game are his box-score FGA, his makes his FGM":
         len(mine) == lines[0]["fga"] and sum(s["made"] for s in mine) == lines[0]["fgm"],
