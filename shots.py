@@ -1,17 +1,19 @@
 """The shot charts' JSON: every field-goal attempt of the season's regular-season finals, by club and shooter.
 
 Files under <out>/shots/ (out is teams/<season>/):
-  <CODE>.json  {"code", "games": [gid, ...], "players": {pid: [[g, x, y, made, zone], ...]}}, the club's shots in game order:
+  <CODE>.json  {"code", "games": [gid, ...], "players": {pid: [[g, x, y, made, zone, type], ...]}}, the club's shots in game order:
                g indexes games, x and y are the spot in tenths of a foot from the rim (the CDN's xLegacy and yLegacy:
                x > 0 is the shooter's right as he faces the basket, y grows away from the baseline; null when the feed has
-               no spot, so the chart leaves it out but the zones still count it), made is 1 or 0, zone indexes ZONES.
-  league.json  {"zones": [[fgm, fga], ...], "teams": {CODE: {"for": [[fgm, fga], ...], "against": [[fgm, fga], ...]}}}: every
-               club's attempts by zone, in ZONES order, then each club's own (its file's) and its opponents' in its games.
+               no spot, so the chart leaves it out but the zones still count it), made is 1 or 0, zone indexes ZONES and
+               type indexes TYPES (how the shot came, from the feed's subType and descriptor).
+  league.json  {"zones": [[fgm, fga], ...], "types": [[fgm, fga], ...], "teams": {CODE: {"for": [[fgm, fga], ...], "against": [[fgm, fga], ...]}}}: every
+               club's attempts by zone, in ZONES order, and by type, in TYPES order, then each club's own (its file's) and its opponents' in its games.
 A player traded mid-season has shots in each club's file, under the club he shot for.
 
 from_warehouse() reads warehouse/<season>/shots.parquet (warehouse.py) and checks every player's attempts and makes per
 game against his box-score line, threes against his 3P line, so a chart always holds the shots of the FG column beside it
-and its two three-point zones add up to the 3P column. A game that fails is quarantined (quarantine.py) and left out of
+and its two three-point zones add up to the 3P column. Every shot takes exactly one type, so a player's types in a game
+add up to his FGM-FGA too; check_types() checks that on the files as written. A game that fails is quarantined (quarantine.py) and left out of
 the charts, as is a game an earlier gate holds; the run fails only when the quarantine is systemic.
 usage: python shots.py [2026-27]   (reads warehouse/<season>/, writes teams/<season>/shots/)
 """
@@ -20,6 +22,29 @@ import os
 import quarantine
 
 ZONES = ("Restricted area", "Paint", "Mid-range", "Corner 3", "Above the break 3")
+TYPES = ("Pull-ups and step-backs", "Other jumpers", "Floaters", "Drives and layups", "Hooks", "Cuts and alley-oops",
+         "Putbacks and tips", "Dunks")
+
+
+def kind(sub, desc):
+    """The shot's index in TYPES from the feed's subType (Jump Shot, Layup, DUNK, Hook) and descriptor ("pullup", "driving
+    floating bank", ...): every dunk is a dunk, then the putbacks and tips, cuts and alley-oops, floaters, pull-ups and
+    step-backs, other jump shots (the feed does not say catch-and-shoot, so untagged ones stay "other"), hooks, and every
+    other layup (driving, running, reverse) is a drive or layup. An unknown subType counts as a jump shot."""
+    sub, desc = (sub or "").lower(), (desc or "").lower()
+    if sub == "dunk":
+        return 7
+    if "putback" in desc or "tip" in desc:
+        return 6
+    if "cutting" in desc or "alley-oop" in desc:
+        return 5
+    if "floating" in desc:
+        return 2
+    if sub == "layup":
+        return 3
+    if sub == "hook":
+        return 4
+    return 0 if "pullup" in desc or "step back" in desc else 1
 
 
 def zone(pts, area, x, y):
@@ -38,12 +63,12 @@ def zone(pts, area, x, y):
 
 def write_shots(out, teams, shots):
     """teams: site_data.load_teams() rows. shots: gid, time (tip-off, for game order), team, pid, x, y, made, pts (2 or 3)
-    and the feed's area (or none)."""
+    and the feed's area, sub_type and descriptor (or none)."""
     by_team = {t["code"]: [] for t in teams}
     for s in shots:
         by_team[s["team"]].append(s)
     os.makedirs(os.path.join(out, "shots"), exist_ok=True)
-    league = [[0, 0] for _ in ZONES]
+    league, types = [[0, 0] for _ in ZONES], [[0, 0] for _ in TYPES]
     side = {code: {"for": [[0, 0] for _ in ZONES], "against": [[0, 0] for _ in ZONES]} for code in by_team}
     clubs = {}
     for s in shots:
@@ -57,19 +82,20 @@ def write_shots(out, teams, shots):
         players = {}
         for s in rows:
             x, y = (None, None) if s["x"] is None or s["y"] is None else (int(s["x"]), int(s["y"]))
-            z, made = zone(s["pts"], s.get("area"), x, y), 1 if s["made"] else 0
-            league[z][0] += made
-            league[z][1] += 1
+            z, k, made = zone(s["pts"], s.get("area"), x, y), kind(s.get("sub_type"), s.get("descriptor")), 1 if s["made"] else 0
+            for c in (league[z], types[k]):
+                c[0] += made
+                c[1] += 1
             side[code]["for"][z][0] += made
             side[code]["for"][z][1] += 1
             for opp in clubs[s["gid"]] - {code}:
                 side[opp]["against"][z][0] += made
                 side[opp]["against"][z][1] += 1
-            players.setdefault(str(s["pid"]), []).append([g[s["gid"]], x, y, made, z])
+            players.setdefault(str(s["pid"]), []).append([g[s["gid"]], x, y, made, z, k])
         with open(os.path.join(out, "shots", f"{code}.json"), "w") as f:
             json.dump({"code": code, "games": games, "players": players}, f, separators=(",", ":"))
     with open(os.path.join(out, "shots", "league.json"), "w") as f:
-        json.dump({"zones": league, "teams": side}, f, separators=(",", ":"))
+        json.dump({"zones": league, "types": types, "teams": side}, f, separators=(",", ":"))
 
 
 class Mismatch(ValueError):
@@ -102,9 +128,44 @@ def from_warehouse(wh, skip=()):
         raise Mismatch(f"{len(bad)} player-games whose shots differ from the box score, e.g. game {bad[0][0]} player {bad[0][1]}: "
                          f"shots {bad[0][2]}-{bad[0][3]} (3P {bad[0][6]}-{bad[0][7]}), box {bad[0][4]}-{bad[0][5]} (3P {bad[0][8]}-{bad[0][9]})", games)
     cur = con.execute(f"""select s.game as gid, strftime(g.tipoff_utc, '%Y-%m-%dT%H:%M:%SZ') as time, s.team, s.player::varchar as pid,
-                                 s.x, s.y, s.made, s.pts, s.area from shots s {final} order by g.tipoff_utc, s.game, s.action""")
+                                 s.x, s.y, s.made, s.pts, s.area, s.sub_type, s.descriptor from shots s {final} order by g.tipoff_utc, s.game, s.action""")
     cols = [c[0] for c in cur.description]
     return [dict(zip(cols, r)) for r in cur.fetchall()]
+
+
+def check_types(out, box):
+    """Raises ValueError unless every player's shots by type in the files under <out>/shots/ add up, game by game, to his
+    box-score FGM-FGA, and the league's types to its zones. box: {(gid, pid): (fgm, fga)} of the games the files hold."""
+    got = {}
+    for name in sorted(os.listdir(os.path.join(out, "shots"))):
+        if name == "league.json":
+            continue
+        f = json.load(open(os.path.join(out, "shots", name)))
+        for pid, rows in f["players"].items():
+            for r in rows:
+                if not 0 <= r[5] < len(TYPES):
+                    raise ValueError(f"{name}: player {pid} has a shot of no type: {r}")
+                c = got.setdefault((f["games"][r[0]], pid), [[0, 0] for _ in TYPES])[r[5]]
+                c[0] += r[3]
+                c[1] += 1
+    sums = {k: (sum(m for m, _ in v), sum(a for _, a in v)) for k, v in got.items()}
+    want = {k: tuple(v) for k, v in box.items() if v[1]}
+    if sums != want:
+        k = next(k for k in sorted(set(sums) | set(want)) if sums.get(k) != want.get(k))
+        raise ValueError(f"shot types differ from the box score, e.g. game {k[0]} player {k[1]}: types {sums.get(k)}, box {want.get(k)}")
+    league = json.load(open(os.path.join(out, "shots", "league.json")))
+    if [sum(c) for c in zip(*league["types"])] != [sum(c) for c in zip(*league["zones"])]:
+        raise ValueError(f"league shot types {league['types']} do not add up to its zones {league['zones']}")
+
+
+def box_lines(wh, games):
+    """{(gid, pid): (fgm, fga)} of the ACTIVE box lines of the given games, from the warehouse directory wh."""
+    import duckdb
+    if not games:
+        return {}
+    rows = duckdb.connect().execute(f"""select game, player::varchar, fgm, fga from read_parquet('{os.path.join(wh, "box.parquet")}')
+                                        where status = 'ACTIVE' and game in ({', '.join(repr(g) for g in sorted(games))})""").fetchall()
+    return {(g, p): (m, a) for g, p, m, a in rows}
 
 
 if __name__ == "__main__":
@@ -122,5 +183,6 @@ if __name__ == "__main__":
         shots = from_warehouse(wh, skip | set(bad))
     quarantine.record(wh, "shots", {g: ("shots", f"shots differ from the box score, e.g. {r}") for g, r in bad.items()})
     write_shots(out, load_teams(), shots)
+    check_types(out, box_lines(wh, {s["gid"] for s in shots}))
     print(f"{SEASON}: shot charts written to {os.path.join(out, 'shots')}; {len(bad)} games quarantined, {len(skip)} held by an earlier gate")
     raise SystemExit(quarantine.exit_code(wh))

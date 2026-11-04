@@ -107,8 +107,14 @@ def side(rng, roster):
     return out
 
 
+KINDS = {3: (("Jump Shot", "pullup"), ("Jump Shot", None), ("Jump Shot", "step back"), ("Jump Shot", "running pullup")),
+         2: (("Layup", "driving"), ("Jump Shot", "driving floating"), ("DUNK", "alley-oop"), ("Jump Shot", "fadeaway"), ("Layup", "putback"),
+             ("Hook", "turnaround"), ("Layup", "cutting"), ("DUNK", None), ("Layup", "running"), ("Jump Shot", "pullup"), ("Layup", "tip"))}
+
+
 def spots(rng, games, lines):
-    """Every box line's field-goal attempts as shots: its threes beyond the arc, its twos inside it, its makes first."""
+    """Every box line's field-goal attempts as shots: its threes beyond the arc, its twos inside it, its makes first, each
+    with the feed's subType and descriptor taken in turn from KINDS (no draws, so the spots stay as they were)."""
     when = {g["gid"]: g["time"] for g in games}
     out = []
     for x in lines:
@@ -120,8 +126,9 @@ def spots(rng, games, lines):
             else:
                 a, r = rng.uniform(.4, math.pi - .4) if three else rng.uniform(0, math.pi), rng.uniform(245, 275) if three else rng.uniform(0, 210)
                 px, py = round(r * math.cos(a)), round(r * math.sin(a))
+            sub, desc = KINDS[3 if three else 2][len(out) % len(KINDS[3 if three else 2])]
             out.append({"gid": x["gid"], "time": when[x["gid"]], "team": x["team"], "pid": x["pid"], "x": px, "y": py, "made": made,
-                        "pts": 3 if three else 2})
+                        "pts": 3 if three else 2, "sub_type": sub, "descriptor": desc})
     return out
 
 
