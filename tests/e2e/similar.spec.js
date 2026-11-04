@@ -18,6 +18,8 @@ for (const [name, use, lang] of [['desktop', DESKTOP, 'en'], ['phone', PHONE, 't
       const shown = await page.evaluate(() => [...document.querySelectorAll('#sims a')].map(a => [a.dataset.pid, a.getAttribute('href'), a.querySelector('small .cd').textContent]));
       expect(shown).toEqual(want.map(q => [q, `#compare/${pid}/${q}`, by[q].team]));
       expect(await page.locator('#sim h2').textContent()).toBe(lang === 'tr' ? 'Benzer rol' : 'Similar role');
+      expect(await page.evaluate(() => document.querySelector('#sim').open)).toBe(false);   // closed when the page opens
+      await page.click('#sim summary');
       await page.locator('#sim').scrollIntoViewIfNeeded();
       await page.screenshot({path: info.outputPath(`player-${name}-${lang}.png`)});
       await noSidewaysScroll(page, 'similar role');
