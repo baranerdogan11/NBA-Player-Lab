@@ -530,5 +530,6 @@
  "Dunks": "Smaç",
  "How each attempt came, from the play-by-play’s description of the shot: pull-ups and step-backs, other jumpers, floaters, drives and layups, hooks, cuts and alley-oops, putbacks and tips, and dunks. Every attempt has one type, so they add up to the box score’s FG. Jump shots the play-by-play describes no further are other jumpers; it does not say which were catch-and-shoot.": "Her denemenin nasıl geldiği, oyun akışındaki şut tanımından: pull-up ve step-back, diğer jump şutlar, floater, penetre ve turnike, kanca, kesme ve alley-oop, dönüş ve tip-in, smaç. Her denemenin tek bir türü vardır, bu yüzden türler kutu skordaki FG'yi verir. Oyun akışının başka bir şey söylemediği jump şutlar diğer jump şutlardır; hangilerinin catch-and-shoot olduğunu söylemez.",
  "League by shot type": "Şut türüne göre lig",
- "The whole league’s FG% on that shot type over the season.": "Tüm ligin sezon boyunca o şut türündeki FG%'si."
+ "The whole league’s FG% on that shot type over the season.": "Tüm ligin sezon boyunca o şut türündeki FG%'si.",
+ "5-game avg": "5 maç ort."
 }
