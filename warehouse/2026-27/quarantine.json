@@ -6,6 +6,13 @@
    "scope": "lineups",
    "reason": "14 problems: game 0022600142: 519: 1629023 subbed out while on the bench; game 0022600142: 520: [6, 5] on the floor; game 0022600142: 522: [6, 5] on the floor",
    "first_seen": "2026-10-29T09:52:57Z"
+  },
+  {
+   "game": "0022600179",
+   "gate": "warehouse_tests",
+   "scope": "box",
+   "reason": "team_box: player lines add up to the team totals: 1 rows, e.g. ('0022600179', 'UTA')",
+   "first_seen": "2026-11-05T04:06:54Z"
   }
  ]
 }
