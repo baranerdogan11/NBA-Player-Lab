@@ -268,7 +268,8 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 .tile b{display:block;font:900 34px/1 var(--sans);letter-spacing:-.04em;color:var(--A)}
 .tile span{display:block;margin-top:6px;font:900 10.5px/1 var(--sans);text-transform:uppercase;letter-spacing:.14em}
 .tile.lead b{font-size:48px}
-@media (max-width:760px){.tiles{grid-template-columns:repeat(3,minmax(0,1fr))}.tile:nth-child(6n){border-right:1px solid var(--ink)}.tile:nth-child(3n){border-right:0}.tile b{font-size:26px}.tile.lead b{font-size:34px}}
+.tiles.five{grid-template-columns:repeat(5,minmax(0,1fr))}.tiles.five .tile:nth-child(6n){border-right:1px solid var(--ink)}.tiles.five .tile:nth-child(5n){border-right:0}
+@media (max-width:760px){.tiles{grid-template-columns:repeat(3,minmax(0,1fr))}.tile:nth-child(6n){border-right:1px solid var(--ink)}.tile:nth-child(3n){border-right:0}.tiles.five{grid-template-columns:repeat(3,minmax(0,1fr))}.tiles.five .tile:nth-child(5n){border-right:1px solid var(--ink)}.tiles.five .tile:nth-child(3n){border-right:0}.tile b{font-size:26px}.tile.lead b{font-size:34px}}
 .empty{padding:18px 0;font:italic 400 17px/1.4 var(--serif);color:var(--muted)}
 .cards>.empty{grid-column:1/-1}
 
@@ -614,7 +615,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <div class="hero" id="hero"></div>
     <a class="lgb" id="lg-badge" href="#league" hidden></a>
     <div class="pick"><select id="team" data-kind="team" aria-label="Team" data-ta="Team"></select><select id="from" data-kind="country" aria-label="From" data-ta="From"></select><select id="player" data-kind="player" aria-label="Player" data-ta="Player"></select><a class="arr" id="prev" aria-label="Previous player" data-ta="Previous player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="arr" id="next" aria-label="Next player" data-ta="Next player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 5.5 6.5 6.5-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
-    <div class="tiles" id="tiles"></div>
+    <div class="tiles five" id="tiles"></div>
     <details class="panel" id="sc"><summary><h2 data-t="Shot chart">Shot chart</h2></summary><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div><div class="fm-h unast" id="sc-unast" hidden></div><div class="scroll zones" id="sc-zones"></div><div class="scroll zones" id="sc-types" hidden></div></details>
     <details class="panel" id="lu" hidden><summary><h2 data-t="Lineups">Lineups</h2></summary><div class="scroll"><table class="tbl" id="onoff"></table></div><div class="scroll"><table class="tbl" id="fives"></table></div></details>
     <details class="panel" id="duo" hidden><summary><h2 data-t="Duos">Duos</h2></summary><div class="fives" id="duo-cols"></div></details>
@@ -741,10 +742,12 @@ const avg = (total, gp) => N(rdiv(total, gp));
 const pct = (m, a) => N(rdiv(100 * m, a));
 const ts = (pts, fga, fta) => N(rdiv(2500 * pts, 50 * fga + 22 * fta));   // pts / (2 × (FGA + 0.44 FTA)), in integers
 const mpg = (sec, gp) => N(rdiv(sec, 60 * gp));
+const ftar = (fta, fga) => fga ? N(fq(rq(fta, fga, 3), 3).replace(/^0/, '')) : '–';   // free-throw rate FTA ÷ FGA, three decimals (.380)
+const per36 = (n, sec) => N(rdiv(2160 * n, sec));
 const signed = s => s == null ? '–' : (s[0] === '-' ? '−' + s.slice(1) : s === '0' || /^0\.0+$/.test(s) ? s : '+' + s);
 const clock = sec => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
-const STATS = ['pts', 'oreb', 'dreb', 'reb', 'ast', 'stl', 'blk', 'tov', 'pf', 'fgm', 'fga', 'fg3m', 'fg3a', 'ftm', 'fta', 'pm'];
-const sum = log => { const s = {gp: 0, sec: 0}; for (const k of STATS) s[k] = 0; for (const x of log) if (x.sec > 0) { s.gp++; s.sec += x.sec; for (const k of STATS) s[k] += x[k]; } return s; };
+const STATS = ['pts', 'oreb', 'dreb', 'reb', 'ast', 'stl', 'blk', 'tov', 'pf', 'fgm', 'fga', 'fg3m', 'fg3a', 'ftm', 'fta', 'pm', 'fd', 'pf_off', 'tech'];
+const sum = log => { const s = {gp: 0, sec: 0}; for (const k of STATS) s[k] = 0; for (const x of log) if (x.sec > 0) { s.gp++; s.sec += x.sec; for (const k of STATS) s[k] += x[k] || 0; } return s; };
 const loc = () => LANG === 'tr' ? 'tr-TR' : 'en-US';
 const fmtDate = (d, long) => new Intl.DateTimeFormat(loc(), long ? {weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC'} : {month: 'short', day: 'numeric', timeZone: 'UTC'}).format(new Date(`${d}T12:00:00Z`));
 const fmtTime = iso => new Intl.DateTimeFormat(loc(), {hour: '2-digit', minute: '2-digit'}).format(new Date(iso));
@@ -1071,6 +1074,9 @@ async function renderPlayer(code, pid, my, gid) {
   hero.innerHTML = `<div class="badge">${face(p.pid, p.name, true)}</div><div class="who"><div class="tag"><a href="#team/${esc(code)}">${logo(code, 'mark')}${EN(tname(code))}</a>${p.pos ? ` · ${esc(p.pos)}` : ''}${p.rookie ? ` · <span class="rook">${t('Rookie')}</span>` : ''}</div><h1>${EN(p.name)}</h1><div class="facts">${p.country ? `<span data-k="from">${t('From')} <b>${esc(country(p.country))}</b></span>` : ''}${p.height ? `<span>${t('Height')} <b>${esc(p.height)}</b></span>` : ''}${a != null ? `<span>${t('Age')} <b>${a}</b></span>` : ''}<span${def('gp')}>${t('Games')} <b>${s.gp}</b></span><span${def('min')}>${t('Minutes')} <b>${mpg(s.sec, s.gp)}</b></span>${me && me.run ? `<span data-k="dd"${def('dd')}>${t('DD@stat')} <b>${me.dd}</b></span><span data-k="td"${def('td')}>${t('TD@stat')} <b>${me.td}</b></span>` : ''}</div>${runChips(me)}</div>${p.jersey !== '' && p.jersey != null ? `<div class="num" aria-hidden="true">${esc(p.jersey)}</div>` : ''}${STAR_BTN(p.pid)}${SHARE_BTN('player')}`;
   const tiles = [['PTS', avg(s.pts, s.gp)], ['REB', avg(s.reb, s.gp)], ['AST', avg(s.ast, s.gp)], ['STL', avg(s.stl, s.gp)], ['BLK', avg(s.blk, s.gp)], ['TOV', avg(s.tov, s.gp)],
     ['FG%', pct(s.fgm, s.fga)], ['3P%', pct(s.fg3m, s.fg3a)], ['FT%', pct(s.ftm, s.fta)], ['TS%', ts(s.pts, s.fga, s.fta)], ['+/-', N(signed(rdiv(s.pm, s.gp)))], ['MIN', mpg(s.sec, s.gp)]];
+  // on the page, five a row: scoring and defence, shooting with the free-throw rate, then fouls drawn and committed
+  const tileOf = k => tiles.find(x => x[0] === k);
+  const shown = [...['PTS', 'REB', 'AST', 'STL', 'BLK', 'FG%', '3P%', 'FT%'].map(tileOf), ['FTR', ftar(s.fta, s.fga)], tileOf('TS%'), tileOf('TOV'), ['FD', avg(s.fd, s.gp)], ['PF', avg(s.pf, s.gp)], tileOf('+/-'), tileOf('MIN')];
   // the picture: the game picked on the shot chart, as its log row shows it (and its fouls, from the box score), or the season's tiles
   SHARE.player = () => {
     const g = $('#sc-game').value, x = g ? p.log.find(y => y.gid === g) : null, club = x ? x.team : code;
@@ -1081,7 +1087,7 @@ async function renderPlayer(code, pid, my, gid) {
       tiles: tl.map(([k, v]) => [t(k + '@stat'), v]), courts: SC.pid === p.pid ? [shotsSvg()] : [],
       link: link(`${code}/${p.pid}`), title: `${p.name} · NBA Player Lab`, file: `${ascii(p.name)}-${x ? x.date : META.season}.png`};
   };
-  $('#tiles').innerHTML = tiles.map(([k, v], i) => `<div class="tile${i === 0 ? ' lead' : ''}" data-k="${k}"${def(STAT_DEF[k])}><b>${v}</b><span>${t(k + '@stat')}</span></div>`).join('');
+  $('#tiles').innerHTML = shown.map(([k, v], i) => `<div class="tile${i === 0 ? ' lead' : ''}" data-k="${k}"${def(STAT_DEF[k])}><b>${v}</b><span>${t(k + '@stat')}</span></div>`).join('');
   const log = [...p.log].reverse();
   // his season highs: the games where a stat is at its most over his games played, marked once he has played two
   const top = {}, games = log.filter(x => x.sec > 0);
@@ -1245,8 +1251,9 @@ const CMP_ROWS = [{k: 'Games', v: s => s.gp, f: s => String(s.gp)}, {k: 'Minutes
   {k: 'Blocks', v: s => s.gp && s.blk / s.gp, f: s => avg(s.blk, s.gp)}, {k: 'Turnovers', v: s => s.gp && -s.tov / s.gp, f: s => avg(s.tov, s.gp)},
   {k: 'FG%', v: s => s.fga && s.fgm / s.fga, f: s => pct(s.fgm, s.fga)}, {k: '3P%', v: s => s.fg3a && s.fg3m / s.fg3a, f: s => pct(s.fg3m, s.fg3a)},
   {k: 'FT%', v: s => s.fta && s.ftm / s.fta, f: s => pct(s.ftm, s.fta)}, {k: 'TS%', v: s => (s.fga + s.fta) && s.pts / (s.fga + 0.44 * s.fta), f: s => ts(s.pts, s.fga, s.fta)},
+  {k: 'FT rate', v: s => s.fga && s.fta / s.fga, f: s => ftar(s.fta, s.fga)}, {k: 'Fouls drawn', v: s => s.gp && s.fd / s.gp, f: s => avg(s.fd, s.gp)},
   {k: '+/-', v: s => s.gp && s.pm / s.gp, f: s => N(signed(rdiv(s.pm, s.gp)))}];
-const CMP_DEF = {Games: 'avg', Minutes: 'min', Points: 'pts', Rebounds: 'reb', Assists: 'ast', Steals: 'stl', Blocks: 'blk', Turnovers: 'tov', 'FG%': 'fgp', '3P%': 'fg3p', 'FT%': 'ftp', 'TS%': 'ts', '+/-': 'pm'};
+const CMP_DEF = {'FT rate': 'ftar', 'Fouls drawn': 'fd', Games: 'avg', Minutes: 'min', Points: 'pts', Rebounds: 'reb', Assists: 'ast', Steals: 'stl', Blocks: 'blk', Turnovers: 'tov', 'FG%': 'fgp', '3P%': 'fg3p', 'FT%': 'ftp', 'TS%': 'ts', '+/-': 'pm'};
 async function renderCompare(a, b, my) {
   const L = (await get('leaders.json')).players;
   if (stale(my)) return;
@@ -1867,7 +1874,8 @@ document.addEventListener('click', async e => {
 });
 
 // ---- Leaders: per game, or a percentage with the league's own minimums prorated to the games played (FG 300 makes,
-// 3P 82, FT 125 over 82 games); per-game boards need 70% of the club's games, usage and RAPM also 15 minutes a game.
+// 3P 82, FT 125 over 82 games); per-game boards need 70% of the club's games, usage, RAPM and the foul boards (fouls
+// drawn, free-throw rate FTA ÷ FGA, personal fouls per 36 minutes) also 15 minutes a game.
 // Usage: (FGA + 0.44 FTA + TOV) × (club minutes / 5) / (minutes × the club's FGA + 0.44 FTA + TOV), over his games, in integers.
 // RAPM comes from rapm.py already rounded; the boards rank and show that value
 const usg = s => rdiv(100 * (25 * s.fga + 11 * s.fta + 25 * s.tov) * s.tm_sec, 5 * s.sec * (25 * s.tm_fga + 11 * s.tm_fta + 25 * s.tm_tov));
@@ -1884,6 +1892,8 @@ const LEAD = {
   ts: ['TS%', s => s.pts / (s.fga + 0.44 * s.fta), s => ts(s.pts, s.fga, s.fta), (s, tg) => 82 * s.fgm >= 300 * tg, s => String(s.pts)],
   usg: ['USG%', s => Number(usg(s)), s => N(usg(s)), busy],
   uast: ['Unassisted %', s => s.uam / s.am, s => pct(s.uam, s.am), (s, tg) => 82 * s.am >= 300 * tg],
+  fd: ['Fouls drawn', s => s.fd / s.gp, s => avg(s.fd, s.gp), busy], ftar: ['FT rate', s => s.fta / s.fga, s => ftar(s.fta, s.fga), (s, tg) => s.fga > 0 && busy(s, tg)],
+  pf36: ['Foul trouble', s => s.pf / s.sec, s => per36(s.pf, s.sec), busy],
   rapm: ['RAPM', ...rapm('rapm')], orapm: ['O-RAPM', ...rapm('orapm')], drapm: ['D-RAPM', ...rapm('drapm')],
 };
 // the top 25 who qualify for a board, each with the shown value and a rank that ties on it
@@ -2254,6 +2264,8 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['blk', 'BLK@stat', 'Blocks', 'Opponent shots blocked.', ''],
     ['tov', 'TOV@stat', 'Turnovers', 'Possessions lost without a shot: a bad pass, a travel, an offensive foul.', ''],
     ['pf', 'PF@stat', 'Personal fouls', 'Fouls called on the player.', ''],
+    ['fd', 'FD@stat', 'Fouls drawn', 'Fouls called on opponents against the player, the offensive fouls he draws on defence included.', ''],
+    ['pf36', 'PF/36@stat', 'Foul trouble', 'Personal fouls per 36 minutes on the court.', '36 × PF ÷ minutes'],
     ['fg', 'FG@stat', 'Field goals', 'Twos and threes, made-attempted.', ''],
     ['fg3', '3P@stat', '3-pointers', 'Threes, made-attempted.', ''],
     ['ft', 'FT@stat', 'Free throws', 'Free throws, made-attempted.', ''],
@@ -2264,6 +2276,7 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['fgp', 'FG%@stat', 'Field goal percentage', 'Share of field goals made.', 'FGM ÷ FGA'],
     ['fg3p', '3P%@stat', 'Three-point percentage', 'Share of threes made.', '3PM ÷ 3PA'],
     ['ftp', 'FT%@stat', 'Free throw percentage', 'Share of free throws made.', 'FTM ÷ FTA'],
+    ['ftar', 'FTR@stat', 'Free-throw rate', 'How often the player gets to the line: free throws attempted per field goal attempted.', 'FTA ÷ FGA'],
     ['ts', 'TS%@stat', 'True shooting percentage', 'Scoring efficiency that counts threes and free throws: points per two shooting chances.', 'PTS ÷ (2 × (FGA + 0.44 × FTA))'],
   ]],
   ['Player value', [
@@ -2353,7 +2366,7 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['floor-fg', '', 'FG% and TS% boards', 'Also 300 made field goals over 82 games, in proportion to the club’s games so far.', ''],
     ['floor-fg3', '', '3P% board', 'Also 82 made threes over 82 games, in proportion to the club’s games so far.', ''],
     ['floor-ft', '', 'FT% board', 'Also 125 made free throws over 82 games, in proportion to the club’s games so far.', ''],
-    ['floor-busy', '', 'Usage and RAPM boards', 'Also 15 minutes a game.', ''],
+    ['floor-busy', '', 'Usage, RAPM and foul boards', 'Also 15 minutes a game.', ''],
     ['floor-unast', '', 'Unassisted board', 'Also 300 made field goals over 82 games, in proportion to the club’s games so far, counted where the assist credits match the box score.', ''],
     ['floor-trend', '', 'Trending board', 'Ten games played, 70% of the club’s games and 15 minutes a game, over the season and over the last five.', ''],
     ['floor-units', '', 'Lineups board', 'The ten best units by net rating, equal ratings sharing a place. A five needs 6 minutes together for every game the clubs have played (the middle club’s count), up to 100; a pair 20, up to 400.', ''],
@@ -2374,10 +2387,10 @@ const defName = r => { const ab = r[1] ? t(r[1]) : '', nm = t(r[2]); return ab &
 const defBody = r => `<span>${esc(t(r[3]))}</span>${r[4] ? `<code>${esc(t(r[4]))}</code>` : ''}`;
 // the Leaders boards: each one's stat and its floor
 const LEAD_DEF = {pts: 'pts floor-pg', reb: 'reb floor-pg', ast: 'ast floor-pg', stl: 'stl floor-pg', blk: 'blk floor-pg', fg3m: 'fg3 floor-pg', min: 'min floor-pg',
-  fg: 'fgp floor-pg floor-fg', fg3: 'fg3p floor-pg floor-fg3', ft: 'ftp floor-pg floor-ft', ts: 'ts floor-pg floor-fg', usg: 'usg floor-pg floor-busy', uast: 'unast floor-pg floor-unast',
+  fg: 'fgp floor-pg floor-fg', fg3: 'fg3p floor-pg floor-fg3', ft: 'ftp floor-pg floor-ft', ts: 'ts floor-pg floor-fg', usg: 'usg floor-pg floor-busy', uast: 'unast floor-pg floor-unast', fd: 'fd floor-pg floor-busy', ftar: 'ftar floor-pg floor-busy', pf36: 'pf36 floor-pg floor-busy',
   rapm: 'rapm floor-pg floor-busy', orapm: 'orapm floor-pg floor-busy', drapm: 'drapm floor-pg floor-busy', form: 'trend floor-trend', lineups: 'lineup pair floor-units', streaks: 'runs dd td', highs: 'highs'};
 // a stat label (as tiles and table headings name it) and its entry
-const STAT_DEF = {PTS: 'pts', REB: 'reb', OREB: 'oreb', DREB: 'dreb', AST: 'ast', STL: 'stl', BLK: 'blk', TOV: 'tov', PF: 'pf', FG: 'fg', '3P': 'fg3', FT: 'ft',
+const STAT_DEF = {PTS: 'pts', REB: 'reb', OREB: 'oreb', DREB: 'dreb', AST: 'ast', STL: 'stl', BLK: 'blk', TOV: 'tov', PF: 'pf', FD: 'fd', FTR: 'ftar', FG: 'fg', '3P': 'fg3', FT: 'ft',
   'FG%': 'fgp', '3P%': 'fg3p', 'FT%': 'ftp', 'TS%': 'ts', '+/-': 'pm', MIN: 'min', GP: 'gp', Result: 'result',
   W: 'w', L: 'l', PCT: 'pct', PPG: 'ppg', 'OPP PPG': 'oppg', DIFF: 'diff'};
 // a heading that sorts its table when tapped also opens its definition; the sort button inside it takes the focus

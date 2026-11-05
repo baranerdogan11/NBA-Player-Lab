@@ -42,9 +42,11 @@ test.describe('share a player', () => {
       expect(got.title).toBe(await page.title());
       writeFileSync(info.outputPath(`player-game-${lang}.png`), Buffer.from(got.png));
       await PICK(page, '');
-      const season = await page.evaluate(() => SHARE.player().tiles.map(([, x]) => x));
-      const tiles = await page.evaluate(() => [...document.querySelectorAll('#tiles .tile b')].map(b => b.textContent));
-      expect(season, 'season tiles vs the page').toEqual(tiles);
+      // the picture keeps its two rows of six; each is the page's tile of the same label (the page adds FTR, FD and PF)
+      const season = await page.evaluate(() => SHARE.player().tiles);
+      const tiles = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('#tiles .tile')].map(d => [d.querySelector('span').textContent, d.querySelector('b').textContent])));
+      expect(season.length).toBe(12);
+      expect(season, 'season tiles vs the page').toEqual(season.map(([k]) => [k, tiles[k]]));
       await page.evaluate(() => { window.shared = null; });
       await page.click('#hero .share');
       await page.waitForFunction(() => window.shared);
