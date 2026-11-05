@@ -34,7 +34,7 @@ Files under <out>/ (out is teams/<season>/):
                     (tm_fga, tm_fta, tm_tov, tm_sec, for usage), his country and rookie flag, his RAPM, O-RAPM and D-RAPM (null without one), and
                     for form his Game Score total gs and gs5 and sec5 over his last five games played, and his season's
                     double-doubles dd, triple-doubles td and streaks run: {key: [active, longest]} for each of STREAKS
-                    (streaks()); check_streaks() holds them to the game box scores
+                    (streaks()); check_streaks() holds them to the game box scores, and check_totals() every total
   cal/<CODE>.ics    the club's schedule as an iCalendar feed (write_calendars()): one event per game, tip-off in UTC, a
                     UID per gid so a moved game moves in subscribed calendars, the final score once there is one
 
@@ -49,7 +49,9 @@ import os
 from rounding import rnd
 
 STATS = ["pts", "oreb", "dreb", "reb", "ast", "stl", "blk", "tov", "pf",
-         "fgm", "fga", "fg3m", "fg3a", "ftm", "fta", "pm"]
+         "fgm", "fga", "fg3m", "fg3a", "ftm", "fta", "pm", "fd", "pf_off", "tech"]
+# fd: fouls drawn (offensive fouls drawn on defense too), pf_off: offensive fouls committed (part of pf), tech: technical
+# fouls (not part of pf), all as the box score counts them
 HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = "https://baranerdogan11.github.io/NBA-Player-Lab/"
 
@@ -243,6 +245,7 @@ def write_site(out, season, label, built, teams, players, games, lines):
         for x in sorted((x for x in played if x[k] > 0), key=lambda x: (-x[k], final[x["gid"]]["time"], x["gid"], name[x["pid"]], x["pid"]))[:10]]
         for k in HIGHS}})
     check_highs(out, final)
+    check_totals(out)
     check_streaks(out)
     write_calendars(out, teams, games)
 
@@ -329,18 +332,40 @@ def streaks(played):
     return {"dd": sum(doubles(x) >= 2 for x in played), "td": sum(doubles(x) >= 3 for x in played), "run": run}
 
 
-def check_streaks(out):
-    """Raises unless every player's dd, td and streaks in leaders.json are those of his box-score lines in the finals'
-    game files (games/<gid>.json), counted over his games played in tip-off order."""
-    sched = json.load(open(os.path.join(out, "games.json")))["games"]
+def finals_lines(out):
+    """{pid: [box line, ...]}: every player's lines with seconds in the finals' game files (games/<gid>.json), in
+    tip-off order (games.json lists the schedule in that order; a final has its score)."""
     lines = {}
-    for g in sched:   # games.json lists the schedule in tip-off order; a final has its score
+    for g in json.load(open(os.path.join(out, "games.json")))["games"]:
         if g["hs"] is None:
             continue
         for side in json.load(open(os.path.join(out, "games", f"{g['gid']}.json")))["box"].values():
             for x in side:
                 if x["sec"] > 0:
                     lines.setdefault(x["pid"], []).append(x)
+    return lines
+
+
+def check_totals(out):
+    """Raises unless every player's season totals in leaders.json (games, seconds and every key in STATS, fouls drawn
+    among them) are the sums of his box-score lines in the finals' game files, his offensive fouls are part of his
+    personal fouls in every game, and no line has a negative count."""
+    lines = finals_lines(out)
+    for x in (x for ls in lines.values() for x in ls):
+        if x["pf_off"] > x["pf"] or any(x[k] < 0 for k in STATS if k != "pm"):
+            raise ValueError(f"box line {x['name']}: pf {x['pf']}, pf_off {x['pf_off']}, fd {x['fd']}, tech {x['tech']}")
+    for p in json.load(open(os.path.join(out, "leaders.json")))["players"]:
+        ls = lines.get(p["pid"], [])
+        want = {"gp": len(ls), "sec": sum(x["sec"] for x in ls), **{k: sum(x[k] for x in ls) for k in STATS}}
+        got = {k: p.get(k) for k in want}
+        if got != want:
+            raise ValueError(f"leaders.json: {p['name']} totals {[(k, got[k], want[k]) for k in want if got[k] != want[k]]} (leaders, box)")
+
+
+def check_streaks(out):
+    """Raises unless every player's dd, td and streaks in leaders.json are those of his box-score lines in the finals'
+    game files (games/<gid>.json), counted over his games played in tip-off order."""
+    lines = finals_lines(out)
     for p in json.load(open(os.path.join(out, "leaders.json")))["players"]:
         want = streaks(lines.get(p["pid"], []))
         got = {k: p.get(k) for k in want}

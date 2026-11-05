@@ -16,7 +16,7 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "tests", "fixtures"))
 import site_fixture  # noqa: E402
 from rounding import rnd  # noqa: E402
-from site_data import (HIGHS, LEAGUE_FLOOR, RT, STATS, STREAKS, check_highs, check_league_lineups, check_ratings, check_streaks,  # noqa: E402
+from site_data import (HIGHS, LEAGUE_FLOOR, RT, STATS, STREAKS, check_highs, check_league_lineups, check_ratings, check_streaks, check_totals,  # noqa: E402
                        doubles, game_score, streaks,
                        write_league_lineups, write_lineups, write_ratings, write_site)
 
@@ -197,6 +197,34 @@ top["run"]["p20"][0] += 1     # a run one game longer than the box scores
 json.dump(ld, open(os.path.join(out, "leaders.json"), "w"))
 checks["the streaks gate fails on a run the box scores do not have"] = not streaks_gate()
 open(os.path.join(out, "leaders.json"), "w").write(keep)
+
+
+def totals_gate():
+    try:
+        check_totals(out)
+        return True
+    except ValueError:
+        return False
+
+
+checks["every log line and leaders row carries fouls drawn, offensive and technical fouls"] = all(
+    all(k in r for k in ("fd", "pf_off", "tech")) for log in logs.values() for r in log) and all(all(k in p for k in ("fd", "pf_off", "tech")) for p in lead)
+checks["the fixture has fouls drawn, offensive fouls and technicals"] = all(sum(p[k] for p in lead) > 0 for k in ("fd", "pf_off", "tech"))
+checks["the totals gate passes on the box scores"] = totals_gate()
+ld = json.loads(keep)
+max(ld["players"], key=lambda p: p["fd"])["fd"] += 1   # a foul drawn the box scores do not have
+json.dump(ld, open(os.path.join(out, "leaders.json"), "w"))
+checks["the totals gate fails on fouls drawn the box scores do not have"] = not totals_gate()
+open(os.path.join(out, "leaders.json"), "w").write(keep)
+g0 = finals[0]["gid"]
+gfile = os.path.join(out, "games", f"{g0}.json")
+gkeep = open(gfile).read()
+gb = json.loads(gkeep)
+x = next(x for side in gb["box"].values() for x in side if x["sec"] > 0)
+x["pf_off"] = x["pf"] + 1   # more offensive fouls than personal fouls
+json.dump(gb, open(gfile, "w"))
+checks["the totals gate fails on a line with more offensive fouls than fouls"] = not totals_gate()
+open(gfile, "w").write(gkeep)
 
 checks["Game Score is Hollinger's, in tenths"] = game_score(
     {"pts": 30, "fgm": 11, "fga": 20, "fta": 8, "ftm": 6, "oreb": 2, "dreb": 8, "stl": 2, "ast": 7, "blk": 1, "pf": 3, "tov": 4}) == 258

@@ -103,6 +103,10 @@ def side(rng, roster):
             x["reb"] = x["oreb"] + x["dreb"]
             for k, hi in (("ast", 10), ("stl", 3), ("blk", 3), ("tov", 4), ("pf", 5)):
                 x[k] = int(rng.randint(0, hi) * s)
+            # fouls drawn from the line's own numbers, no draws, so the rest of the league stays as it was
+            x["fd"] = (x["fta"] + 1) // 2 + x["fga"] // 7 + j % 2
+            x["pf_off"] = min(x["pf"], x["tov"] // 2)
+            x["tech"] = int(x["pf"] >= 4 and j < 3)
         out.append({"pid": p["pid"], "team": p["team"], "name": p["name"], "start": j < 5, "sec": secs[j], **x})
     return out
 

@@ -65,23 +65,29 @@ with fg as (select game, player, count(*) fga, count(*) filter (made) fgm, count
                    count(*) filter (action_type = 'steal') stl,
                    count(*) filter (action_type = 'block') blk,
                    count(*) filter (action_type = 'turnover') tov,
-                   count(*) filter (action_type = 'foul' and sub_type not in ('technical', 'double technical')) pf
-            from events where player is not null group by 1, 2)
+                   count(*) filter (action_type = 'foul' and sub_type not in ('technical', 'double technical')) pf,
+                   count(*) filter (action_type = 'foul' and sub_type = 'offensive') pf_off
+            from events where player is not null group by 1, 2),
+     fd as (select game, foul_drawn_player player, count(*) fd from events where action_type = 'foul' and foul_drawn_player is not null group by 1, 2)
 select b.game, b.player, b.team,
        coalesce(fg.fgm, 0) * 2 + coalesce(fg.fg3m, 0) + coalesce(ft.ftm, 0) pts, coalesce(fg.fgm, 0) fgm, coalesce(fg.fga, 0) fga,
        coalesce(fg.fg3m, 0) fg3m, coalesce(fg.fg3a, 0) fg3a, coalesce(ft.ftm, 0) ftm, coalesce(ft.fta, 0) fta,
        coalesce(ev.oreb, 0) oreb, coalesce(ev.dreb, 0) dreb, coalesce(ev.oreb, 0) + coalesce(ev.dreb, 0) reb, coalesce(ast.ast, 0) ast,
-       coalesce(ev.stl, 0) stl, coalesce(ev.blk, 0) blk, coalesce(fg.blka, 0) blka, coalesce(ev.tov, 0) tov, coalesce(ev.pf, 0) pf
+       coalesce(ev.stl, 0) stl, coalesce(ev.blk, 0) blk, coalesce(fg.blka, 0) blka, coalesce(ev.tov, 0) tov, coalesce(ev.pf, 0) pf,
+       coalesce(ev.pf_off, 0) pf_off, coalesce(fd.fd, 0) fd
 from box b left join fg using (game, player) left join ft using (game, player) left join ast using (game, player) left join ev using (game, player)
+     left join fd using (game, player)
 where b.game in (select game from events)""")
 # a blocked end-of-period heave counts as a block received in the box score but names no shooter in the play-by-play,
 # so those games are left out of the per-player blka check and covered by the team-level one instead
 heaved = "p.game || p.team in (select game || team from events where action_type = 'heave' and block_player is not null)"
 # the box score receives the league's post-game stat corrections (a rebound or steal moved to a team-mate) and the play-by-play does not,
-# so each stat tolerates a few differing lines per thousand; a feed change breaks thousands of lines at once and still fails
+# so each stat tolerates a few differing lines per thousand; a feed change breaks thousands of lines at once and still fails.
+# Fouls drawn and offensive fouls are held to the play-by-play per player (not in the team-total test above)
+PBP_ONLY = ["pf_off", "fd"]
 TOLERATED = [(f"play-by-play {s} per player per game equals the box score",
               f"select p.game, p.player, p.team, p.{s} pbp, b.{s} box from pbp_box p join box b using (game, player) where p.{s} != b.{s}"
-              + (f" and not {heaved}" if s == "blka" else "")) for s in STATS]
+              + (f" and not {heaved}" if s == "blka" else "")) for s in STATS + PBP_ONLY]
 TESTS += [
     ("play-by-play: blocked shots and heaves per team per game equal the box score", """
         select t.game, t.team, t.blka box, e.n pbp from team_box t join (
@@ -132,6 +138,9 @@ for n, q in TESTS:
 allowed = max(2, con.execute("select count(*) from box").fetchone()[0] // 1000)
 for n, q in TOLERATED:
     k, by = run(n, q, "WARN")
+    # lines of a game another test already holds are left out with it, not counted against the corrections allowed
+    k -= sum(len(rows) for g, rows in by.items() if g in failures)
+    by = {g: rows for g, rows in by.items() if g not in failures}
     if k > allowed:
         # the games with the most differing lines are held until what is left is within the stat corrections allowed
         for g, rows in sorted(by.items(), key=lambda x: -len(x[1])):
