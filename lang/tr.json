@@ -417,7 +417,6 @@
  "Also 82 made threes over 82 games, in proportion to the club’s games so far.": "Ayrıca 82 maçta 82 isabetli üçlük, takımın şimdiye kadarki maçlarına oranlanarak.",
  "FT% board": "SA% listesi",
  "Also 125 made free throws over 82 games, in proportion to the club’s games so far.": "Ayrıca 82 maçta 125 isabetli serbest atış, takımın şimdiye kadarki maçlarına oranlanarak.",
- "Usage and RAPM boards": "Kullanım ve RAPM listeleri",
  "Also 15 minutes a game.": "Ayrıca maç başına 15 dakika.",
  "Trending board": "Form durumu listesi",
  "Ten games played, 70% of the club’s games and 15 minutes a game, over the season and over the last five.": "On maç, takım maçlarının %70’i ve maç başına 15 dakika; hem sezon boyunca hem son beş maçta.",
@@ -535,5 +534,18 @@
  "Results": "Sonuçlar",
  "Record@stat": "G-M",
  "Wins and losses after that game.": "O maçtan sonraki galibiyet ve mağlubiyetler.",
- "Win-loss record": "Galibiyet-mağlubiyet"
+ "Win-loss record": "Galibiyet-mağlubiyet",
+ "FD@stat": "FA",
+ "FTR@stat": "SAO",
+ "PF/36@stat": "F/36",
+ "Fouls drawn": "Alınan faul",
+ "FT rate": "SA oranı",
+ "Foul trouble": "Faul sıkıntısı",
+ "Free-throw rate": "Çizgiye gitme oranı",
+ "Fouls called on opponents against the player, the offensive fouls he draws on defence included.": "Rakiplerin oyuncuya yaptığı ve çalınan fauller; savunmada aldığı hücum faulleri de dahil.",
+ "Personal fouls per 36 minutes on the court.": "Sahada geçen 36 dakika başına kişisel faul.",
+ "36 × PF ÷ minutes": "36 × F ÷ dakika",
+ "How often the player gets to the line: free throws attempted per field goal attempted.": "Oyuncunun ne sıklıkla çizgiye gittiği: denenen saha atışı başına denenen serbest atış.",
+ "FTA ÷ FGA": "Denenen SA ÷ denenen FG",
+ "Usage, RAPM and foul boards": "Kullanım, RAPM ve faul listeleri"
 }
