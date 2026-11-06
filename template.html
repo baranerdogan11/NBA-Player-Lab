@@ -514,6 +514,8 @@ html[data-theme="dark"] .intro{--A:#0078b4}
 .vs h2{font-size:clamp(28px,3.6vw,52px);line-height:.9;letter-spacing:-.04em;text-transform:uppercase;margin-top:8px;overflow-wrap:anywhere;color:var(--A);text-shadow:3px 3px 0 color-mix(in srgb,var(--B) 70%,transparent)}
 .vs small{display:flex;align-items:center;font:900 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase}
 .vs>div+div small{justify-content:flex-end}
+.vs .dr{margin-top:10px;font:italic 400 15px/1.25 var(--serif)}
+.vs .dr b{font:900 13px/1 var(--sans);font-style:normal}
 .vs+.panel{margin-top:0;border-top:0}
 .cmp td{width:38%;font-size:16px}
 .cmp td.m{width:24%;text-align:center;font:900 10.5px/1 var(--sans);text-transform:uppercase;letter-spacing:.16em}
@@ -1029,6 +1031,8 @@ let FROM = '';
 try { FROM = localStorage.getItem('pl-from') || ''; } catch (e) {}
 const setFrom = c => { FROM = c; try { if (c) localStorage.setItem('pl-from', c); else localStorage.removeItem('pl-from'); } catch (e) {} };
 const country = c => t(c + '@country');
+// a draft as the feed gives it: [year, round, overall pick], [] for an undrafted player
+const drafted = d => d.length ? `${t('Draft')} <b>${t('{y}, round {r}, pick {n}', {y: d[0], r: d[1], n: d[2]})}</b>` : `<b>${t('Undrafted')}</b>`;
 async function renderPlayer(code, pid, my, gid) {
   const [data, L] = await Promise.all([get(`${code}.json`), get('leaders.json').then(d => d.players).catch(() => [])]);
   if (stale(my)) return;
@@ -1071,7 +1075,7 @@ async function renderPlayer(code, pid, my, gid) {
   remember(`${code}/${p.pid}`);
   leagueBadge(p.pid);
   const s = p.s, a = age(p.born), me = L.find(x => x.pid === p.pid);
-  hero.innerHTML = `<div class="badge">${face(p.pid, p.name, true)}</div><div class="who"><div class="tag"><a href="#team/${esc(code)}">${logo(code, 'mark')}${EN(tname(code))}</a>${p.pos ? ` · ${esc(p.pos)}` : ''}${p.rookie ? ` · <span class="rook">${t('Rookie')}</span>` : ''}</div><h1>${EN(p.name)}</h1><div class="facts">${p.country ? `<span data-k="from">${t('From')} <b>${esc(country(p.country))}</b></span>` : ''}${p.height ? `<span>${t('Height')} <b>${esc(p.height)}</b></span>` : ''}${a != null ? `<span>${t('Age')} <b>${a}</b></span>` : ''}<span${def('gp')}>${t('Games')} <b>${s.gp}</b></span><span${def('min')}>${t('Minutes')} <b>${mpg(s.sec, s.gp)}</b></span>${me && me.run ? `<span data-k="dd"${def('dd')}>${t('DD@stat')} <b>${me.dd}</b></span><span data-k="td"${def('td')}>${t('TD@stat')} <b>${me.td}</b></span>` : ''}</div>${runChips(me)}</div>${p.jersey !== '' && p.jersey != null ? `<div class="num" aria-hidden="true">${esc(p.jersey)}</div>` : ''}${STAR_BTN(p.pid)}${SHARE_BTN('player')}`;
+  hero.innerHTML = `<div class="badge">${face(p.pid, p.name, true)}</div><div class="who"><div class="tag"><a href="#team/${esc(code)}">${logo(code, 'mark')}${EN(tname(code))}</a>${p.pos ? ` · ${esc(p.pos)}` : ''}${p.rookie ? ` · <span class="rook">${t('Rookie')}</span>` : ''}</div><h1>${EN(p.name)}</h1><div class="facts">${p.country ? `<span data-k="from">${t('From')} <b>${esc(country(p.country))}</b></span>` : ''}${p.draft ? `<span data-k="draft">${drafted(p.draft)}</span>` : ''}${p.height ? `<span>${t('Height')} <b>${esc(p.height)}</b></span>` : ''}${a != null ? `<span>${t('Age')} <b>${a}</b></span>` : ''}<span${def('gp')}>${t('Games')} <b>${s.gp}</b></span><span${def('min')}>${t('Minutes')} <b>${mpg(s.sec, s.gp)}</b></span>${me && me.run ? `<span data-k="dd"${def('dd')}>${t('DD@stat')} <b>${me.dd}</b></span><span data-k="td"${def('td')}>${t('TD@stat')} <b>${me.td}</b></span>` : ''}</div>${runChips(me)}</div>${p.jersey !== '' && p.jersey != null ? `<div class="num" aria-hidden="true">${esc(p.jersey)}</div>` : ''}${STAR_BTN(p.pid)}${SHARE_BTN('player')}`;
   const tiles = [['PTS', avg(s.pts, s.gp)], ['REB', avg(s.reb, s.gp)], ['AST', avg(s.ast, s.gp)], ['STL', avg(s.stl, s.gp)], ['BLK', avg(s.blk, s.gp)], ['TOV', avg(s.tov, s.gp)],
     ['FG%', pct(s.fgm, s.fga)], ['3P%', pct(s.fg3m, s.fg3a)], ['FT%', pct(s.ftm, s.fta)], ['TS%', ts(s.pts, s.fga, s.fta)], ['+/-', N(signed(rdiv(s.pm, s.gp)))], ['MIN', mpg(s.sec, s.gp)]];
   // on the page, five a row: scoring and defence, shooting with the free-throw rate, then fouls drawn and committed
@@ -1263,7 +1267,7 @@ async function renderCompare(a, b, my) {
   const opts = sel => IDX.teams.map(T => `<optgroup label="${esc(T.city)} ${esc(T.name)}">${L.filter(p => p.team === T.code).sort((x, y) => x.name.localeCompare(y.name)).map(p => `<option value="${esc(p.pid)}"${p === sel ? ' selected' : ''}>${esc(p.name)}</option>`).join('')}</optgroup>`).join('');
   $('#cmp-a').innerHTML = opts(A);
   $('#cmp-b').innerHTML = opts(B);
-  const card = p => `<div style="${colours(p.team)}">${face(p.pid, p.name, true)}<div><small>${logo(p.team, 'mark')}${EN(tname(p.team))}${p.pos ? ` · ${esc(p.pos)}` : ''}</small><h2>${EN(p.name)}</h2></div></div>`;
+  const card = p => `<div style="${colours(p.team)}">${face(p.pid, p.name, true)}<div><small>${logo(p.team, 'mark')}${EN(tname(p.team))}${p.pos ? ` · ${esc(p.pos)}` : ''}</small><h2>${EN(p.name)}</h2>${p.draft ? `<p class="dr">${drafted(p.draft)}</p>` : ''}</div></div>`;
   $('#cmp-vs').innerHTML = card(A) + card(B);
   $('#cmp').innerHTML = `<tbody>${CMP_ROWS.map(({k, v, f}) => {
     const va = v(A), vb = v(B), better = k === 'Games' ? 0 : va > vb ? 1 : vb > va ? 2 : 0;
