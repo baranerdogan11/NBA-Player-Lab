@@ -22,8 +22,8 @@ from site_data import from_warehouse, period_start, team_lines, write_ratings, w
 
 ARGS = ("2026-27", "2026-27", "2026-10-26T06:00:00Z")
 teams, players, games, lines = site_fixture.make(random.Random(7))
-for p in players:   # the feeds carry no height or birth date, and box scores no country
-    p["height"] = p["born"] = p["country"] = None
+for p in players:   # the feeds carry no height or birth date, and box scores no country or draft
+    p["height"] = p["born"] = p["country"] = p["draft"] = None
     p["rookie"] = False
 direct, wh, read = (tempfile.mkdtemp() for _ in range(3))
 write_site(direct, *ARGS, teams, players, games, lines)
@@ -87,9 +87,10 @@ checks["team box scores give the same ratings, team turnovers counted"] = filecm
 moved = players[0]
 to = next(t["code"] for t in teams if t["code"] != moved["team"])
 with open(os.path.join(wh, "roster.jsonl"), "w") as f:
-    f.write(json.dumps({"player": 98, "team": "BOS", "name": "New Signing", "jersey": "7", "position": "G", "height": "6-3", "country": "Turkey", "from_year": 2026}) + "\n")
+    f.write(json.dumps({"player": 98, "team": "BOS", "name": "New Signing", "jersey": "7", "position": "G", "height": "6-3", "country": "Turkey", "from_year": 2026,
+                        "draft_year": None, "draft_round": None, "draft_pick": None}) + "\n")
     f.write(json.dumps({"player": int(moved["pid"]), "team": to, "name": moved["name"], "jersey": None, "position": None, "height": "6-11",
-                        "country": "France", "from_year": 2019}) + "\n")
+                        "country": "France", "from_year": 2019, "draft_year": 2019, "draft_round": 2, "draft_pick": 39}) + "\n")
 con.execute(f"copy (select * from read_json_auto('{wh}/roster.jsonl')) to '{wh}/roster.parquet' (format parquet)")
 rost = tempfile.mkdtemp()
 write_site(rost, *ARGS, teams, *from_warehouse(wh))
@@ -101,6 +102,9 @@ checks["the roster gives the country and the rookie flag"] = (bos["98"]["country
                                                               and dest[moved["pid"]]["country"] == "France" and dest[moved["pid"]]["rookie"] is False)
 lead = {p["pid"]: p for p in json.load(open(os.path.join(rost, "leaders.json")))["players"]}
 checks["leaders carry the country and the rookie flag"] = lead["98"]["country"] == "Turkey" and lead["98"]["rookie"] is True
+checks["the roster gives the draft: [year, round, pick], [] undrafted, null without a roster row"] = (
+    bos["98"]["draft"] == [] and dest[moved["pid"]]["draft"] == [2019, 2, 39] and lead["98"]["draft"] == []
+    and lead[moved["pid"]]["draft"] == [2019, 2, 39] and all(p["draft"] is None for p in json.load(open(os.path.join(read, "leaders.json")))["players"]))
 checks["a rostered player is under his current club with his log"] = (
     moved["pid"] in dest and dest[moved["pid"]]["log"] == next(p["log"] for p in old if p["pid"] == moved["pid"])
     and dest[moved["pid"]]["jersey"] == moved["jersey"] and dest[moved["pid"]]["height"] == "6'11\""

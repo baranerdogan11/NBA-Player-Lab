@@ -162,9 +162,20 @@ def game_score(x):
             + 10 * x["stl"] + 7 * x["ast"] + 7 * x["blk"] - 4 * x["pf"] - 10 * x["tov"])
 
 
+def check_draft(p):
+    """A player's draft as the page shows it: [year, round, overall pick], [] for an undrafted player, None without a
+    roster row. Fails the run on anything else, so a changed feed cannot put a wrong draft on a player card."""
+    d = p.get("draft")
+    if d is None or d == []:
+        return d
+    if not (len(d) == 3 and all(isinstance(x, int) for x in d) and 1946 <= d[0] <= 2100 and 1 <= d[1] <= 10 and d[2] >= 1):
+        raise ValueError(f"player {p['pid']}: draft {d!r} is not [year, round, pick]")
+    return list(d)
+
+
 def write_site(out, season, label, built, teams, players, games, lines):
     """teams: load_teams() rows. players: pid, team (current), name, jersey, pos, height, born, country, rookie (his first
-    NBA season is this one), and optionally
+    NBA season is this one), and optionally draft ([year, round, overall pick], [] undrafted, None not known: no roster row),
     o_rapm, d_rapm (unrounded, from rapm.py).
     games: gid, date, time (UTC ISO), home, away, final, hs, as, periods ([[home, away], ...]) and optionally flow
     (game_flow()) and rotation (rotation(), both clubs' together) for finals.
@@ -218,11 +229,12 @@ def write_site(out, season, label, built, teams, players, games, lines):
         log = logs.get(p["pid"], [])
         played = [x for x in log if x["sec"] > 0]
         last5 = played[-5:]
-        info = {k: p[k] for k in ("pid", "name", "jersey", "pos", "height", "born", "country", "rookie")}
+        info = {**{k: p[k] for k in ("pid", "name", "jersey", "pos", "height", "born", "country", "rookie")}, "draft": check_draft(p)}
         roster.setdefault(p["team"], []).append({**info, "log": log})
         o, d = p.get("o_rapm"), p.get("d_rapm")
         has = o is not None and d is not None
-        leaders.append({"pid": p["pid"], "name": p["name"], "team": p["team"], "pos": p["pos"], "country": p["country"], "rookie": p["rookie"], "gp": len(played),
+        leaders.append({"pid": p["pid"], "name": p["name"], "team": p["team"], "pos": p["pos"], "country": p["country"], "rookie": p["rookie"],
+                        "draft": info["draft"], "gp": len(played),
                         "sec": sum(x["sec"] for x in played), **{k: sum(x[k] for x in played) for k in STATS},
                         **{f"tm_{k}": sum(team_tot[(x["gid"], x["team"])][k] for x in played) for k in ("fga", "fta", "tov", "sec")},
                         "rapm": rnd(o + d) if has else None, "orapm": rnd(o) if has else None, "drapm": rnd(d) if has else None,
@@ -527,7 +539,7 @@ def from_warehouse(wh):
         con.execute(f"create view roster as select * from read_parquet('{os.path.join(wh, 'roster.parquet')}')")
     else:   # an earlier season, or a warehouse built before rosters were fetched: players come from box scores only
         con.execute("create view roster as select null::int as player, '' as team, '' as name, '' as jersey, '' as position, '' as height, "
-                    "'' as country, null::int as from_year where false")
+                    "'' as country, null::int as from_year, null::int as draft_year, null::int as draft_round, null::int as draft_pick where false")
 
     def rows(sql):
         cur = con.execute(sql)
@@ -560,12 +572,15 @@ def from_warehouse(wh):
     lines = rows(f"select b.game as gid, b.team, b.player::varchar as pid, p.name, b.starter as start, round(b.seconds)::int as sec, {stat} {played}")
     boxed = rows("select b.player::varchar as pid, arg_max(b.team, g.tipoff_utc) as team, any_value(p.name) as \"name\", "
                  "arg_max(b.jersey, g.tipoff_utc) as jersey, arg_max(b.position, g.tipoff_utc) filter (where b.position is not null) as pos, "
-                 f"null as height, null as born, null as country, false as rookie {played} group by b.player")
-    # the roster gives the current club, the jersey, the height (6-8 in the feed, shown as 6'8"), the country and whether
-    # this is his first NBA season (from_year the year the season's regular season began); box scores have none of them
+                 f"null as height, null as born, null as country, false as rookie, null as draft {played} group by b.player")
+    # the roster gives the current club, the jersey, the height (6-8 in the feed, shown as 6'8"), the country, whether
+    # this is his first NBA season (from_year the year the season's regular season began) and his draft (year, round,
+    # overall pick; [] undrafted, null when the feed gives only part of it); box scores have none of them
     players = {p["pid"]: p for p in boxed}
     for r in rows("select player::varchar as pid, team, name, jersey, position as pos, height, country, coalesce(from_year = "
-                  "(select year(min(date)) from games where game_type = 'regular'), false) as rookie from roster"):
+                  "(select year(min(date)) from games where game_type = 'regular'), false) as rookie, "
+                  "case when coalesce(draft_year, draft_round, draft_pick) is null then [] when draft_year is null or draft_round is null "
+                  "or draft_pick is null then null else [draft_year, draft_round, draft_pick] end as draft from roster"):
         b = players.get(r["pid"], {})
         ft, _, inch = (r["height"] or "").partition("-")
         players[r["pid"]] = {**r, "jersey": r["jersey"] or b.get("jersey"), "pos": r["pos"] or b.get("pos"),

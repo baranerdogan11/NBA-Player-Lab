@@ -28,7 +28,9 @@ def make(rng):
             players.append({"pid": f"{1630000 + i * 10 + j}", "team": t["code"], "name": f"{FIRST[(i + j) % 12]} {LAST[(i * 3 + j) % 12]}",
                             "jersey": str((j * 7 + i) % 45), "pos": POS[j], "height": f"6-{2 + j % 9}",
                             "born": f"{1996 + (i + j) % 9}-0{1 + j % 9}-1{j % 9}",
-                            "country": COUNTRY[(i + j) % len(COUNTRY)], "rookie": j in (2, 8)})
+                            "country": COUNTRY[(i + j) % len(COUNTRY)], "rookie": j in (2, 8),
+                            # every fourth player went undrafted, and the last of each club has no roster row
+                            "draft": None if j == 9 else [] if j % 4 == 3 else [2026 if j in (2, 8) else 2015 + (i + j) % 11, 1 + j % 2, 1 + (i * 7 + j * 3) % 30 + 30 * (j % 2)]})
     # names the league-wide search has to fold: the feed's spelling of Şengün, and a name that keeps its accent
     for code, name in (("HOU", "Alperen Sengun"), ("DEN", "Nikola Jokić")):
         next(p for p in players if p["team"] == code)["name"] = name
