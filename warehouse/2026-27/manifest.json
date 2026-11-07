@@ -3,12 +3,12 @@
  "tables": {
   "teams": 30,
   "games": 1274,
-  "players": 470,
+  "players": 471,
   "roster": 524,
-  "box": 3526,
-  "team_box": 262,
-  "periods": 1064,
-  "events": 79409,
-  "shots": 23068
+  "box": 3553,
+  "team_box": 264,
+  "periods": 1072,
+  "events": 80046,
+  "shots": 23231
  }
 }
