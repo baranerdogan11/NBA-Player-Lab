@@ -1,11 +1,11 @@
 {
  "season": "2026-27",
- "checked_at": "2026-11-08T05:42:55Z",
+ "checked_at": "2026-11-08T11:17:11Z",
  "rows": {
   "teams": 30,
   "games": 1274,
   "players": 474,
-  "roster": 526,
+  "roster": 525,
   "box": 3733,
   "team_box": 278,
   "periods": 1130,
