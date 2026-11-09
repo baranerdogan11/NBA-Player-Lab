@@ -131,6 +131,10 @@ jobs:
         if: hashFiles('warehouse.py') != ''
         run: python assists.py
 
+      - name: Free throws attempt by attempt (teams/<season>/ft.json from the play-by-play; every player's free throws match his box-score FTM-FTA, or the game is left out)
+        if: hashFiles('warehouse.py') != ''
+        run: python ft.py
+
       - name: Similar role (profiles.py role rates, then teams/<season>/similar.json; every comp clears the floors and matches leaders.json)
         if: hashFiles('warehouse.py') != ''
         run: python profiles.py && python similar.py

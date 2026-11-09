@@ -40,6 +40,11 @@ A port of [Euroleague Player Lab](https://github.com/baranerdogan11/Euroleague-P
   made field goals per game and shot zone with how many were assisted (unassisted makes include putbacks), and
   `assists/league.json` the league's counts by zone and by player; each player's makes in a game must equal his
   box-score FGM and his three-point zones his 3PM, or the game is left out
+- `ft.py`: writes `teams/<season>/ft.json`, every free throw of the play-by-play by kind (first of two, second of two,
+  one shot, trips of three, technical and flagrant), with the and-ones and the free throws under pressure (last two
+  minutes of the fourth quarter or overtime, within five points), by player, club (for and against) and league; a game
+  where a player's free throws differ from his box-score FTM-FTA is left out, and more of them than one per thousand box
+  lines quarantines those games
 - `profiles.py` and `similar.py`: `profiles.py` turns each player's season box-score lines into role rates (usage,
   assist, turnover, rebound, steal and block percentages, three-point and free-throw rates) and a position group;
   `similar.py` writes `teams/<season>/similar.json`, each regular's three nearest players by those role rates alone
