@@ -131,7 +131,7 @@ def spots(rng, games, lines):
             if three and rng.random() < .25:
                 px, py = rng.choice((-1, 1)) * rng.randint(222, 240), rng.randint(-40, 85)
             else:
-                a, r = rng.uniform(.4, math.pi - .4) if three else rng.uniform(0, math.pi), rng.uniform(245, 275) if three else rng.uniform(0, 210)
+                a, r = rng.uniform(.4, math.pi - .4) if three else rng.uniform(0, math.pi), rng.uniform(245, 310) if three else rng.uniform(0, 210)
                 px, py = round(r * math.cos(a)), round(r * math.sin(a))
             sub, desc = KINDS[3 if three else 2][len(out) % len(KINDS[3 if three else 2])]
             out.append({"gid": x["gid"], "time": when[x["gid"]], "team": x["team"], "pid": x["pid"], "x": px, "y": py, "made": made,

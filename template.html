@@ -173,6 +173,9 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 .zones i.hi{background:#ff4fa5}
 .zones i.lo{background:#0078b4}
 .unast{max-width:560px;margin:14px auto -6px}
+.dist .fm-h{margin:0 0 10px}.dist .fm-h span:last-child{text-align:right}
+.dist td.bars{width:34%;min-width:70px;padding-top:6px;padding-bottom:6px}
+.dist .bars i{display:block;height:6px;margin:0;border:0;background:var(--A)}.dist .bars i+i{height:3px;margin-top:2px;background:var(--B)}
 .panel>summary .more{margin-right:4px}
 .panel>summary:has(.more)::after{margin-left:14px}
 .zcourts{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -620,7 +623,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <a class="lgb" id="lg-badge" href="#league" hidden></a>
     <div class="pick"><select id="team" data-kind="team" aria-label="Team" data-ta="Team"></select><select id="from" data-kind="country" aria-label="From" data-ta="From"></select><select id="player" data-kind="player" aria-label="Player" data-ta="Player"></select><a class="arr" id="prev" aria-label="Previous player" data-ta="Previous player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="arr" id="next" aria-label="Next player" data-ta="Next player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 5.5 6.5 6.5-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
     <div class="tiles five" id="tiles"></div>
-    <details class="panel" id="sc"><summary><h2 data-t="Shot chart">Shot chart</h2></summary><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div><div class="fm-h unast" id="sc-unast" hidden></div><div class="scroll zones" id="sc-zones"></div><div class="scroll zones" id="sc-types" hidden></div></details>
+    <details class="panel" id="sc"><summary><h2 data-t="Shot chart">Shot chart</h2></summary><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div><div class="fm-h unast" id="sc-unast" hidden></div><div class="scroll zones" id="sc-zones"></div><div class="scroll zones" id="sc-types" hidden></div><div class="zones dist" id="sc-dist" hidden></div></details>
     <details class="panel" id="ft" hidden><summary><h2 data-t="Free throws">Free throws</h2></summary><div class="scroll"><table class="tbl" id="ft-tbl"></table></div></details>
     <details class="panel" id="lu" hidden><summary><h2 data-t="Lineups">Lineups</h2></summary><div class="scroll"><table class="tbl" id="onoff"></table></div><div class="scroll"><table class="tbl" id="fives"></table></div></details>
     <details class="panel" id="duo" hidden><summary><h2 data-t="Duos">Duos</h2></summary><div class="fives" id="duo-cols"></div></details>
@@ -685,6 +688,10 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
       <section class="panel"><h2 data-t="Worst on first attempts" data-def="ft1 floor-ft1" tabindex="0">Worst on first attempts</h2><div class="scroll"><table class="tbl" id="ld-ft1-dn"></table></div></section>
       <section class="panel"><h2 data-t="Best under pressure" data-def="ftpress floor-ftpress" tabindex="0">Best under pressure</h2><div class="scroll"><table class="tbl" id="ld-press-up"></table></div></section>
       <section class="panel"><h2 data-t="Worst under pressure" data-def="ftpress floor-ftpress" tabindex="0">Worst under pressure</h2><div class="scroll"><table class="tbl" id="ld-press-dn"></table></div></section>
+    </div>
+    <div id="ld-range" hidden>
+      <section class="panel"><h2 data-t="Deep threes" data-def="deep floor-range" tabindex="0">Deep threes</h2><div class="scroll"><table class="tbl trend" id="ld-deep"></table></div></section>
+      <section class="panel"><h2 data-t="Average distance" data-def="dist floor-range" tabindex="0">Average distance</h2><div class="scroll"><table class="tbl trend" id="ld-far"></table></div></section>
     </div>
     <div class="trio" id="ld-highs" hidden></div>
     <div class="trio" id="ld-runs" hidden></div>
@@ -869,6 +876,11 @@ const light = hex => { const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i
 const ZN = ['Restricted area', 'Paint', 'Mid-range', 'Corner 3', 'Above the break 3'], ZMIN = 5;
 // shot types (shots.py TYPES, the shot row's sixth field): how the shot came, from the feed's subType and descriptor
 const TN = ['Pull-ups and step-backs', 'Other jumpers', 'Floaters', 'Drives and layups', 'Hooks', 'Cuts and alley-oops', 'Putbacks and tips', 'Dunks'];
+// distance bands (shots.py BANDS and band(), on the shot row's seventh field, tenths of a foot): four of twos, three of threes
+const BN = ['0-3 ft', '3-10 ft', '10-16 ft', '16 ft to the arc', 'Arc to 27 ft', '27-30 ft', '30+ ft'], DEEP = 270;
+const band = (d, z) => z >= 3 ? (d < DEEP ? 4 : d < 300 ? 5 : 6) : d < 30 ? 0 : d < 100 ? 1 : d < 160 ? 2 : 3;
+// an average distance in feet to one decimal from a sum of tenths of a foot over n attempts
+const feet = (sum, n) => n ? t('{d} ft', {d: N(fq(rq(sum, 10 * n)))}) : '–';
 const ZD = ['M-40 52.5V0A40 40 0 0 1 40 0V52.5Z', 'M-80 52.5V-137.5H80V52.5ZM-40 52.5V0A40 40 0 0 1 40 0V52.5Z',
   'M-220 52.5V-89.5A237.5 237.5 0 0 1 220-89.5V52.5ZM-80 52.5V-137.5H80V52.5Z', 'M-250 52.5V-89.5H-220V52.5ZM250 52.5V-89.5H220V52.5Z',
   'M-250-89.5H-220A237.5 237.5 0 0 1 220-89.5H250V-417.5H-250Z'];
@@ -896,14 +908,16 @@ function court(code, shots, heat = []) {
 // the Player page's chart: his season, or one game picked from his log, on the court of the club he shot for
 // with his zones against the league's below it (the season's league totals, for a game too)
 // and, from the assist credits (assists.py: made rows [gid, zone, assisted, makes]), the share of his makes a team-mate set up
-// and his shots by type against the league's (shots/league.json types), most attempts first
-let SC = {pid: '', code: '', shots: [], club: {}, league: null, types: null, made: null};
+// and his shots by type against the league's (shots/league.json types), most attempts first,
+// and by distance band against the league's (shots/league.json bands, dist), with his average distance
+let SC = {pid: '', code: '', shots: [], club: {}, league: null, types: null, bands: null, made: null};
+const bandFg = shots => BN.map((_, b) => shots.reduce((a, s) => band(s[6], s[4]) === b ? [a[0] + s[3], a[1] + 1] : a, [0, 0]));
 const typeFg = shots => TN.map((_, k) => shots.reduce((a, s) => s[5] === k ? [a[0] + s[3], a[1] + 1] : a, [0, 0]));
 const zoneAst = made => ZN.map((_, z) => made.reduce((a, r) => r[1] === z ? [a[0] + r[2], a[1] + r[3]] : a, [0, 0]));
 const scPick = () => { const g = $('#sc-game').value, shots = g ? SC.shots.filter(s => s[0] === g) : SC.shots, lg = SC.league && SC.shots.every(s => s[4] != null) ? SC.league : null;
   const zf = lg ? zoneFg(shots) : null, za = lg && SC.made ? zoneAst(g ? SC.made.filter(r => r[0] === g) : SC.made) : null;
-  const tl = SC.types && SC.shots.every(s => s[5] != null) ? SC.types : null;
-  return {code: g ? SC.club[g] : SC.code, shots, lg, zf, za, heat: lg ? zoneHeat(zf, lg) : [], tl, tf: tl ? typeFg(shots) : null}; };
+  const tl = SC.types && SC.shots.every(s => s[5] != null) ? SC.types : null, bl = SC.bands && lg && SC.shots.every(s => s[6] != null) ? SC.bands : null;
+  return {code: g ? SC.club[g] : SC.code, shots, lg, zf, za, heat: lg ? zoneHeat(zf, lg) : [], tl, tf: tl ? typeFg(shots) : null, bl, bf: bl ? bandFg(shots) : null}; };
 const shotsSvg = () => { const k = scPick(); return court(k.code, k.shots, k.heat); };
 const drawShots = () => {
   const k = scPick();
@@ -912,12 +926,18 @@ const drawShots = () => {
   $('#sc-unast').hidden = !fm;
   $('#sc-unast').innerHTML = fm ? `<span${def('unast')}>${t('Unassisted makes')}</span><span><b>${fm - am}/${fm}</b> · <b>${pct(fm - am, fm)}%</b></span>` : '';
   $('#sc-zones').hidden = !k.lg;
-  $('#sc-zones').innerHTML = k.lg ? `<table class="tbl" style="${tc(k.code)}"><thead><tr><th class="l"${def('zones heat')}>${t('Zone')}</th><th${def('fg')}>${t('FG@stat')}</th><th${def('fgp')}>${t('FG%@stat')}</th><th${def('league')}>${t('League')}</th>${k.za ? `<th${def('astd')}>${t('AST’D%@stat')}</th>` : ''}</tr></thead><tbody>${k.zf.map(([m, n], z) =>
+  $('#sc-zones').innerHTML = k.lg ? `<table class="tbl" style="${tc(k.code)}"><thead><tr><th class="l"${def('zones heat dband')}>${t('Zone')}</th><th${def('fg')}>${t('FG@stat')}</th><th${def('fgp')}>${t('FG%@stat')}</th><th${def('league')}>${t('League')}</th>${k.za ? `<th${def('astd')}>${t('AST’D%@stat')}</th>` : ''}</tr></thead><tbody>${k.zf.map(([m, n], z) =>
     `<tr data-z="${z}"><td class="l"><i class="${k.heat[z] || ''}"></i>${t(ZN[z])}</td><td>${m}-${n}</td><td class="k">${n ? pct(m, n) : '–'}</td><td>${pct(...k.lg[z])}</td>${k.za ? `<td class="astd">${k.za[z][1] ? pct(...k.za[z]) : '–'}</td>` : ''}</tr>`).join('')}</tbody></table>` : '';
   const ty = k.tf ? k.tf.map((c, i) => [i, ...c]).filter(r => r[2]).sort((a, b) => b[2] - a[2] || a[0] - b[0]) : [];
   $('#sc-types').hidden = !ty.length;
   $('#sc-types').innerHTML = ty.length ? `<table class="tbl" style="${tc(k.code)}"><thead><tr><th class="l"${def('stype')}>${t('Shot type')}</th><th${def('fg')}>${t('FG@stat')}</th><th${def('fgp')}>${t('FG%@stat')}</th><th${def('tleague')}>${t('League')}</th></tr></thead><tbody>${ty.map(([i, m, n]) =>
     `<tr data-type="${i}"><td class="l">${t(TN[i])}</td><td>${m}-${n}</td><td class="k">${pct(m, n)}</td><td>${k.tl[i][1] ? pct(...k.tl[i]) : '–'}</td></tr>`).join('')}</tbody></table>` : '';
+  // how far out: every band in court order, a thick bar for his share of attempts and a thin one for the league's
+  const n = k.shots.length, bl = k.bl, ln = bl ? bl.fga.reduce((a, c) => a + c, 0) : 0;
+  $('#sc-dist').hidden = !k.bf || !n;
+  $('#sc-dist').innerHTML = k.bf && n ? `<div class="fm-h"><span${def('dist')}>${t('Average distance')}</span><span><b id="sc-avg">${feet(k.shots.reduce((a, s) => a + s[6], 0), n)}</b> · ${t('League')} <span id="sc-lavg">${feet(bl.sum, ln)}</span></span></div>`
+    + `<div class="scroll"><table class="tbl" style="${tc(k.code)}"><thead><tr><th class="l"${def('dband zones')}>${t('Distance')}</th><th class="l"${def('dshare')}>${t('Share@att')}</th><th${def('fg')}>${t('FG@stat')}</th><th${def('fgp')}>${t('FG%@stat')}</th><th${def('dleague')}>${t('League')}</th></tr></thead><tbody>${k.bf.map(([m, a], b) =>
+    `<tr data-band="${b}"><td class="l">${t(BN[b])}</td><td class="bars" aria-hidden="true"><i style="width:${100 * a / n}%"></i><i style="width:${ln ? 100 * bl.fga[b] / ln : 0}%"></i></td><td>${m}-${a}</td><td class="k">${a ? pct(m, a) : '–'}</td><td>${bl.bands[b][1] ? pct(...bl.bands[b]) : '–'}</td></tr>`).join('')}</tbody></table></div>` : '';
 };
 $('#sc-game').addEventListener('change', () => { drawShots(); prime('player'); });
 
@@ -1133,8 +1153,9 @@ async function renderPlayer(code, pid, my, gid) {
     Promise.all(clubs.map(c => get(`assists/${c}.json`).catch(() => null))), drawLineups(p, code, clubs, my), drawDuos(p, clubs, my), drawSimilar(p, L, my), drawSeason(p, code, my), drawFt(p, code, my)]);
   if (stale(my)) return;
   const made = asts.every(f => f && f.made) ? asts.flatMap(f => f.made.filter(r => r[1] === p.pid).map(r => [f.games[r[0]], r[2], r[3], r[4]])) : null;
-  SC = {pid: p.pid, code, shots: files.flatMap(f => f && f.players[p.pid] ? f.players[p.pid].map(s => [f.games[s[0]], s[1], s[2], s[3], s[4], s[5]]) : []), club: Object.fromEntries(played.map(x => [x.gid, x.team])),
-    league: league && league.zones, types: league && league.types && league.types.length === TN.length ? league.types : null, made};
+  SC = {pid: p.pid, code, shots: files.flatMap(f => f && f.players[p.pid] ? f.players[p.pid].map(s => [f.games[s[0]], s[1], s[2], s[3], s[4], s[5], s[6]]) : []), club: Object.fromEntries(played.map(x => [x.gid, x.team])),
+    league: league && league.zones, types: league && league.types && league.types.length === TN.length ? league.types : null,
+    bands: league && league.bands && league.bands.length === BN.length ? {bands: league.bands, fga: league.bands.map(c => c[1]), sum: league.dist} : null, made};
   const at = played.some(x => x.gid === gid) ? gid : '';
   if (at) $('#sc').open = true;   // a link to his night opens on that game's shot chart
   $('#sc-game').innerHTML = `<option value="" data-c="${esc(code)}"${at ? '' : ' selected'}>${t('Season')}</option>${played.map(x => `<option value="${esc(x.gid)}" data-c="${esc(x.opp)}"${x.gid === at ? ' selected' : ''}>${fmtDate(x.date)} ${x.home ? t('vs') : '@'} ${esc(x.opp)}</option>`).join('')}`;
@@ -1941,24 +1962,29 @@ const board = (L, stat) => {
 async function renderLeaders(stat, my, rookies, size) {
   let L = (await get('leaders.json')).players;
   if (stale(my)) return;
-  if (!LEAD[stat] && stat !== 'form' && stat !== 'ftsplit' && stat !== 'highs' && stat !== 'lineups' && stat !== 'streaks') stat = 'pts';
+  if (!LEAD[stat] && stat !== 'form' && stat !== 'ftsplit' && stat !== 'range' && stat !== 'highs' && stat !== 'lineups' && stat !== 'streaks') stat = 'pts';
   const wide = stat === 'highs' || stat === 'lineups';
   rookies = rookies && !wide;
   if (rookies) L = L.filter(p => p.rookie);
-  $('#ld-tabs').innerHTML = [...Object.entries(LEAD), ['form', ['Trending']], ['ftsplit', ['Free throws']], ['lineups', ['Lineups@board']], ['streaks', ['Streaks']], ['highs', ['Season highs']]].map(([k, [l]]) => `<a href="#leaders/${k}${rookies && k !== 'highs' && k !== 'lineups' ? '/rookies' : ''}" aria-current="${k === stat}" data-def="${LEAD_DEF[k]}">${t(l)}</a>`).join('');
+  $('#ld-tabs').innerHTML = [...Object.entries(LEAD), ['form', ['Trending']], ['ftsplit', ['Free throws']], ['range', ['Range']], ['lineups', ['Lineups@board']], ['streaks', ['Streaks']], ['highs', ['Season highs']]].map(([k, [l]]) => `<a href="#leaders/${k}${rookies && k !== 'highs' && k !== 'lineups' ? '/rookies' : ''}" aria-current="${k === stat}" data-def="${LEAD_DEF[k]}">${t(l)}</a>`).join('');
   const rk = $('#ld-rook');
   rk.parentElement.hidden = wide;
   rk.setAttribute('aria-pressed', String(rookies));
   rk.dataset.stat = stat;
-  $('#ld-sec').hidden = stat === 'form' || stat === 'ftsplit' || stat === 'streaks' || wide;
+  $('#ld-sec').hidden = stat === 'form' || stat === 'ftsplit' || stat === 'range' || stat === 'streaks' || wide;
   $('#ld-form').hidden = stat !== 'form';
   $('#ld-ft').hidden = stat !== 'ftsplit';
+  $('#ld-range').hidden = stat !== 'range';
   $('#ld-highs').hidden = stat !== 'highs';
   $('#ld-runs').hidden = stat !== 'streaks';
   $('#ld-size').hidden = $('#ld-lu').hidden = stat !== 'lineups';
   if (stat === 'form') return drawTrend(L);
   if (stat === 'ftsplit') return drawFtBoards(L, await get('ft.json').catch(() => null), my);
   if (stat === 'streaks') return drawRuns(L);
+  if (stat === 'range') {
+    const P = await get('shots/league.json').then(d => d.players || {}).catch(() => ({}));
+    return stale(my) ? undefined : drawRange(L, P);
+  }
   if (stat === 'lineups') return drawUnits(L, await get('lineups/league.json').catch(() => null), size, my);
   if (stat === 'highs') return drawHighs(await get('highs.json').catch(() => ({stats: {}})), my);
   // the unassisted board counts makes from the assist credits (assists/league.json: pid -> [assisted, makes])
@@ -2015,6 +2041,26 @@ function drawFtBoards(L, F, my) {
   $('#ld-ft1-dn').innerHTML = table(0, first, -1);
   $('#ld-press-up').innerHTML = table(6, press, 1);
   $('#ld-press-dn').innerHTML = table(6, press, -1);
+}
+
+// ---- Range (shots/league.json players: pid -> [FGA, sum of distances in tenths of a foot, makes and attempts from 27 feet
+// out]): the most deep threes made, from 10 attempts, and the longest average shot distance, from 100 attempts; ten each,
+// places shared on the shown value
+const DEEP_MIN = 10, FAR_MIN = 100;
+const rangeRows = (L, P) => L.filter(p => P[p.pid]).map(p => { const [n, d, m27, a27] = P[p.pid]; return {p, n, d, m27, a27, far: feet(d, n)}; });
+function drawRange(L, P) {
+  const all = rangeRows(L, P);
+  const table = (rows, heads, cells, key) => {
+    let rank = 0, prev = null;
+    return `<thead><tr><th${def('place')}>#</th><th class="l">${t('Player')}</th>${heads}</tr></thead><tbody>${rows.length ? rows.slice(0, 10).map((r, i) => {
+      if (key(r) !== prev) { rank = i + 1; prev = key(r); }
+      return `<tr data-pid="${esc(r.p.pid)}"><td>${rank}</td><td class="l">${logo(r.p.team)}<a href="#${esc(r.p.team)}/${esc(r.p.pid)}">${esc(r.p.name)}</a></td>${cells(r)}</tr>`;
+    }).join('') : `<tr><td class="empty l" colspan="4">${t('No player qualifies yet.')}</td></tr>`}</tbody>`;
+  };
+  $('#ld-deep').innerHTML = table(all.filter(r => r.a27 >= DEEP_MIN).sort((x, y) => y.m27 - x.m27 || x.a27 - y.a27 || x.p.name.localeCompare(y.p.name)),
+    `<th${def('ma deep')}>${t('M-A@stat')}</th><th${def('fgp deep')}>${t('FG%@stat')}</th>`, r => `<td>${r.m27}-${r.a27}</td><td class="k">${pct(r.m27, r.a27)}</td>`, r => r.m27);
+  $('#ld-far').innerHTML = table(all.filter(r => r.n >= FAR_MIN).sort((x, y) => y.d * x.n - x.d * y.n || x.p.name.localeCompare(y.p.name)),
+    `<th${def('fg')}>${t('FGA@stat')}</th><th${def('dist')}>${t('Distance')}</th>`, r => `<td>${r.n}</td><td class="k">${r.far}</td>`, r => r.far);
 }
 
 // ---- Best lineups (lineups/league.json): every club's fives and pairs over the season at or above the minutes floor, which
@@ -2397,7 +2443,7 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
   ]],
   ['Shot chart', [
     ['dots', '', 'Dots and crosses', 'Every field-goal attempt at its spot: a dot is a make, a cross a miss.', ''],
-    ['zones', '', 'Zones', 'Each attempt falls in one of five zones: restricted area (within 4 feet of the rim), paint, mid-range, corner three and above-the-break three. The two three-point zones add up to the box score’s threes.', ''],
+    ['zones', '', 'Zones', 'Each attempt falls in one of five zones: restricted area (within 4 feet of the rim), paint, mid-range, corner three and above-the-break three. The two three-point zones add up to the box score’s threes. The distance bands split the same attempts by how far out they were.', ''],
     ['heat', '', 'Hot and cold zones', 'From five attempts in a zone, it prints pink when the player’s FG% there beats the league’s and blue when it trails.', ''],
     ['league', '', 'League', 'The whole league’s FG% in the zone over the season.', ''],
     ['zgrade', '', 'Club zones', 'On the club page, each zone’s FG% on offense and the FG% opponents shoot there on defense, shaded against the league’s: pink where the club does better, blue where it does worse, deeper at 1.5, 4 and 8 points apart.', ''],
@@ -2405,6 +2451,11 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['unast', '', 'Unassisted makes', 'Makes with no assist credited: off the dribble, in the post, and putbacks too.', 'FGM − assisted makes'],
     ['stype', '', 'Shot types', 'How each attempt came, from the play-by-play’s description of the shot: pull-ups and step-backs, other jumpers, floaters, drives and layups, hooks, cuts and alley-oops, putbacks and tips, and dunks. Every attempt has one type, so they add up to the box score’s FG. Jump shots the play-by-play describes no further are other jumpers; it does not say which were catch-and-shoot.', ''],
     ['tleague', '', 'League by shot type', 'The whole league’s FG% on that shot type over the season.', ''],
+    ['dband', '', 'Distance bands', 'How far from the rim each attempt was, in feet, from the play-by-play: twos from 0-3, 3-10 and 10-16 feet and from 16 feet to the three-point line, threes from the line to 27 feet, 27-30 feet and 30 feet and beyond. Twos and threes never share a band, so the bands add up to the box score’s FG and 3P. Distances are kept to a tenth of a foot and can differ slightly from NBA.com’s; the zones split the same attempts by area.', ''],
+    ['dshare', '', 'Share of attempts', 'The band’s share of the player’s attempts (the thick bar) and of the whole league’s (the thin bar).', 'Band FGA ÷ FGA'],
+    ['dleague', '', 'League by distance', 'The whole league’s FG% from that band over the season.', ''],
+    ['dist', '', 'Average distance', 'How far from the rim the attempts were on average, in feet.', 'Sum of distances ÷ FGA'],
+    ['deep', '', 'Deep threes', 'Threes from 27 feet out and beyond. 27 feet is a convention, about three feet behind the line at the top of the key; the NBA draws no line there.', ''],
   ]],
   ['Form and trends', [
     ['form', '', 'Form', 'The last ten games played as Game Score bars, oldest first, over a dashed line at the season average; a filled bar is at or above it.', ''],
@@ -2432,6 +2483,7 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['floor-ftpress', '', 'Pressure board', 'Also one pressure free throw attempted for every three games the club has played.', ''],
     ['floor-busy', '', 'Usage, RAPM and foul boards', 'Also 15 minutes a game.', ''],
     ['floor-unast', '', 'Unassisted board', 'Also 300 made field goals over 82 games, in proportion to the club’s games so far, counted where the assist credits match the box score.', ''],
+    ['floor-range', '', 'Range boards', 'Deep threes: 10 attempts from 27 feet out, most made first. Average distance: 100 field-goal attempts.', ''],
     ['floor-trend', '', 'Trending board', 'Ten games played, 70% of the club’s games and 15 minutes a game, over the season and over the last five.', ''],
     ['floor-units', '', 'Lineups board', 'The ten best units by net rating, equal ratings sharing a place. A five needs 6 minutes together for every game the clubs have played (the middle club’s count), up to 100; a pair 20, up to 400.', ''],
     ['rookies', '', 'Rookies', 'The Rookies switch keeps every board to players in their first NBA season; the floors stay the same.', ''],
@@ -2452,7 +2504,7 @@ const defBody = r => `<span>${esc(t(r[3]))}</span>${r[4] ? `<code>${esc(t(r[4]))
 // the Leaders boards: each one's stat and its floor
 const LEAD_DEF = {pts: 'pts floor-pg', reb: 'reb floor-pg', ast: 'ast floor-pg', stl: 'stl floor-pg', blk: 'blk floor-pg', fg3m: 'fg3 floor-pg', min: 'min floor-pg',
   fg: 'fgp floor-pg floor-fg', fg3: 'fg3p floor-pg floor-fg3', ft: 'ftp floor-pg floor-ft', ts: 'ts floor-pg floor-fg', usg: 'usg floor-pg floor-busy', uast: 'unast floor-pg floor-unast', fd: 'fd floor-pg floor-busy', ftar: 'ftar floor-pg floor-busy', pf36: 'pf36 floor-pg floor-busy',
-  rapm: 'rapm floor-pg floor-busy', orapm: 'orapm floor-pg floor-busy', drapm: 'drapm floor-pg floor-busy', form: 'trend floor-trend', ftsplit: 'ft1 ftpress floor-ft1', lineups: 'lineup pair floor-units', streaks: 'runs dd td', highs: 'highs'};
+  rapm: 'rapm floor-pg floor-busy', orapm: 'orapm floor-pg floor-busy', drapm: 'drapm floor-pg floor-busy', form: 'trend floor-trend', ftsplit: 'ft1 ftpress floor-ft1', range: 'deep dist floor-range', lineups: 'lineup pair floor-units', streaks: 'runs dd td', highs: 'highs'};
 // a stat label (as tiles and table headings name it) and its entry
 const STAT_DEF = {PTS: 'pts', REB: 'reb', OREB: 'oreb', DREB: 'dreb', AST: 'ast', STL: 'stl', BLK: 'blk', TOV: 'tov', PF: 'pf', FD: 'fd', FTR: 'ftar', FG: 'fg', '3P': 'fg3', FT: 'ft',
   'FG%': 'fgp', '3P%': 'fg3p', 'FT%': 'ftp', 'TS%': 'ts', '+/-': 'pm', MIN: 'min', GP: 'gp', Result: 'result',
