@@ -87,7 +87,9 @@ test('its ratings and Four Factors, values and ranks, are the ones Standings sho
   await settled(page);
   await page.waitForFunction(club, CODE);
   const mine = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('#tm-rt td[data-k], #tm-ff td[data-k]')].map(td => [td.dataset.k, {v: td.querySelector('.v').textContent, r: td.dataset.r || null}])));
-  expect(Object.keys(mine).length).toBe(12);
+  expect(Object.keys(mine).length).toBe(14);
+  delete mine.ftp;    // the FT% beside the Four Factors is the club page's own (tests/e2e/ft.spec.js)
+  delete mine.oftp;
   const st = {};
   for (const view of ['ratings', 'factors']) {
     await go(page, `#standings/${view}`, v => document.querySelectorAll(`#st-${v} tbody tr`).length === 30, view);
