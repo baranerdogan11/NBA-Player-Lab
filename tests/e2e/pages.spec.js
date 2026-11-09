@@ -20,7 +20,7 @@ const ROUTES = [
   ['standings-ratings', '#standings/ratings', () => document.body.dataset.page === 'standings' && document.querySelectorAll('#st-ratings tbody tr').length === 30],
   ['game-preview', '#game/0022600061', () => document.body.dataset.page === 'game' && !document.querySelector('#gm-pre').hidden && document.querySelectorAll('#pv-ff [data-k]').length === 8],
   ['standings-factors', '#standings/factors', () => document.body.dataset.page === 'standings' && document.querySelectorAll('#st-factors tbody tr').length === 30],
-  ['standings-quarters', '#standings/quarters', () => document.body.dataset.page === 'standings' && document.querySelectorAll('#st-quarters tbody tr').length === 30],  ['team', '#team/BOS', () => document.body.dataset.page === 'team' && document.querySelectorAll('#tm-roster tbody tr').length > 0 && document.querySelectorAll('#tm-ff td[data-k]').length === 8],
+  ['standings-quarters', '#standings/quarters', () => document.body.dataset.page === 'standings' && document.querySelectorAll('#st-quarters tbody tr').length === 30],  ['team', '#team/BOS', () => document.body.dataset.page === 'team' && document.querySelectorAll('#tm-roster tbody tr').length > 0 && document.querySelectorAll('#tm-ff td[data-k]').length === 10],
 ];
 
 for (const [device, size] of [['phone', PHONE], ['desktop', DESKTOP]]) {
@@ -189,7 +189,7 @@ test.describe('roster', () => {
 
 test.describe('profile sections', () => {
   test.use(DESKTOP);
-  const SECS = ['sc', 'lu', 'duo', 'sim', 'log-sec'];
+  const SECS = ['sc', 'ft', 'lu', 'duo', 'sim', 'log-sec'];
   const states = page => page.evaluate(() => [...document.querySelectorAll('#pg-player details.panel')].map(d => [d.id, d.open]));
   test('every section of the profile starts closed when the page is opened', async ({page}) => {
     const problems = await prepare(page);

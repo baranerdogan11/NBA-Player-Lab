@@ -103,7 +103,7 @@ test.describe('definitions by keyboard', () => {
     const problems = await prepare(page);
     await page.goto('./?l#team/BOS');
     await settled(page);
-    await page.waitForFunction(() => document.querySelectorAll('#tm-ff td[data-k]').length === 8);
+    await page.waitForFunction(() => document.querySelectorAll('#tm-ff td[data-k]').length === 10);
     await page.click('#tm-rt-sec > summary');
     await page.focus('#tm-rt th[data-def^="pace"]');
     await page.keyboard.press('Enter');
@@ -119,7 +119,7 @@ test.describe('definitions by keyboard', () => {
 const PLAIN = new Set(['Player', 'Team', 'Date', 'Opp', 'Oyuncu', 'Takım', 'Tarih', 'Rakip', '']);
 const ROUTES = [
   ['#BOS', () => !!document.querySelector('#tiles .tile') && !document.querySelector('#lu').hidden],
-  ['#team/BOS', () => document.querySelectorAll('#tm-ff td[data-k]').length === 8 && document.querySelectorAll('#tm-q td[data-k]').length === 4],
+  ['#team/BOS', () => document.querySelectorAll('#tm-ff td[data-k]').length === 10 && document.querySelectorAll('#tm-q td[data-k]').length === 4],
   ['#compare', () => document.querySelectorAll('#cmp tr').length > 5],
   ['#standings', () => document.querySelectorAll('#st-body tbody tr').length === 30],
   ['#standings/ratings', () => document.querySelectorAll('#st-ratings tbody tr').length === 30],
