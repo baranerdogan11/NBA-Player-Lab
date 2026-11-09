@@ -10,6 +10,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, ROOT)
 from assists import write_assists  # noqa: E402
+from ft import write_ft  # noqa: E402
 from shots import write_shots, zone  # noqa: E402
 from site_data import RT, STATS, load_teams, period_start, rotation, write_league_lineups, write_lineups, write_ratings, write_site  # noqa: E402
 
@@ -233,6 +234,24 @@ def write_similar(out, players, lines):
         json.dump({"keys": ["pts", "reb", "ast"], "games": 2, "mpg": 0, "players": comps}, f)
 
 
+def free_throws(rng, games, lines):
+    """Every box line's free throws as attempts for write_ft(): trips of two while two or more are left, a trip of three
+    now and then, the last one a one-shot (an and-one every other time) or a technical; his makes spread over them at
+    random, and one attempt in eight under pressure."""
+    opp = {(g["gid"], c): g["away"] if c == g["home"] else g["home"] for g in games for c in (g["home"], g["away"])}
+    out = []
+    for x in lines:
+        kinds, left = [], x["fta"]
+        while left:
+            trip = [3, 3, 3] if left >= 3 and rng.random() < 0.1 else [0, 1] if left >= 2 else [rng.choice([2, 2, 4])]
+            kinds += trip
+            left -= len(trip)
+        made = set(rng.sample(range(x["fta"]), x["ftm"]))
+        out += [{"gid": x["gid"], "pid": x["pid"], "team": x["team"], "opp": opp[(x["gid"], x["team"])], "kind": k, "made": i in made,
+                 "andone": k == 2 and rng.random() < 0.5, "press": rng.random() < 0.125} for i, k in enumerate(kinds)]
+    return out
+
+
 def hits(rng, n, p):
     return sum(rng.random() < p for _ in range(n))
 
@@ -255,4 +274,5 @@ if __name__ == "__main__":
     write_assists(out, teams, makes(shots, assists))
     write_ratings(out, teams, team_lines(games, lines))
     write_similar(out, players, lines)
+    write_ft(out, teams, free_throws(random.Random(19), games, lines))
     print(f"fixture league written to {out}")
