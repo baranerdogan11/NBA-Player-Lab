@@ -226,9 +226,23 @@ test('a game\'s flow ends on the final', async ({page}) => {
     const end = i < 4 ? 7200 * (i + 1) : 28800 + 3000 * (i - 3);
     expect(g.flow.filter(p => p[0] <= end).at(-1).slice(1), `score after period ${i + 1}`).toEqual([h, a]);
   });
+  const status = await page.textContent('#gm-board .mid small');
   await page.focus('#gm-flow');
   await page.keyboard.press('End');
   expect(await page.textContent('#gm-flow .fl-tip')).toContain(`${g.away} ${as} – ${hs} ${g.home}`);
+  // the scoreboard follows the chart: the play being read, its period and clock, then the final again
+  const board = () => page.evaluate(() => [...document.querySelectorAll('#gm-board .score span')].map(x => +x.textContent)
+    .concat(document.querySelector('#gm-board .mid small').textContent, document.querySelector('#gm-board').classList.contains('at')));
+  await page.keyboard.press('Home');
+  expect(await board()).toEqual([0, 0, await page.textContent('#gm-flow .fl-tip small'), true]);
+  for (let i = 1; i <= Math.min(25, g.flow.length); i++) {
+    await page.keyboard.press('ArrowRight');
+    const [, fh, fa] = g.flow[i - 1], [ba, bh, when] = await board();
+    expect([ba, bh], `scoreboard at play ${i}`).toEqual([fa, fh]);
+    expect(await page.textContent('#gm-flow .fl-tip')).toBe(`${when}${g.away} ${fa} – ${fh} ${g.home}`);
+  }
+  await page.evaluate(() => document.querySelector('#gm-flow').blur());
+  expect(await board()).toEqual([as, hs, status, false]);
   const m = [0, ...g.flow.map(p => p[1] - p[2])];
   let lc = 0, lead = 0, tied = 0;
   m.forEach((x, i) => { const s = Math.sign(x); if (s && lead && s !== lead) lc++; if (s) lead = s; if (i && !x && m[i - 1]) tied++; });

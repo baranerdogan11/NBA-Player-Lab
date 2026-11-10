@@ -303,6 +303,7 @@ html[data-theme="dark"] .board{--sa:color-mix(in srgb,var(--ca) 55%,#fff);--sh:c
 .board .score span:first-child{color:var(--sa);text-shadow:5px 4px 0 color-mix(in srgb,var(--sh) 45%,transparent)}
 .board .score span:last-child{color:var(--sh);text-shadow:5px 4px 0 color-mix(in srgb,var(--sa) 45%,transparent)}
 .board .score .lose{opacity:.45}
+.board.at .mid small{background:var(--A);color:var(--paper)}
 html[data-theme="dark"] .board .score span{color:var(--ink)}
 .board .mid{text-align:center}
 .board .mid small{display:inline-block;margin-top:14px;padding:4px 9px;background:var(--ink);color:var(--paper);transform:skewX(-6deg);font:900 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase}
@@ -1577,7 +1578,7 @@ function drawFlow(g) {
   const ca = near(ch, ca0[0]) ? ca0[1] : ca0[0];
   const step = 'M0 80' + pts.map(p => `H${x(p[0]).toFixed(1)}V${y(p[1] - p[2]).toFixed(1)}`).join('') + 'H1000V80Z';
   const ticks = Array.from({length: n - 1}, (_, i) => `M${x(PSTART(i + 2)).toFixed(1)} 0V160`).join('');
-  FL = {g, pts, end, i: null};
+  FL = {g, pts, end, i: null, status: ''};
   box.setAttribute('aria-label', t('Game flow'));
   box.innerHTML = `<svg viewBox="0 0 1000 160" preserveAspectRatio="none" aria-hidden="true"><defs><clipPath id="fl-up"><rect width="1000" height="80"/></clipPath><clipPath id="fl-dn"><rect y="80" width="1000" height="80"/></clipPath></defs>`
     + `<path d="${ticks}" class="qt" vector-effect="non-scaling-stroke"/><path d="${step}" fill="${ch}" clip-path="url(#fl-up)" data-team="${esc(g.home)}"/><path d="${step}" fill="${ca}" clip-path="url(#fl-dn)" data-team="${esc(g.away)}"/>`
@@ -1599,7 +1600,9 @@ function flowAt(i) {
   const cur = $('.fl-cur', box), tip = $('.fl-tip', box);
   cur.hidden = tip.hidden = false;
   cur.style.left = `${at}%`;
-  tip.innerHTML = `<small>${perName(p - 1, g.periods.length)} · ${left >= 600 ? clock(Math.ceil(left / 10)) : N((left / 10).toFixed(1))}</small>${esc(g.away)} ${a} – ${h} ${esc(g.home)}`;
+  const when = `${perName(p - 1, g.periods.length)} · ${left >= 600 ? clock(Math.ceil(left / 10)) : N((left / 10).toFixed(1))}`;
+  tip.innerHTML = `<small>${when}</small>${esc(g.away)} ${a} – ${h} ${esc(g.home)}`;
+  boardAt(a, h, when);
   tip.style.left = `clamp(0px, calc(${at}% - ${tip.offsetWidth / 2}px), calc(100% - ${tip.offsetWidth}px))`;
 }
 const flowPoint = e => {
@@ -1609,7 +1612,20 @@ const flowPoint = e => {
   FL.pts.forEach((p, i) => { if (Math.abs(p[0] - ds) < Math.abs(FL.pts[best][0] - ds)) best = i; });
   flowAt(best);
 };
-const flowHide = () => { $$('#gm-flow .fl-cur, #gm-flow .fl-tip').forEach(el => { el.hidden = true; }); };
+const flowHide = () => { $$('#gm-flow .fl-cur, #gm-flow .fl-tip').forEach(el => { el.hidden = true; }); boardAt(); };
+// the scoreboard follows the chart: the score and clock of the play being read, and the final again once the reading ends
+function boardAt(a, h, when) {
+  const board = $('#gm-board'), sc = $$('.score span', board), st = $('.mid small', board);
+  if (!FL || sc.length !== 2 || !st) return;
+  const g = FL.g, on = a != null;
+  if (!on) { a = g.as; h = g.hs; }
+  board.classList.toggle('at', on);
+  sc[0].textContent = a;
+  sc[1].textContent = h;
+  sc[0].classList.toggle('lose', a < h);
+  sc[1].classList.toggle('lose', h < a);
+  st.textContent = on ? when : FL.status;
+}
 $('#gm-flow').addEventListener('pointerdown', flowPoint);
 $('#gm-flow').addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.buttons) flowPoint(e); });
 $('#gm-flow').addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') flowHide(); });
@@ -1699,7 +1715,9 @@ async function renderGame(gid, my) {
     link: link(`game/${gid}`), title: `${g.away} ${g.as} · ${g.home} ${g.hs} · NBA Player Lab`, file: `${g.away}-${g.home}-${g.date}.png`});
   board.setAttribute('style', `--ch:${H ? H.colors[0] : '#333'};--ca:${A ? A.colors[0] : '#333'}`);
   board.innerHTML = `<a class="side a${g.as > g.hs ? ' won' : ''}" href="#team/${esc(g.away)}">${logo(g.away, 'crest')}<small>${EN(A ? A.city : g.away)}</small><b><span class="full">${EN(A ? A.name : g.away)}</span><span class="abbr">${esc(g.away)}</span></b></a><div class="mid"><div class="score"><span class="${g.as < g.hs ? 'lose' : ''}">${g.as}</span><span class="${g.hs < g.as ? 'lose' : ''}">${g.hs}</span></div><small>${status}</small>${SHARE_BTN('game')}</div><a class="side h${g.hs > g.as ? ' won' : ''}" href="#team/${esc(g.home)}">${logo(g.home, 'crest')}<small>${EN(H ? H.city : g.home)}</small><b><span class="full">${EN(H ? H.name : g.home)}</span><span class="abbr">${esc(g.home)}</span></b></a>`;
+  board.classList.toggle('at', false);
   drawFlow(g);
+  if (FL) FL.status = status;
   const per = g.periods.map((_, i) => perName(i, g.periods.length));
   $('#gm-periods').innerHTML = `<thead><tr><th>${t('Team')}</th>${per.map(p => `<th>${p}</th>`).join('')}<th>${t('T@total')}</th></tr></thead><tbody>${[[g.away, 1, g.as], [g.home, 0, g.hs]].map(([c, i, tot]) => `<tr><td class="l"><a href="#team/${c}">${logo(c)}${EN(tname(c))}</a></td>${g.periods.map(p => `<td>${p[i]}</td>`).join('')}<td class="k">${tot}</td></tr>`).join('')}</tbody>`;
   const head = ['Player', 'MIN', 'PTS', 'REB', 'OREB', 'DREB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'FG', '3P', 'FT', '+/-'];
