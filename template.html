@@ -270,7 +270,7 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 .hero .run.lad{background:var(--paper);color:var(--ink)}
 /* awards ladder: under each count, a bar of its rank points (0 to 100) */
 .tbl.aw .cp{min-width:62px}
-@media (max-width:760px){.tbl.aw td,.tbl.aw th{padding-left:4px;padding-right:4px}.tbl.aw th{white-space:normal}.tbl.aw .cp{min-width:44px}.tbl.aw td.l a{white-space:normal;display:flex;align-items:center;gap:6px;line-height:1.15}.tbl.aw .face{flex:none}}
+@media (max-width:760px){.tbl.aw td,.tbl.aw th{padding-left:3px;padding-right:3px}.tbl.aw th{white-space:normal;letter-spacing:.04em}.tbl.aw .cp{min-width:0}.tbl.aw td{font-size:14px}.tbl.aw .face{width:28px;height:28px}.tbl.aw td.l a{white-space:normal;display:flex;align-items:center;gap:6px;line-height:1.15}.tbl.aw .face{flex:none}}
 .tbl.aw .pb{display:block;height:4px;margin-top:4px;background:linear-gradient(90deg,var(--fluoro-pink) var(--w),color-mix(in srgb,var(--ink) 12%,transparent) var(--w))}
 .tile{padding:12px 10px 10px;border-right:1px solid var(--ink);border-bottom:1px dashed var(--line)}
 .tile:nth-child(6n){border-right:0}
@@ -1183,7 +1183,7 @@ const runChips = (me, extra = '') => {
 const ladderChip = (A, pid) => {
   for (const [k, label] of A ? AWARDS : []) {
     const i = (A[k] || []).findIndex(x => x.pid === pid);
-    if (i >= 0) return `<a class="run lad" href="#leaders/awards/${k}" data-award="${k}" data-n="${awardPlace(A[k], k)[i]}">${t('{award} ladder', {award: t(label)})} · ${ordinal(awardPlace(A[k], k)[i])}</a>`;
+    if (i >= 0) return `<a class="run lad" href="#leaders/awards/${k}" data-award="${k}" data-n="${awardPlace(A[k])[i]}">${t('{award} ladder', {award: t(label)})} · ${ordinal(awardPlace(A[k])[i])}</a>`;
   }
   return '';
 };
@@ -2023,8 +2023,8 @@ async function renderLeaders(stat, my, rookies, size, award) {
   if (stat === 'lineups') return drawUnits(L, await get('lineups/league.json').catch(() => null), size, my);
   if (stat === 'highs') return drawHighs(await get('highs.json').catch(() => ({stats: {}})), my);
   if (stat === 'awards') {
-    const [A, G] = await Promise.all([get('awards.json').catch(() => null), get('games.json').then(d => d.games)]);
-    return stale(my) ? undefined : drawAwards(L, A, G, award);
+    const [A, G, RT] = await Promise.all([get('awards.json').catch(() => null), get('games.json').then(d => d.games), get('ratings.json').then(d => d.teams).catch(() => [])]);
+    return stale(my) ? undefined : drawAwards(L, A, G, RT, award);
   }
   // the unassisted board counts makes from the assist credits (assists/league.json: pid -> [assisted, makes])
   if (stat === 'uast') {
@@ -2121,34 +2121,25 @@ function drawUnits(L, lg, n, my) {
   }).join('') : `<tr><td class="empty l" colspan="8">${t('No lineup qualifies yet.')}</td></tr>`}</tbody>`;
 }
 
-// ---- Awards ladder: the Lab's ladders for MVP, Rookie, Sixth Man (rank points for RAPM, Game Score per game and the
-// club's win percentage, blended 5:3:2 in tenths) and Most Improved (Game Score per 36 now less last season's, in shown
-// tenths), as awards.py writes them; RAPM, Game Score and the record beside each row are the ones every other page shows
-const AWARDS = [['mvp', 'MVP@award', 'floor-mvp'], ['roy', 'Rookie@award', 'floor-roy'], ['smoy', 'Sixth Man@award', 'floor-smoy'], ['mip', 'Most Improved@award', 'floor-mip']];
-const awardPlace = (rows, k) => {
-  const v = x => k === 'mip' ? x.d : x.s;
-  let rank = 0;
-  return rows.map((x, i) => { if (!i || v(x) !== v(rows[i - 1])) rank = i + 1; return rank; });
-};
+// ---- Awards ladder: the Lab's ladders for MVP, Rookie and Defensive Player as awards.py writes them: rank points for
+// impact, production and team, blended 5:3:2 in tenths. MVP and Rookie: RAPM, Game Score per game, the club's record;
+// Defensive: D-RAPM, steals and blocks per game, the club's defensive rating. The values beside each row are the ones
+// every other page shows
+const AWARDS = [['mvp', 'MVP@award', 'ladder floor-mvp'], ['roy', 'Rookie@award', 'ladder floor-roy'], ['dpoy', 'Defensive@award', 'dladder floor-mvp']];
+const awardPlace = rows => { let rank = 0; return rows.map((x, i) => { if (!i || x.s !== rows[i - 1].s) rank = i + 1; return rank; }); };
 const ordinal = n => LANG === 'tr' ? `${n}.` : `${n}${(n % 100 >= 11 && n % 100 <= 13) || n % 10 > 3 || n % 10 === 0 ? 'th' : ['', 'st', 'nd', 'rd'][n % 10]}`;
-function drawAwards(L, A, G, k) {
+function drawAwards(L, A, G, RT, k) {
   if (!AWARDS.some(a => a[0] === k)) k = 'mvp';
-  $('#ld-aw').innerHTML = AWARDS.map(([key, label, ids]) => `<a href="#leaders/awards/${key}" aria-current="${key === k}" data-award="${key}" data-def="${key === 'mip' ? 'mip' : 'ladder'} ${ids}">${t(label)}</a>`).join('');
-  const P = Object.fromEntries(L.map(p => [p.pid, p])), R = records(G), rows = (A && A[k] || []).filter(x => P[x.pid]), places = awardPlace(rows, k);
-  const ids = (AWARDS.find(a => a[0] === k) || [])[2];
-  const who = p => `<td class="l"><a href="#${esc(p.team)}/${esc(p.pid)}">${face(p.pid, p.name)}${EN(p.name)}</a></td><td class="l x">${logo(p.team)}<span class="code">${esc(p.team)}</span></td><td class="x">${p.gp}</td>`;
-  const bar = c => `<i class="pb" style="--w:${c}%"></i>`;
-  if (k === 'mip') {
-    const now = p => rq(p.gs * 216, p.sec), then = x => rq(x.last[2] * 216, x.last[1]);
-    $('#ld-award').innerHTML = `<thead><tr><th${def('place')}>#</th><th class="l"${def(`mip ${ids}`)}>${t('Player')}</th><th class="l x">${t('Team')}</th><th class="x"${def('gp')}>${t('GP@stat')}</th><th${def('mip')}>${esc(A.rule.last)}</th><th${def('mip')}>${esc(IDX.label)}</th><th${def('mip')}>${t('Change')}</th></tr></thead><tbody>${rows.length ? rows.map((x, i) => {
-      const p = P[x.pid];
-      return `<tr data-pid="${esc(p.pid)}"><td>${places[i]}</td>${who(p)}<td>${tenths(then(x))}</td><td>${tenths(now(p))}</td><td class="k">${tenths(x.d, 1)}</td></tr>`;
-    }).join('') : `<tr><td class="empty l" colspan="7">${t('No player qualifies yet.')}</td></tr>`}</tbody>`;
-    return;
-  }
-  $('#ld-award').innerHTML = `<thead><tr><th${def('place')}>#</th><th class="l"${def(`ladder ${ids}`)}>${t('Player')}</th><th class="l x">${t('Team')}</th><th class="x"${def('gp')}>${t('GP@stat')}</th><th class="cp"${def('rapm ladder')}>${t('RAPM')}</th><th class="cp"${def('gs ladder')}>${t('GmSc@stat')}</th><th class="cp"${def('pct ladder')}>${t('W-L@stat')}</th><th${def('ladder')}>${t('Score@award')}</th></tr></thead><tbody>${rows.length ? rows.map((x, i) => {
-    const p = P[x.pid], r = R[p.team] || {w: 0, l: 0};
-    return `<tr data-pid="${esc(p.pid)}"><td>${places[i]}</td>${who(p)}<td class="cp">${N(signed(p.rapm.toFixed(1)))}${bar(x.c[0])}</td><td class="cp">${avg(p.gs, 10 * p.gp)}${bar(x.c[1])}</td><td class="cp">${r.w}-${r.l}${bar(x.c[2])}</td><td class="k">${tenths(x.s)}</td></tr>`;
+  $('#ld-aw').innerHTML = AWARDS.map(([key, label, ids]) => `<a href="#leaders/awards/${key}" aria-current="${key === k}" data-award="${key}" data-def="${ids}">${t(label)}</a>`).join('');
+  const P = Object.fromEntries(L.map(p => [p.pid, p])), R = records(G), rows = (A && A[k] || []).filter(x => P[x.pid]), places = awardPlace(rows);
+  const ids = (AWARDS.find(a => a[0] === k) || [])[2], lad = ids.split(' ')[0], D = Object.fromEntries(RT.map(c => [c.code, c.against]));
+  const drtg = code => { const a = D[code]; return tenths(a ? rtg(a.pts, a.fga, a.oreb, a.tov, a.fta) : null); };
+  // each count: its heading, its definitions and the value shown
+  const cols = k === 'dpoy' ? [{l: 'D-RAPM', d: 'drapm', v: p => N(signed(p.drapm.toFixed(1)))}, {l: 'STL+BLK@stat', d: 'stl blk', v: p => avg(p.stl + p.blk, p.gp)}, {l: 'DRtg@stat', d: 'drtg poss', v: p => drtg(p.team)}]
+    : [{l: 'RAPM', d: 'rapm', v: p => N(signed(p.rapm.toFixed(1)))}, {l: 'GmSc@stat', d: 'gs', v: p => avg(p.gs, 10 * p.gp)}, {l: 'W-L@stat', d: 'pct', v: p => { const r = R[p.team] || {w: 0, l: 0}; return `${r.w}-${r.l}`; }}];
+  $('#ld-award').innerHTML = `<thead><tr><th${def('place')}>#</th><th class="l"${def(ids)}>${t('Player')}</th><th class="l x">${t('Team')}</th><th class="x"${def('gp')}>${t('GP@stat')}</th>${cols.map(c => `<th class="cp"${def(`${c.d} ${lad}`)}>${t(c.l)}</th>`).join('')}<th${def(lad)}>${t('Score@award')}</th></tr></thead><tbody>${rows.length ? rows.map((x, i) => {
+    const p = P[x.pid];
+    return `<tr data-pid="${esc(p.pid)}"><td>${places[i]}</td><td class="l"><a href="#${esc(p.team)}/${esc(p.pid)}">${face(p.pid, p.name)}${EN(p.name)}</a></td><td class="l x">${logo(p.team)}<span class="code">${esc(p.team)}</span></td><td class="x">${p.gp}</td>${cols.map((c, j) => `<td class="cp">${c.v(p)}<i class="pb" style="--w:${x.c[j]}%"></i></td>`).join('')}<td class="k">${tenths(x.s)}</td></tr>`;
   }).join('') : `<tr><td class="empty l" colspan="8">${t('No player qualifies yet.')}</td></tr>`}</tbody>`;
 }
 
@@ -2543,12 +2534,10 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['lead', '', 'Biggest lead', 'Each club’s largest lead, in points.', ''],
   ]],
   ['Awards ladder', [
-    ['ladder', '', 'Lab ladder', 'The Lab’s own ladder from numbers the site shows, not a forecast of the vote. In each award’s pool a player gets points for his place on three counts, 100 for the first and 0 for the last, equal values sharing a place: impact (RAPM), production (Game Score per game) and team (his club’s win percentage). The bar under each count is those points. MVP, Rookie and Sixth Man share the formula.', '0.5 × impact + 0.3 × production + 0.2 × team'],
-    ['floor-mvp', '', 'MVP pool', 'On pace for the 65-game line of the NBA’s awards rule: a game counts at 20 minutes, and up to two games of 15 to 19 minutes count too.', 'Counted games × 82 ≥ 65 × club games'],
+    ['ladder', '', 'Lab ladder', 'The Lab’s own ladder from numbers the site shows, not a forecast of the vote. In the award’s pool a player gets points for his place on three counts, 100 for the first and 0 for the last, equal values sharing a place: impact (RAPM), production (Game Score per game) and team (his club’s win percentage). The bar under each count is those points. MVP and Rookie share the formula.', '0.5 × impact + 0.3 × production + 0.2 × team'],
+    ['dladder', '', 'Defensive ladder', 'The Lab’s own ladder, not a forecast of the vote, built as the MVP ladder is from three defensive counts: impact (D-RAPM), production (steals and blocks per game) and team (his club’s defensive rating, the lower the better).', '0.5 × impact + 0.3 × production + 0.2 × team'],
+    ['floor-mvp', '', 'MVP and Defensive pools', 'On pace for the 65-game line of the NBA’s awards rule: a game counts at 20 minutes, and up to two games of 15 to 19 minutes count too.', 'Counted games × 82 ≥ 65 × club games'],
     ['floor-roy', '', 'Rookie pool', 'Players in their first NBA season who played 70% of the club’s games at 15 minutes a game.', ''],
-    ['floor-smoy', '', 'Sixth Man pool', 'More games off the bench than starts, in 70% of the club’s games at 15 minutes a game.', ''],
-    ['mip', '', 'Most Improved', 'Game Score per 36 minutes this season less last season’s, both to one decimal. Last season is rebuilt from its play-by-play.', 'GmSc per 36 − last season’s'],
-    ['floor-mip', '', 'Most Improved pool', 'Not a rookie, on pace for the 65-game line, and 20 games at 15 minutes a game last season.', ''],
   ]],
   ['Leader boards', [
     ['place', '', 'Place', 'A player’s place on a board, 1 the best; equal values share a place.', ''],
@@ -2582,7 +2571,7 @@ const defBody = r => `<span>${esc(t(r[3]))}</span>${r[4] ? `<code>${esc(t(r[4]))
 // the Leaders boards: each one's stat and its floor
 const LEAD_DEF = {pts: 'pts floor-pg', reb: 'reb floor-pg', ast: 'ast floor-pg', stl: 'stl floor-pg', blk: 'blk floor-pg', fg3m: 'fg3 floor-pg', min: 'min floor-pg',
   fg: 'fgp floor-pg floor-fg', fg3: 'fg3p floor-pg floor-fg3', ft: 'ftp floor-pg floor-ft', ts: 'ts floor-pg floor-fg', usg: 'usg floor-pg floor-busy', uast: 'unast floor-pg floor-unast', fd: 'fd floor-pg floor-busy', ftar: 'ftar floor-pg floor-busy', pf36: 'pf36 floor-pg floor-busy',
-  rapm: 'rapm floor-pg floor-busy', orapm: 'orapm floor-pg floor-busy', drapm: 'drapm floor-pg floor-busy', form: 'trend floor-trend', ftsplit: 'ft1 ftpress floor-ft1', range: 'deep dist floor-range', lineups: 'lineup pair floor-units', streaks: 'runs dd td', awards: 'ladder', highs: 'highs'};
+  rapm: 'rapm floor-pg floor-busy', orapm: 'orapm floor-pg floor-busy', drapm: 'drapm floor-pg floor-busy', form: 'trend floor-trend', ftsplit: 'ft1 ftpress floor-ft1', range: 'deep dist floor-range', lineups: 'lineup pair floor-units', streaks: 'runs dd td', awards: 'ladder dladder', highs: 'highs'};
 // a stat label (as tiles and table headings name it) and its entry
 const STAT_DEF = {PTS: 'pts', REB: 'reb', OREB: 'oreb', DREB: 'dreb', AST: 'ast', STL: 'stl', BLK: 'blk', TOV: 'tov', PF: 'pf', FD: 'fd', FTR: 'ftar', FG: 'fg', '3P': 'fg3', FT: 'ft',
   'FG%': 'fgp', '3P%': 'fg3p', 'FT%': 'ftp', 'TS%': 'ts', '+/-': 'pm', MIN: 'min', GP: 'gp', Result: 'result',
