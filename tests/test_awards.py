@@ -1,5 +1,5 @@
-"""awards.py: the 65-game count, rank points with shared ranks, the pools' floors (pace, rookies, bench, last season),
-the blend and its order, Most Improved on shown tenths, the gate refusing a changed file, and the play-by-play counts.
+"""awards.py: the 65-game count, rank points with shared ranks, the pools' floors (pace, rookies), the blend and its
+order, the defensive ladder on D-RAPM, steals and blocks and the club's defence, and the gate refusing a changed file.
 usage: python tests/test_awards.py
 """
 import json
@@ -22,96 +22,83 @@ assert awards.points({"a": 1}) == {"a": 100}
 ZERO = dict.fromkeys(["pts", "fgm", "fga", "ftm", "fta", "oreb", "dreb", "stl", "ast", "blk", "pf", "tov"], 0)
 
 
-def line(pid, sec, pts, start):
-    return {**ZERO, "pid": pid, "name": pid, "start": start, "sec": sec, "pts": pts}
+def line(pid, sec, pts, start, stl=0, blk=0):
+    return {**ZERO, "pid": pid, "name": pid, "start": start, "sec": sec, "pts": pts, "stl": stl, "blk": blk}
 
 
-def league(tmp, extra=None):
-    """Two clubs, ten finals (A wins seven). A1-A3 and B1-B3 play every game; A4 misses four; R1 a rookie, S1 off the
-    bench, S2 starts most games."""
+def league(tmp):
+    """Two clubs, ten finals (AAA wins seven and allows fewer points). A1-A3 and B1-B3 play every game; A4 misses four;
+    R1 is a rookie, R2 a rookie short of minutes."""
     games, box = [], {}
     for i in range(10):
         gid = f"g{i}"
         home_wins = i < 7
         games.append({"gid": gid, "home": "AAA", "away": "BBB", "hs": 100 if home_wins else 90, "as": 90 if home_wins else 100})
-        a = [line("A1", 2000, 30, True), line("A2", 1800, 20, True), line("A3", 1500, 10, True), line("R1", 1300, 12, True),
-             line("S1", 1250, 15, False)]
+        a = [line("A1", 2000, 30, True, 1, 0), line("A2", 1800, 20, True, 0, 3), line("A3", 1500, 10, True, 2, 0),
+             line("R1", 1300, 12, True), line("R2", 600, 15, False)]
         if i >= 4:
-            a.append(line("A4", 2200, 25, True))
-        b = [line("B1", 2100, 28, True), line("B2", 1700, 18, True), line("B3", 1200, 8, i % 3 == 0), line("S2", 1000, 9, i > 2)]
+            a.append(line("A4", 2200, 25, True, 4, 4))
+        b = [line("B1", 2100, 24, True, 2, 2), line("B2", 1700, 18, True), line("B3", 1200, 8, True, 1, 0)]
         box[gid] = {"AAA": a, "BBB": b}
     games.append({"gid": "g10", "home": "AAA", "away": "BBB", "hs": None, "as": None})
     os.makedirs(os.path.join(tmp, "games"))
     json.dump({"games": games}, open(os.path.join(tmp, "games.json"), "w"))
     for gid, b in box.items():
         json.dump({"gid": gid, "box": b}, open(os.path.join(tmp, "games", f"{gid}.json"), "w"))
-    rapm = {"A1": 5.0, "A2": 2.0, "A3": 2.0, "A4": 9.0, "R1": 1.0, "S1": 3.0, "B1": 6.0, "B2": 0.5, "B3": -1.0, "S2": 4.0}
+    side = lambda pts: {"pts": pts, "fga": 800, "oreb": 100, "tov": 120, "fta": 200}   # noqa: E731
+    json.dump({"teams": [{"code": "AAA", "for": side(970), "against": side(930)}, {"code": "BBB", "for": side(930), "against": side(970)}]},
+              open(os.path.join(tmp, "ratings.json"), "w"))
+    rapm = {"A1": (5.0, 1.0), "A2": (2.0, 3.0), "A3": (2.0, 0.5), "A4": (9.0, 6.0), "R1": (1.0, 0.0), "R2": (4.0, 2.0),
+            "B1": (6.0, 3.0), "B2": (0.5, -1.0), "B3": (-1.0, 0.2)}
     lead = []
-    for pid, r in rapm.items():
+    for pid, (r, d) in rapm.items():
         ls = [x for b in box.values() for c in b.values() for x in c if x["pid"] == pid]
-        lead.append({"pid": pid, "name": pid, "team": "AAA" if pid[0] in "ARS" and pid != "S2" else "BBB", "rookie": pid == "R1",
-                     "rapm": r, "gp": len(ls), "sec": sum(x["sec"] for x in ls), "gs": sum(awards.game_score(x) for x in ls)})
-    json.dump({"players": lead + (extra or [])}, open(os.path.join(tmp, "leaders.json"), "w"))
+        lead.append({"pid": pid, "name": pid, "team": "BBB" if pid[0] == "B" else "AAA", "rookie": pid[0] == "R", "rapm": r, "drapm": d,
+                     "gp": len(ls), "sec": sum(x["sec"] for x in ls), "gs": sum(awards.game_score(x) for x in ls),
+                     "stl": sum(x["stl"] for x in ls), "blk": sum(x["blk"] for x in ls)})
+    lead.append({"pid": "N1", "name": "N1", "team": "AAA", "rookie": False, "rapm": None, "drapm": None, "gp": 0, "sec": 0, "gs": 0, "stl": 0, "blk": 0})
+    json.dump({"players": lead}, open(os.path.join(tmp, "leaders.json"), "w"))
 
 
 with tempfile.TemporaryDirectory() as tmp:
     league(tmp)
-    last = {"A1": [70, 70 * 2000, 70 * 250], "A2": [70, 70 * 1800, 70 * 50], "B1": [19, 19 * 2000, 19 * 300], "A3": [40, 40 * 800, 4000]}
-    doc = awards.document(tmp, last, "2026-27")
+    doc = awards.document(tmp)
+    assert set(doc) == {"rule", "pool", "mvp", "roy", "dpoy"}, sorted(doc)
     mvp = [x["pid"] for x in doc["mvp"]]
-    # A4 missed four of ten: 6 x 82 < 65 x 10, off the MVP ladder; S2 never plays 15 minutes, counts nothing
-    assert "A4" not in mvp and "S2" not in mvp, mvp
-    assert set(mvp) == {"A1", "A2", "A3", "R1", "S1", "B1", "B2", "B3"}, mvp
-    assert doc["pool"]["mvp"] == 8
+    # A4 missed four of ten: 6 x 82 < 65 x 10, off the MVP and Defensive ladders; R2 never plays 15 minutes
+    assert set(mvp) == {"A1", "A2", "A3", "R1", "B1", "B2", "B3"}, mvp
+    assert doc["pool"] == {"mvp": 7, "roy": 1, "dpoy": 7}, doc["pool"]
     assert mvp[0] == "A1", doc["mvp"]                       # second in impact, first in production, best club
-    for x in doc["mvp"]:
-        assert x["s"] == 5 * x["c"][0] + 3 * x["c"][1] + 2 * x["c"][2]
-    assert [x["s"] for x in doc["mvp"]] == sorted((x["s"] for x in doc["mvp"]), reverse=True)
+    for k in ("mvp", "roy", "dpoy"):
+        for x in doc[k]:
+            assert x["s"] == 5 * x["c"][0] + 3 * x["c"][1] + 2 * x["c"][2]
+        assert [x["s"] for x in doc[k]] == sorted((x["s"] for x in doc[k]), reverse=True)
     # A2 and A3 share a RAPM, so they share its points
     c = {x["pid"]: x["c"] for x in doc["mvp"]}
     assert c["A2"][0] == c["A3"][0]
     assert [x["pid"] for x in doc["roy"]] == ["R1"], doc["roy"]
-    # the bench: more games off the bench than starts, 70% of the games, 15 minutes a game (S2 plays 1000 s: out)
-    assert [x["pid"] for x in doc["smoy"]] == ["S1", "B3"] or [x["pid"] for x in doc["smoy"]] == ["B3", "S1"], doc["smoy"]
-    # Most Improved: B1 had 19 games last season, A3 too few minutes; A2 improved more than A1 declined
-    assert [x["pid"] for x in doc["mip"]] == ["A2", "A1"], doc["mip"]
-    a2 = doc["mip"][0]
-    assert a2["d"] == awards.per36(10 * 200, 18000) - awards.per36(70 * 50, 70 * 1800), a2
-    assert a2["last"] == last["A2"]
+    # Defensive: A2 and B1 share the best D-RAPM; B1 has more steals and blocks, A2 the better club defence
+    d = {x["pid"]: x["c"] for x in doc["dpoy"]}
+    assert set(d) == set(mvp)
+    assert d["A2"][0] == d["B1"][0] == 100 and d["B1"][1] == 100 and d["A2"][1] < 100, d
+    assert d["A2"][2] == 100 and d["B1"][2] == 33, d          # AAA allows fewer points per possession
+    assert [x["pid"] for x in doc["dpoy"]][:2] == ["A2", "B1"], doc["dpoy"]   # 500 + 3 x 83 + 200 against 500 + 300 + 66
 
-    awards.check(doc, tmp, last, "2026-27")
+    awards.check(doc, tmp)
 
-    def refused(d, lst=last):
+    def refused(d):
         try:
-            awards.check(d, tmp, lst, "2026-27")
+            awards.check(d, tmp)
         except SystemExit:
             return True
         return False
     assert refused({**doc, "mvp": doc["mvp"][::-1]})                                  # out of order, not what it gives
     assert refused({**doc, "roy": doc["roy"] + [{"pid": "A1", "c": [0, 0, 0], "s": 0, "g": 10}]})
-    assert refused(doc, {**last, "A2": [70, 70 * 1800, 70 * 60]})                      # last season changed
     # leaders.json disagreeing with the box scores is refused too
     lead = json.load(open(os.path.join(tmp, "leaders.json")))
     for p in lead["players"]:
-        if p["pid"] == "A1":
-            p["gs"] += 1
+        if p["pid"] == "A2":
+            p["blk"] += 1
     json.dump(lead, open(os.path.join(tmp, "leaders.json"), "w"))
     assert refused(doc)
-
-# the play-by-play counts behind Game Score
-acts = [
-    {"game": "g", "action_type": "2pt", "result": "Made", "player": 1, "assist_player": 2, "block_player": None, "sub_type": None},
-    {"game": "g", "action_type": "3pt", "result": "Missed", "player": 1, "assist_player": None, "block_player": 3, "sub_type": None},
-    {"game": "g", "action_type": "rebound", "result": None, "player": 1, "assist_player": None, "block_player": None, "sub_type": "offensive"},
-    {"game": "g", "action_type": "freethrow", "result": "Made", "player": 1, "assist_player": None, "block_player": None, "sub_type": "1 of 1"},
-    {"game": "g", "action_type": "foul", "result": None, "player": 3, "assist_player": None, "block_player": None, "sub_type": "technical"},
-    {"game": "g", "action_type": "foul", "result": None, "player": 3, "assist_player": None, "block_player": None, "sub_type": "personal"},
-    {"game": "g", "action_type": "turnover", "result": None, "player": 2, "assist_player": None, "block_player": None, "sub_type": "bad pass"},
-    {"game": "g", "action_type": "steal", "result": None, "player": 3, "assist_player": None, "block_player": None, "sub_type": None},
-    {"game": "g", "action_type": "rebound", "result": None, "player": None, "assist_player": None, "block_player": None, "sub_type": "defensive"},
-]
-t = awards.box_counts(acts)
-assert t[("g", 1)] | {} == {**ZERO, "pts": 3, "fgm": 1, "fga": 2, "ftm": 1, "fta": 1, "oreb": 1}, t[("g", 1)]
-assert t[("g", 2)] == {**ZERO, "ast": 1, "tov": 1}
-assert t[("g", 3)] == {**ZERO, "blk": 1, "pf": 1, "stl": 1}
 print("awards ok")
