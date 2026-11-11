@@ -9,6 +9,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, ROOT)
+import awards  # noqa: E402
 from assists import write_assists  # noqa: E402
 from ft import write_ft  # noqa: E402
 from shots import write_shots, zone  # noqa: E402
@@ -234,6 +235,22 @@ def write_similar(out, players, lines):
         json.dump({"keys": ["pts", "reb", "ast"], "games": 2, "mpg": 0, "players": comps}, f)
 
 
+def write_awards(out, players, lines):
+    """awards.json from awards.py, with a made-up last season for every player who is not a rookie: his games this
+    season times six at his minutes, and a Game Score that moves a little each way, so Most Improved has rows."""
+    import json
+    last = {}
+    for p in players:
+        ls = [x for x in lines if x["pid"] == p["pid"] and x["sec"] > 0]
+        if ls and not p["rookie"]:
+            gs = sum(awards.game_score(x) for x in ls)
+            last[p["pid"]] = [6 * len(ls), 6 * sum(x["sec"] for x in ls), 6 * gs + (len(p["name"]) % 7 - 3) * 40 * len(ls)]
+    doc = awards.document(out, last, SEASON)
+    awards.check(doc, out, last, SEASON)
+    with open(os.path.join(out, "awards.json"), "w") as f:
+        json.dump(doc, f)
+
+
 def free_throws(rng, games, lines):
     """Every box line's free throws as attempts for write_ft(): trips of two while two or more are left, a trip of three
     now and then, the last one a one-shot (an and-one every other time) or a technical; his makes spread over them at
@@ -275,4 +292,5 @@ if __name__ == "__main__":
     write_ratings(out, teams, team_lines(games, lines))
     write_similar(out, players, lines)
     write_ft(out, teams, free_throws(random.Random(19), games, lines))
+    write_awards(out, players, lines)
     print(f"fixture league written to {out}")
