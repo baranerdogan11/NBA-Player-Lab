@@ -266,6 +266,12 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 .tiles{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));margin-top:22px;border-top:4px solid var(--ink);border-bottom:2px solid var(--ink)}
 .hero .runs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .hero .run{padding:5px 9px;border:2px solid var(--ink);background:var(--riso-yellow);color:#1a1a1a;font:900 12px/1 var(--sans);text-transform:uppercase;letter-spacing:.08em;box-shadow:3px 3px 0 var(--ink)}
+.hero a.run{text-decoration:none}
+.hero .run.lad{background:var(--paper);color:var(--ink)}
+/* awards ladder: under each count, a bar of its rank points (0 to 100) */
+.tbl.aw .cp{min-width:62px}
+@media (max-width:760px){.tbl.aw td,.tbl.aw th{padding-left:3px;padding-right:3px}.tbl.aw th{white-space:normal;letter-spacing:.04em}.tbl.aw .cp{min-width:0}.tbl.aw td{font-size:14px}.tbl.aw .face{width:28px;height:28px}.tbl.aw td.l a{white-space:normal;display:flex;align-items:center;gap:6px;line-height:1.15}.tbl.aw .face{flex:none}}
+.tbl.aw .pb{display:block;height:4px;margin-top:4px;background:linear-gradient(90deg,var(--fluoro-pink) var(--w),color-mix(in srgb,var(--ink) 12%,transparent) var(--w))}
 .tile{padding:12px 10px 10px;border-right:1px solid var(--ink);border-bottom:1px dashed var(--line)}
 .tile:nth-child(6n){border-right:0}
 .tile b{display:block;font:900 34px/1 var(--sans);letter-spacing:-.04em;color:var(--A)}
@@ -678,6 +684,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <div class="tabs" id="ld-tabs" role="group" aria-label="Stat" data-ta="Stat"></div>
     <div class="tabs ld-only"><button type="button" id="ld-rook" aria-pressed="false" data-t="Rookies">Rookies</button></div>
     <div class="tabs" id="ld-size" role="group" aria-label="Lineup" data-ta="Lineup" hidden></div>
+    <div class="tabs" id="ld-aw" role="group" aria-label="Award" data-ta="Award" hidden></div>
     <section class="panel" id="ld-sec"><div class="scroll"><table class="tbl" id="ld"></table></div></section>
     <section class="panel" id="ld-lu" hidden><div class="scroll"><table class="tbl units" id="ld-units"></table></div></section>
     <div id="ld-form" hidden>
@@ -696,6 +703,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     </div>
     <div class="trio" id="ld-highs" hidden></div>
     <div class="trio" id="ld-runs" hidden></div>
+    <section class="panel" id="ld-awards" hidden><div class="scroll"><table class="tbl aw" id="ld-award"></table></div></section>
   </section>
   <section class="pg" id="pg-privacy" hidden>
     <section class="panel"><h2 data-t="Privacy">Privacy</h2><div class="prose">
@@ -838,7 +846,7 @@ async function route() {
     else if (page === 'games') await renderGames(b, my);
     else if (page === 'game') await renderGame(b, my);
     else if (page === 'team') await renderTeam(b, my);
-    else if (page === 'leaders') await renderLeaders(b, my, c === 'rookies', c === '2' ? 2 : 5);
+    else if (page === 'leaders') await renderLeaders(b, my, c === 'rookies', c === '2' ? 2 : 5, c);
     else if (page === 'privacy') document.title = `${t('Privacy')} · NBA Player Lab`;
     else if (page === 'glossary') renderGlossary();
     else if (page === 'league') await renderLeague(b, c, my);
@@ -1078,7 +1086,7 @@ const country = c => t(c + '@country');
 // a draft as the feed gives it: [year, round, overall pick], [] for an undrafted player
 const drafted = d => d.length ? `${t('Draft')} <b>${t('{y}, round {r}, pick {n}', {y: d[0], r: d[1], n: d[2]})}</b>` : `<b>${t('Undrafted')}</b>`;
 async function renderPlayer(code, pid, my, gid) {
-  const [data, L] = await Promise.all([get(`${code}.json`), get('leaders.json').then(d => d.players).catch(() => [])]);
+  const [data, L, AW] = await Promise.all([get(`${code}.json`), get('leaders.json').then(d => d.players).catch(() => []), get('awards.json').catch(() => null)]);
   if (stale(my)) return;
   // every section starts closed when the page is opened; moving from player to player keeps them as the reader left them
   if (document.body.dataset.page !== 'player') for (const d of $$('#pg-player details.panel')) d.open = false;
@@ -1120,7 +1128,7 @@ async function renderPlayer(code, pid, my, gid) {
   remember(`${code}/${p.pid}`);
   leagueBadge(p.pid);
   const s = p.s, a = age(p.born), me = L.find(x => x.pid === p.pid);
-  hero.innerHTML = `<div class="badge">${face(p.pid, p.name, true)}</div><div class="who"><div class="tag"><a href="#team/${esc(code)}">${logo(code, 'mark')}${EN(tname(code))}</a>${p.pos ? ` · ${esc(p.pos)}` : ''}${p.rookie ? ` · <span class="rook">${t('Rookie')}</span>` : ''}</div><h1>${EN(p.name)}</h1><div class="facts">${p.country ? `<span data-k="from">${t('From')} <b>${esc(country(p.country))}</b></span>` : ''}${p.draft ? `<span data-k="draft">${drafted(p.draft)}</span>` : ''}${p.height ? `<span>${t('Height')} <b>${esc(p.height)}</b></span>` : ''}${a != null ? `<span>${t('Age')} <b>${a}</b></span>` : ''}<span${def('gp')}>${t('Games')} <b>${s.gp}</b></span><span${def('min')}>${t('Minutes')} <b>${mpg(s.sec, s.gp)}</b></span>${me && me.run ? `<span data-k="dd"${def('dd')}>${t('DD@stat')} <b>${me.dd}</b></span><span data-k="td"${def('td')}>${t('TD@stat')} <b>${me.td}</b></span>` : ''}</div>${runChips(me)}</div>${p.jersey !== '' && p.jersey != null ? `<div class="num" aria-hidden="true">${esc(p.jersey)}</div>` : ''}${STAR_BTN(p.pid)}${SHARE_BTN('player')}`;
+  hero.innerHTML = `<div class="badge">${face(p.pid, p.name, true)}</div><div class="who"><div class="tag"><a href="#team/${esc(code)}">${logo(code, 'mark')}${EN(tname(code))}</a>${p.pos ? ` · ${esc(p.pos)}` : ''}${p.rookie ? ` · <span class="rook">${t('Rookie')}</span>` : ''}</div><h1>${EN(p.name)}</h1><div class="facts">${p.country ? `<span data-k="from">${t('From')} <b>${esc(country(p.country))}</b></span>` : ''}${p.draft ? `<span data-k="draft">${drafted(p.draft)}</span>` : ''}${p.height ? `<span>${t('Height')} <b>${esc(p.height)}</b></span>` : ''}${a != null ? `<span>${t('Age')} <b>${a}</b></span>` : ''}<span${def('gp')}>${t('Games')} <b>${s.gp}</b></span><span${def('min')}>${t('Minutes')} <b>${mpg(s.sec, s.gp)}</b></span>${me && me.run ? `<span data-k="dd"${def('dd')}>${t('DD@stat')} <b>${me.dd}</b></span><span data-k="td"${def('td')}>${t('TD@stat')} <b>${me.td}</b></span>` : ''}</div>${runChips(me, ladderChip(AW, p.pid))}</div>${p.jersey !== '' && p.jersey != null ? `<div class="num" aria-hidden="true">${esc(p.jersey)}</div>` : ''}${STAR_BTN(p.pid)}${SHARE_BTN('player')}`;
   const tiles = [['PTS', avg(s.pts, s.gp)], ['REB', avg(s.reb, s.gp)], ['AST', avg(s.ast, s.gp)], ['STL', avg(s.stl, s.gp)], ['BLK', avg(s.blk, s.gp)], ['TOV', avg(s.tov, s.gp)],
     ['FG%', pct(s.fgm, s.fga)], ['3P%', pct(s.fg3m, s.fg3a)], ['FT%', pct(s.ftm, s.fta)], ['TS%', ts(s.pts, s.fga, s.fta)], ['+/-', N(signed(rdiv(s.pm, s.gp)))], ['MIN', mpg(s.sec, s.gp)]];
   // on the page, five a row: scoring and defence, shooting with the free-throw rate, then fouls drawn and committed
@@ -1167,9 +1175,17 @@ async function renderPlayer(code, pid, my, gid) {
 }
 // ---- On a run: his active streaks of three games or more (leaders.json), double-doubles first, at most two
 const RUN_MIN = 3;
-const runChips = me => {
+const runChips = (me, extra = '') => {
   const on = me && me.run ? ['dd', 'p20', 't3', 'p10'].filter(k => me.run[k][0] >= RUN_MIN).slice(0, 2) : [];
-  return on.length ? `<div class="runs">${on.map(k => `<span class="run" data-run="${k}" data-n="${me.run[k][0]}"${def('runs')}>${t((RUNS.find(r => r[0] === k) || [])[2])} · ${t('{n} straight', {n: me.run[k][0]})}</span>`).join('')}</div>` : '';
+  return on.length || extra ? `<div class="runs">${extra}${on.map(k => `<span class="run" data-run="${k}" data-n="${me.run[k][0]}"${def('runs')}>${t((RUNS.find(r => r[0] === k) || [])[2])} · ${t('{n} straight', {n: me.run[k][0]})}</span>`).join('')}</div>` : '';
+};
+// his best place on the awards ladders (awards.json), the first ladder he is on in AWARDS order; it opens that ladder
+const ladderChip = (A, pid) => {
+  for (const [k, label] of A ? AWARDS : []) {
+    const i = (A[k] || []).findIndex(x => x.pid === pid);
+    if (i >= 0) return `<a class="run lad" href="#leaders/awards/${k}" data-award="${k}" data-n="${awardPlace(A[k])[i]}">${t('{award} ladder', {award: t(label)})} · ${ordinal(awardPlace(A[k])[i])}</a>`;
+  }
+  return '';
 };
 // ---- Form: his last ten games played, oldest first, as bars of Game Score (gs, in tenths, written by site_data.py) from
 // zero, over a dashed line at his season average; filled above the average, outlined below; each bar opens its game
@@ -1977,19 +1993,20 @@ const board = (L, stat) => {
 };
 // the Rookies switch (#leaders/<stat>/rookies) keeps every board to players in their first NBA season, floors unchanged;
 // the season highs stay league-wide
-async function renderLeaders(stat, my, rookies, size) {
+async function renderLeaders(stat, my, rookies, size, award) {
   let L = (await get('leaders.json')).players;
   if (stale(my)) return;
-  if (!LEAD[stat] && stat !== 'form' && stat !== 'ftsplit' && stat !== 'range' && stat !== 'highs' && stat !== 'lineups' && stat !== 'streaks') stat = 'pts';
-  const wide = stat === 'highs' || stat === 'lineups';
+  if (!LEAD[stat] && stat !== 'form' && stat !== 'ftsplit' && stat !== 'range' && stat !== 'highs' && stat !== 'lineups' && stat !== 'streaks' && stat !== 'awards') stat = 'pts';
+  const wide = stat === 'highs' || stat === 'lineups' || stat === 'awards';
   rookies = rookies && !wide;
   if (rookies) L = L.filter(p => p.rookie);
-  $('#ld-tabs').innerHTML = [...Object.entries(LEAD), ['form', ['Trending']], ['ftsplit', ['Free throws']], ['range', ['Range']], ['lineups', ['Lineups@board']], ['streaks', ['Streaks']], ['highs', ['Season highs']]].map(([k, [l]]) => `<a href="#leaders/${k}${rookies && k !== 'highs' && k !== 'lineups' ? '/rookies' : ''}" aria-current="${k === stat}" data-def="${LEAD_DEF[k]}">${t(l)}</a>`).join('');
+  $('#ld-tabs').innerHTML = [...Object.entries(LEAD), ['form', ['Trending']], ['ftsplit', ['Free throws']], ['range', ['Range']], ['lineups', ['Lineups@board']], ['streaks', ['Streaks']], ['awards', ['Awards']], ['highs', ['Season highs']]].map(([k, [l]]) => `<a href="#leaders/${k}${rookies && k !== 'highs' && k !== 'lineups' && k !== 'awards' ? '/rookies' : ''}" aria-current="${k === stat}" data-def="${LEAD_DEF[k]}">${t(l)}</a>`).join('');
   const rk = $('#ld-rook');
   rk.parentElement.hidden = wide;
   rk.setAttribute('aria-pressed', String(rookies));
   rk.dataset.stat = stat;
   $('#ld-sec').hidden = stat === 'form' || stat === 'ftsplit' || stat === 'range' || stat === 'streaks' || wide;
+  $('#ld-aw').hidden = $('#ld-awards').hidden = stat !== 'awards';
   $('#ld-form').hidden = stat !== 'form';
   $('#ld-ft').hidden = stat !== 'ftsplit';
   $('#ld-range').hidden = stat !== 'range';
@@ -2005,6 +2022,10 @@ async function renderLeaders(stat, my, rookies, size) {
   }
   if (stat === 'lineups') return drawUnits(L, await get('lineups/league.json').catch(() => null), size, my);
   if (stat === 'highs') return drawHighs(await get('highs.json').catch(() => ({stats: {}})), my);
+  if (stat === 'awards') {
+    const [A, G, RT] = await Promise.all([get('awards.json').catch(() => null), get('games.json').then(d => d.games), get('ratings.json').then(d => d.teams).catch(() => [])]);
+    return stale(my) ? undefined : drawAwards(L, A, G, RT, award);
+  }
   // the unassisted board counts makes from the assist credits (assists/league.json: pid -> [assisted, makes])
   if (stat === 'uast') {
     const A = await get('assists/league.json').then(d => d.players).catch(() => ({}));
@@ -2098,6 +2119,28 @@ function drawUnits(L, lg, n, my) {
     const top = pids.reduce((a, b) => ((P[b] || {}).sec || 0) > ((P[a] || {}).sec || 0) ? b : a), names = pids.map(p => EN(surname(name(p)))).join(' · '), label = esc(pids.map(p => name(p)).join(', '));
     return `<tr data-unit="${esc(code)}:${esc(pids.join(','))}"><td>${rank}</td><td class="l unit"><a href="#${esc(code)}/${esc(top)}" aria-label="${label}"><span class="faces" style="${colours(code)}">${pids.map(p => face(p, name(p))).join('')}</span><span class="nm">${names}</span></a></td><td class="l">${logo(code)}<span class="code">${esc(code)}</span></td><td>${N(rdiv(u.ds, 600, 0))}</td><td class="x">${N(signed(String(u.pts - u.opp)))}</td><td class="x">${tenths(r[0])}</td><td class="x">${tenths(r[1])}</td><td class="k">${tenths(r[2], 1)}</td></tr>`;
   }).join('') : `<tr><td class="empty l" colspan="8">${t('No lineup qualifies yet.')}</td></tr>`}</tbody>`;
+}
+
+// ---- Awards ladder: the Lab's ladders for MVP, Rookie and Defensive Player as awards.py writes them: rank points for
+// impact, production and team, blended 5:3:2 in tenths. MVP and Rookie: RAPM, Game Score per game, the club's record;
+// Defensive: D-RAPM, steals and blocks per game, the club's defensive rating. The values beside each row are the ones
+// every other page shows
+const AWARDS = [['mvp', 'MVP@award', 'ladder floor-mvp'], ['roy', 'Rookie@award', 'ladder floor-roy'], ['dpoy', 'Defensive@award', 'dladder floor-mvp']];
+const awardPlace = rows => { let rank = 0; return rows.map((x, i) => { if (!i || x.s !== rows[i - 1].s) rank = i + 1; return rank; }); };
+const ordinal = n => LANG === 'tr' ? `${n}.` : `${n}${(n % 100 >= 11 && n % 100 <= 13) || n % 10 > 3 || n % 10 === 0 ? 'th' : ['', 'st', 'nd', 'rd'][n % 10]}`;
+function drawAwards(L, A, G, RT, k) {
+  if (!AWARDS.some(a => a[0] === k)) k = 'mvp';
+  $('#ld-aw').innerHTML = AWARDS.map(([key, label, ids]) => `<a href="#leaders/awards/${key}" aria-current="${key === k}" data-award="${key}" data-def="${ids}">${t(label)}</a>`).join('');
+  const P = Object.fromEntries(L.map(p => [p.pid, p])), R = records(G), rows = (A && A[k] || []).filter(x => P[x.pid]), places = awardPlace(rows);
+  const ids = (AWARDS.find(a => a[0] === k) || [])[2], lad = ids.split(' ')[0], D = Object.fromEntries(RT.map(c => [c.code, c.against]));
+  const drtg = code => { const a = D[code]; return tenths(a ? rtg(a.pts, a.fga, a.oreb, a.tov, a.fta) : null); };
+  // each count: its heading, its definitions and the value shown
+  const cols = k === 'dpoy' ? [{l: 'D-RAPM', d: 'drapm', v: p => N(signed(p.drapm.toFixed(1)))}, {l: 'STL+BLK@stat', d: 'stl blk', v: p => avg(p.stl + p.blk, p.gp)}, {l: 'DRtg@stat', d: 'drtg poss', v: p => drtg(p.team)}]
+    : [{l: 'RAPM', d: 'rapm', v: p => N(signed(p.rapm.toFixed(1)))}, {l: 'GmSc@stat', d: 'gs', v: p => avg(p.gs, 10 * p.gp)}, {l: 'W-L@stat', d: 'pct', v: p => { const r = R[p.team] || {w: 0, l: 0}; return `${r.w}-${r.l}`; }}];
+  $('#ld-award').innerHTML = `<thead><tr><th${def('place')}>#</th><th class="l"${def(ids)}>${t('Player')}</th><th class="l x">${t('Team')}</th><th class="x"${def('gp')}>${t('GP@stat')}</th>${cols.map(c => `<th class="cp"${def(`${c.d} ${lad}`)}>${t(c.l)}</th>`).join('')}<th${def(lad)}>${t('Score@award')}</th></tr></thead><tbody>${rows.length ? rows.map((x, i) => {
+    const p = P[x.pid];
+    return `<tr data-pid="${esc(p.pid)}"><td>${places[i]}</td><td class="l"><a href="#${esc(p.team)}/${esc(p.pid)}">${face(p.pid, p.name)}${EN(p.name)}</a></td><td class="l x">${logo(p.team)}<span class="code">${esc(p.team)}</span></td><td class="x">${p.gp}</td>${cols.map((c, j) => `<td class="cp">${c.v(p)}<i class="pb" style="--w:${x.c[j]}%"></i></td>`).join('')}<td class="k">${tenths(x.s)}</td></tr>`;
+  }).join('') : `<tr><td class="empty l" colspan="8">${t('No player qualifies yet.')}</td></tr>`}</tbody>`;
 }
 
 // ---- Season highs: the season's ten best single games for each stat (highs.json, Game Score in tenths), ranks tied on
@@ -2490,6 +2533,12 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['tied', '', 'Times tied', 'Times the score was level again after a lead.', ''],
     ['lead', '', 'Biggest lead', 'Each club’s largest lead, in points.', ''],
   ]],
+  ['Awards ladder', [
+    ['ladder', '', 'Lab ladder', 'The Lab’s own ladder from numbers the site shows, not a forecast of the vote. In the award’s pool a player gets points for his place on three counts, 100 for the first and 0 for the last, equal values sharing a place: impact (RAPM), production (Game Score per game) and team (his club’s win percentage). The bar under each count is those points. MVP and Rookie share the formula.', '0.5 × impact + 0.3 × production + 0.2 × team'],
+    ['dladder', '', 'Defensive ladder', 'The Lab’s own ladder, not a forecast of the vote, built as the MVP ladder is from three defensive counts: impact (D-RAPM), production (steals and blocks per game) and team (his club’s defensive rating, the lower the better).', '0.5 × impact + 0.3 × production + 0.2 × team'],
+    ['floor-mvp', '', 'MVP and Defensive pools', 'On pace for the 65-game line of the NBA’s awards rule: a game counts at 20 minutes, and up to two games of 15 to 19 minutes count too.', 'Counted games × 82 ≥ 65 × club games'],
+    ['floor-roy', '', 'Rookie pool', 'Players in their first NBA season who played 70% of the club’s games at 15 minutes a game.', ''],
+  ]],
   ['Leader boards', [
     ['place', '', 'Place', 'A player’s place on a board, 1 the best; equal values share a place.', ''],
     ['ma', 'M-A@stat', 'Made-attempted', 'Shots made and shots attempted over the season.', ''],
@@ -2522,7 +2571,7 @@ const defBody = r => `<span>${esc(t(r[3]))}</span>${r[4] ? `<code>${esc(t(r[4]))
 // the Leaders boards: each one's stat and its floor
 const LEAD_DEF = {pts: 'pts floor-pg', reb: 'reb floor-pg', ast: 'ast floor-pg', stl: 'stl floor-pg', blk: 'blk floor-pg', fg3m: 'fg3 floor-pg', min: 'min floor-pg',
   fg: 'fgp floor-pg floor-fg', fg3: 'fg3p floor-pg floor-fg3', ft: 'ftp floor-pg floor-ft', ts: 'ts floor-pg floor-fg', usg: 'usg floor-pg floor-busy', uast: 'unast floor-pg floor-unast', fd: 'fd floor-pg floor-busy', ftar: 'ftar floor-pg floor-busy', pf36: 'pf36 floor-pg floor-busy',
-  rapm: 'rapm floor-pg floor-busy', orapm: 'orapm floor-pg floor-busy', drapm: 'drapm floor-pg floor-busy', form: 'trend floor-trend', ftsplit: 'ft1 ftpress floor-ft1', range: 'deep dist floor-range', lineups: 'lineup pair floor-units', streaks: 'runs dd td', highs: 'highs'};
+  rapm: 'rapm floor-pg floor-busy', orapm: 'orapm floor-pg floor-busy', drapm: 'drapm floor-pg floor-busy', form: 'trend floor-trend', ftsplit: 'ft1 ftpress floor-ft1', range: 'deep dist floor-range', lineups: 'lineup pair floor-units', streaks: 'runs dd td', awards: 'ladder dladder', highs: 'highs'};
 // a stat label (as tiles and table headings name it) and its entry
 const STAT_DEF = {PTS: 'pts', REB: 'reb', OREB: 'oreb', DREB: 'dreb', AST: 'ast', STL: 'stl', BLK: 'blk', TOV: 'tov', PF: 'pf', FD: 'fd', FTR: 'ftar', FG: 'fg', '3P': 'fg3', FT: 'ft',
   'FG%': 'fgp', '3P%': 'fg3p', 'FT%': 'ftp', 'TS%': 'ts', '+/-': 'pm', MIN: 'min', GP: 'gp', Result: 'result',
