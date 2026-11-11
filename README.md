@@ -52,6 +52,10 @@ A port of [Euroleague Player Lab](https://github.com/baranerdogan11/Euroleague-P
   `similar.py` writes `teams/<season>/similar.json`, each regular's three nearest players by those role rates alone
   (no efficiency), from his own position group first, for the Player page's Similar role row. Only players with five
   games and 15 minutes a game get comps or are one, and every one of them must match `leaders.json`'s games and seconds
+- `awards.py`: writes `teams/<season>/awards.json`, the Lab's awards ladder: MVP and Rookie (50% RAPM, 30% Game Score
+  per game, 20% club win percentage) and Defensive Player (50% D-RAPM, 30% steals and blocks per game, 20% club
+  defensive rating), each part as rank points in the award's pool, from the published JSON alone; every row must match
+  `leaders.json` and the box scores, and the MVP and Defensive Player pools keep to the 65-game pace
 - `tests/fixtures/site_fixture.py`: a made-up, self-consistent league the browser tests run against
 - `tests/`: Python self-tests (`tests/run_all.py` runs every `tests/test_*.py`), the Playwright browser tests
   (`tests/e2e/`) and the lint and type-check setup for the page's script (`tests/lint/`)

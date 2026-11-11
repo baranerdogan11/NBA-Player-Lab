@@ -9,6 +9,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, ROOT)
+import awards  # noqa: E402
 from assists import write_assists  # noqa: E402
 from ft import write_ft  # noqa: E402
 from shots import write_shots, zone  # noqa: E402
@@ -234,6 +235,15 @@ def write_similar(out, players, lines):
         json.dump({"keys": ["pts", "reb", "ast"], "games": 2, "mpg": 0, "players": comps}, f)
 
 
+def write_awards(out):
+    """awards.json from awards.py, over the fixture's own files."""
+    import json
+    doc = awards.document(out)
+    awards.check(doc, out)
+    with open(os.path.join(out, "awards.json"), "w") as f:
+        json.dump(doc, f)
+
+
 def free_throws(rng, games, lines):
     """Every box line's free throws as attempts for write_ft(): trips of two while two or more are left, a trip of three
     now and then, the last one a one-shot (an and-one every other time) or a technical; his makes spread over them at
@@ -275,4 +285,5 @@ if __name__ == "__main__":
     write_ratings(out, teams, team_lines(games, lines))
     write_similar(out, players, lines)
     write_ft(out, teams, free_throws(random.Random(19), games, lines))
+    write_awards(out)
     print(f"fixture league written to {out}")

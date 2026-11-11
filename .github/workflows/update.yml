@@ -135,6 +135,10 @@ jobs:
         if: hashFiles('warehouse.py') != ''
         run: python ft.py
 
+      - name: Awards ladder (teams/<season>/awards.json from the published JSON; every row matches leaders.json and the box scores, every score is its parts' blend)
+        if: hashFiles('warehouse.py') != ''
+        run: python awards.py
+
       - name: Similar role (profiles.py role rates, then teams/<season>/similar.json; every comp clears the floors and matches leaders.json)
         if: hashFiles('warehouse.py') != ''
         run: python profiles.py && python similar.py
