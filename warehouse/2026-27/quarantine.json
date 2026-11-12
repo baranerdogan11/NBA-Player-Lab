@@ -13,6 +13,13 @@
    "scope": "box",
    "reason": "team_box: score is the schedule's final score: 1 rows, e.g. ('0022600224', 'UTA', 'ORL', True, 108, 14400.0, 108, 33, 81, 14, 44, 28, 34, 9, 29, 38, 21, 6, 8, 4, 11, 23, 2, 1, 29, 8, 6, 2, 0)",
    "first_seen": "2026-11-12T04:38:20Z"
+  },
+  {
+   "game": "0022600225",
+   "gate": "warehouse_tests",
+   "scope": "box",
+   "reason": "team_box: score is the schedule's final score: 1 rows, e.g. ('0022600225', 'GSW', 'HOU', False, 108, 14400.0, 108, 36, 88, 17, 51, 19, 26, 16, 32, 48, 22, 5, 6, 7, 13, 20, 0, 1, 23, 11, 10, 1, 0)",
+   "first_seen": "2026-11-12T05:18:20Z"
   }
  ]
 }
