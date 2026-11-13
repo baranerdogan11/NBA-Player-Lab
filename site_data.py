@@ -21,9 +21,13 @@ Files under <out>/ (out is teams/<season>/):
                     per five per game: g indexes games (tip-off order), f fives, ds is tenths of a second; the page sums
                     the rows and derives every rating with rdiv
   ratings.json      each club's season totals and its opponents' over its finals, from the official team box scores:
-                    {"teams": [{"code", "gp", "sec", "for": {RT keys}, "against": {RT keys}}, ...]}, sec the club's
-                    seconds (five players' worth, 14400 a regulation game), tov with the team turnovers; the page
-                    derives ratings, pace and the Four Factors with rdiv
+                    {"teams": [{"code", "gp", "sec", "for": {RT keys}, "against": {RT keys}, "style": {STYLE keys}}, ...]},
+                    sec the club's seconds (five players' worth, 14400 a regulation game), tov with the team turnovers;
+                    style (style_totals()) from the players' box lines in the club's finals: psec their seconds, bench
+                    the seconds of those who did not start, hin the sum of height in inches times seconds over the
+                    players with a known height and hsec their seconds; the page derives ratings, pace, the Four
+                    Factors and the club's style (pace, 3PA rate, assist rate, FT rate, height on the floor, bench
+                    share) with rdiv
   night.json        the latest night with a final: {"date", "rows": [{gid, pid, name, team, gs, pts, reb, ast, fgm, fga},
                     ...]}, its five best lines by Hollinger's Game Score, gs in tenths (game_score()), best first
   highs.json        the season's best single games: {"stats": {stat: [{gid, date, pid, name, team, club, opp, home, v},
@@ -386,7 +390,44 @@ def check_streaks(out):
 
 
 LU_COUNTS = ("fga", "oreb", "tov", "fta")
-RT = ("pts", "fgm", "fga", "fg3m", "ftm", "fta", "oreb", "dreb", "tov")
+RT = ("pts", "fgm", "fga", "fg3m", "ftm", "fta", "oreb", "dreb", "tov", "fg3a", "ast")
+STYLE = ("psec", "bench", "hin", "hsec")
+
+
+def inches(h):
+    """6'8" (or the feed's 6-8) in inches; None when the height is not known."""
+    import re
+    m = re.fullmatch(r"(\d+)\D+(\d+)\D*", h or "")
+    return 12 * int(m[1]) + int(m[2]) if m else None
+
+
+def style_totals(out):
+    """{code: {STYLE keys}} over every final's box lines in the game files (games/<gid>.json): psec the seconds of the
+    club's players, bench those of the ones who did not start, hin height in inches times seconds over the players
+    whose height the club files (<CODE>.json, the rosters) give, hsec their seconds. Raises unless every club started
+    exactly five players in every final."""
+    tall = {}
+    for code in (t["code"] for t in load_teams()):
+        path = os.path.join(out, f"{code}.json")
+        if os.path.exists(path):
+            for p in json.load(open(path))["players"]:
+                if inches(p.get("height")) is not None:
+                    tall[p["pid"]] = inches(p["height"])
+    tot = {}
+    for g in json.load(open(os.path.join(out, "games.json")))["games"]:
+        if g["hs"] is None:
+            continue
+        for code, side in json.load(open(os.path.join(out, "games", f"{g['gid']}.json")))["box"].items():
+            if sum(1 for x in side if x["start"]) != 5:
+                raise ValueError(f"{g['gid']} {code}: {sum(1 for x in side if x['start'])} starters in the box score")
+            c = tot.setdefault(code, dict.fromkeys(STYLE, 0))
+            for x in side:
+                c["psec"] += x["sec"]
+                c["bench"] += 0 if x["start"] else x["sec"]
+                if x["pid"] in tall:
+                    c["hin"] += tall[x["pid"]] * x["sec"]
+                    c["hsec"] += x["sec"]
+    return tot
 
 
 def write_ratings(out, teams, rows):
@@ -400,6 +441,9 @@ def write_ratings(out, teams, rows):
         for k in RT:
             c["for"][k] += int(r[k])
             c["against"][k] += int(o[k])
+    style = style_totals(out)
+    for c in tot.values():
+        c["style"] = style.get(c["code"], dict.fromkeys(STYLE, 0))
     _dump(os.path.join(out, "ratings.json"), {"teams": list(tot.values())})
 
 
@@ -421,6 +465,30 @@ def check_ratings(out, rows=(), held=()):
         if len(lu["games"]) != gp or got != box:
             raise ValueError(f"{c['code']}: lineups add up to {len(lu['games'])} games {got}, box scores {c['gp']} games {box} "
                              f"(pts, opp_pts, {', '.join(LU_COUNTS)}, opp_...)")
+
+
+def check_style(out):
+    """Raises unless every club's style totals in ratings.json are its players' box lines in the finals' game files
+    (style_totals()), its team box FGM, FGA, 3PA and assists are the sums of those lines, and its players' seconds are
+    within a second a player of the team box's (the feed rounds each player's minutes, not the club's)."""
+    style, sums = style_totals(out), {}
+    for g in json.load(open(os.path.join(out, "games.json")))["games"]:
+        if g["hs"] is not None:
+            for code, side in json.load(open(os.path.join(out, "games", f"{g['gid']}.json")))["box"].items():
+                s = sums.setdefault(code, {"fgm": 0, "fga": 0, "fg3a": 0, "ast": 0, "n": 0})
+                for x in side:
+                    s["n"] += x["sec"] > 0
+                    for k in ("fgm", "fga", "fg3a", "ast"):
+                        s[k] += x[k]
+    for c in json.load(open(os.path.join(out, "ratings.json")))["teams"]:
+        want, s = style.get(c["code"], dict.fromkeys(STYLE, 0)), sums.get(c["code"], {"fgm": 0, "fga": 0, "fg3a": 0, "ast": 0, "n": 0})
+        if c["style"] != want:
+            raise ValueError(f"ratings.json {c['code']}: style {c['style']}, box lines say {want}")
+        box = {k: c["for"][k] for k in ("fgm", "fga", "fg3a", "ast")}
+        if box != {k: s[k] for k in box}:
+            raise ValueError(f"ratings.json {c['code']}: team box {box}, players' box lines {s}")
+        if abs(c["style"]["psec"] - c["sec"]) > s["n"]:
+            raise ValueError(f"ratings.json {c['code']}: players played {c['style']['psec']} s, the team box says {c['sec']} s")
 
 
 def write_lineups(out, teams, rows):
@@ -638,6 +706,7 @@ if __name__ == "__main__":
     rows = team_lines(wh)
     write_ratings(out, teams, rows)
     check_ratings(out, rows, quarantine.held(wh, "lineups"))   # lineups.py has written teams/<season>/lineups/ by now
+    check_style(out)
     write_league_lineups(out, teams)
     check_league_lineups(out, teams)
     print(f"{SEASON}: site JSON written to {out}")

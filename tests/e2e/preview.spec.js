@@ -2,7 +2,7 @@
 // both clubs' ratings and Four Factors as Standings shows them, and the season's earlier meetings; once final, the same
 // address is the game page. The fixture's first night to come is 2026-10-25 (games 0022600061 on).
 import {test, expect} from '@playwright/test';
-/* global get */
+/* global get, tname */
 import {DESKTOP, prepare, settled, go} from './site.js';
 
 test.use({...DESKTOP, timezoneId: 'Asia/Tokyo'});
@@ -101,5 +101,25 @@ test('clubs yet to meet say so; a final and a game to come swap the page between
   expect(await page.evaluate(() => [document.querySelector('#gm-pre').hidden, document.querySelector('#gm-final').hidden, !!document.querySelector('#gm-board .score:not(.tip)')])).toEqual([true, false, true]);
   await go(page, PRE, preview);
   expect(await page.evaluate(() => [document.querySelector('#gm-pre').hidden, document.querySelector('#gm-final').hidden])).toEqual([false, true]);
+  expect(problems).toEqual([]);
+});
+
+test('how both clubs play shows the club pages\' figures and ranks side by side', async ({page}) => {
+  const problems = await prepare(page);
+  await page.goto(`./?l${PRE}`);
+  await settled(page);
+  await page.waitForFunction(preview);
+  await page.waitForFunction(() => !document.querySelector('#pv-style-sec').hidden);
+  const g = (await games(page)).find(x => x.gid === PRE.split('/')[1]);
+  const pv = await page.evaluate(() => [...document.querySelectorAll('#pv-style [data-k]')].map(d => [d.dataset.k, ...[...d.querySelectorAll('.v')].map(v => [v.dataset.team, v.firstChild.nodeType === 3 ? v.firstChild.textContent : v.childNodes[1].textContent, v.dataset.r])]));
+  expect(pv.map(r => r[0])).toEqual(['pace', 'tpar', 'paint', 'astr', 'cftr', 'size', 'bench']);
+  for (const code of [g.away, g.home]) {
+    await go(page, `#team/${code}`, c => document.body.dataset.page === 'team' && document.title.startsWith(tname(c)), code);
+    const club = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('#tm-style [data-k]')].map(d => [d.dataset.k, [d.querySelector('.v').textContent, d.querySelector('.rk').dataset.r]])));
+    for (const [k, ...sides] of pv) {
+      const [, v, r] = sides.find(s => s[0] === code);
+      expect([v, r], `${code} ${k}`).toEqual(club[k]);
+    }
+  }
   expect(problems).toEqual([]);
 });

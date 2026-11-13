@@ -436,6 +436,15 @@ html[data-theme="dark"] .fl-sum [data-team]{--A:color-mix(in srgb,var(--tc) 55%,
 .tape .bar{display:flex;height:100%;align-items:center}
 .tape .bar.a{justify-content:flex-end}
 .tape .bar i{display:block;height:14px;background:var(--A);mix-blend-mode:var(--blend);transition:width .5s var(--spring)}
+.fp{display:grid;grid-template-columns:auto auto minmax(0,1fr) 2.6ch;align-items:center;column-gap:12px;margin-top:6px}
+.fp>div{display:contents}
+.fp>div>*{padding:8px 0;border-bottom:1px solid var(--line)}
+.fp>div:last-child>*{border-bottom:0}
+.fp .lb{font:900 10.5px/1.1 var(--sans);letter-spacing:.12em;text-transform:uppercase}
+.fp .v{font:900 17px/1 var(--sans);white-space:nowrap;text-align:right}
+.fp .bar{display:flex;height:100%;align-items:center}
+.fp .bar i{display:block;height:14px;background:var(--A);box-shadow:3px 0 0 var(--B);mix-blend-mode:var(--blend);transition:width .5s var(--spring)}
+.fp .rk{text-align:right;font:italic 400 12px/1 var(--serif);color:var(--muted)}
 @media (max-width:760px){.tape{grid-template-columns:auto minmax(0,1fr) 5.2em minmax(0,1fr) auto;column-gap:6px}.tape .v{font-size:14px}.tape .lb{font-size:9.5px;letter-spacing:.06em}.tape .hd .nm{display:none}.pv-form .rec{font-size:26px}}
 
 /* the opening page: the house poster in yellow and blue, then the latest night's tickets and three leader lists */
@@ -659,6 +668,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <section class="panel"><h2 data-t="Form">Form</h2><div class="pv-form" id="pv-form"></div></section>
     <section class="panel"><h2 data-t="Ratings">Ratings</h2><div class="tape" id="pv-rt"></div></section>
     <section class="panel"><h2 data-t="Four Factors">Four Factors</h2><div class="tape" id="pv-ff"></div></section>
+    <section class="panel" id="pv-style-sec" hidden><h2 data-t="How they play">How they play</h2><div class="tape" id="pv-style"></div></section>
     <section class="panel"><h2 data-t="Season series">Season series</h2><div class="cards" id="pv-meet"></div></section>
     </div>
     <div id="gm-final">
@@ -675,6 +685,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <div class="hero" id="tm-hero"></div>
     <div class="pick"><select id="tm-pick" data-kind="team" aria-label="Team" data-ta="Team"></select></div>
     <div class="tiles" id="tm-tiles"></div>
+    <details class="panel" id="tm-style-sec" hidden><summary><h2 data-t="How they play">How they play</h2></summary><div class="fp" id="tm-style"></div></details>
     <details class="panel" id="tm-next-sec"><summary><h2><span data-t="Up next">Up next</span><a class="more" id="tm-cal" data-t="Add to calendar">Add to calendar</a></h2></summary><div class="cards" id="tm-next"></div></details>
     <details class="panel" id="tm-past-sec"><summary><h2 data-t="Results">Results</h2></summary><div class="scroll"><table class="tbl" id="tm-past"></table></div></details>
     <details class="panel" id="tm-roster-sec"><summary><h2 data-t="Roster">Roster</h2></summary><div class="scroll"><table class="tbl" id="tm-roster"></table></div></details>
@@ -1418,6 +1429,24 @@ const teamVals = c => {
   return {ortg, drtg, net: ortg != null && drtg != null ? ortg - drtg : null, pace: c.sec ? rq(72 * (po + pd), c.sec) : null,
     ...o, ...Object.fromEntries(Object.entries(d).map(([k, v]) => ['o' + k, v]))};
 };
+// ---- club style: how a club plays, each figure ranked among the clubs that have one (1 the most, not the best): pace (as
+// Ratings), 3PA rate, assist rate and FT rate (ratings.json, the team box scores), paint share (shots/league.json, the
+// restricted area and the rest of the paint over all the club's charted attempts), and its height on the floor (inches
+// weighted by seconds played) and bench share (seconds of players who did not start) from ratings.json style, the
+// players' box lines; each value rounded once by rq
+const STYLE_COLS = [['pace', 'Pace', 1], ['tpar', '3PA rate', 1], ['paint', 'Paint share', 1], ['astr', 'AST rate', 1], ['cftr', 'FT rate', 1], ['size', 'Height', 1], ['bench', 'Bench share', 1]];
+const STYLE_DEF = {pace: 'pace poss srank', tpar: 'tpar srank', paint: 'paint srank', astr: 'astr srank', cftr: 'cftr srank', size: 'size srank', bench: 'bench srank'};
+const styleVals = (c, z) => {
+  const f = c.for, s = c.style, za = z ? z.for.reduce((n, x) => n + x[1], 0) : 0;
+  return {pace: teamVals(c).pace, tpar: f.fga ? rq(100 * f.fg3a, f.fga) : null, paint: za ? rq(100 * (z.for[0][1] + z.for[1][1]), za) : null,
+    astr: f.fgm ? rq(100 * f.ast, f.fgm) : null, cftr: f.fga ? rq(f.fta, f.fga, 3) : null, size: s.hsec ? rq(s.hin, s.hsec) : null, bench: s.psec ? rq(100 * s.bench, s.psec) : null};
+};
+const styleAll = (rt, zl) => Object.fromEntries(rt.teams.filter(c => c.style && c.gp).map(c => [c.code, styleVals(c, zl && zl.teams && zl.teams[c.code])]));
+const styleShow = (k, q) => q == null ? '–' : k === 'cftr' ? N(fq(q, 3).replace(/^0/, '')) : k === 'size' ? N(`${Math.floor(q / 120)}'${fq(q % 120)}"`) : k === 'pace' ? N(fq(q)) : `${N(fq(q))}%`;
+const styleRows = (code, V) => STYLE_COLS.map(([k, l, dir]) => {
+  const all = Object.values(V).map(v => v[k]), n = all.filter(v => v != null).length, v = V[code] ? V[code][k] : null, r = rankBy(all, dir)(v);
+  return `<div data-k="${k}"><span class="lb"${def(STYLE_DEF[k])}>${t(l + '@stat')}</span><span class="v">${styleShow(k, v)}</span><span class="bar"><i style="width:${r ? (100 * (n + 1 - r) / n).toFixed(1) : 0}%"></i></span><small class="rk"${r ? ` data-r="${r}"` : ''}>${r || ''}</small></div>`;
+}).join('');
 function teamRatings(view, clubs, standing) {
   const cols = RT_COLS[view], place = Object.fromEntries(standing.map((r, i) => [r.code, i]));
   const rows = clubs.map(c => ({code: c.code, v: teamVals(c)}));
@@ -1544,6 +1573,9 @@ async function renderTeam(code, my) {
   $('#tm-qrec').setAttribute('style', tc(code));
   $('#tm-qrec').innerHTML = `<thead><tr><th class="l"></th>${Q_SPLITS.map(([k, , l]) => `<th${def(k)}>${t(l)}</th>`).join('')}</tr></thead><tbody>${[['lead', 'Leading'], ['trail', 'Trailing'], ['tied', 'Level']].map(([s, l]) =>
     `<tr data-at="${s}"><td class="l">${t(l)}</td>${Q_SPLITS.map(([k]) => `<td data-rec="${k}">${wl(qa[k][s])}</td>`).join('')}</tr>`).join('')}</tbody>`;
+  const SV = styleAll(rt, zl);
+  $('#tm-style-sec').hidden = !SV[code];
+  $('#tm-style').innerHTML = SV[code] ? styleRows(code, SV) : '';
   const zt = zl && zl.teams && zl.teams[code];
   $('#tm-zones-sec').hidden = !zt;
   $('#tm-zones').innerHTML = zt ? [['Offense', zt.for, false], ['Defense', zt.against, true]].map(([l, zs, against]) =>
@@ -1842,7 +1874,7 @@ const tipDay = g => new Intl.DateTimeFormat(loc(), {weekday: 'short', month: 'sh
 // between its last game and this one, on the schedule's dates), both clubs' ratings and Four Factors with their ranks
 // (ratings.json through teamVals, as on Standings), and the season's earlier meetings. No prediction and no odds
 async function renderPreview(g, G, my) {
-  const rt = await get('ratings.json').catch(() => ({teams: []}));
+  const [rt, zl] = await Promise.all([get('ratings.json').catch(() => ({teams: []})), get('shots/league.json').catch(() => null)]);
   if (stale(my)) return;
   const H = team(g.home), A = team(g.away), before = G.slice(0, G.indexOf(g)), day = tipDay(g);
   const board = $('#gm-board');
@@ -1856,17 +1888,20 @@ async function renderPreview(g, G, my) {
   $('#pv-form').innerHTML = form(g.away) + form(g.home);
   const vals = Object.fromEntries(rt.teams.map(c => [c.code, teamVals(c)]));
   const hd = `<div class="hd"><span>${logo(g.away)}${esc(g.away)}</span><span></span><span></span><span></span><span>${esc(g.home)}${logo(g.home)}</span></div>`;
-  const rows = cols => cols.map(([k, l, dir]) => {
-    const all = Object.values(vals).map(v => v[k]), rank = rankBy(all, dir), n = all.filter(v => v != null).length;
-    const at = code => { const v = vals[code] ? vals[code][k] : null, r = rank(v); return {v, r, w: r ? 100 * (n + 1 - r) / n : 0}; };
+  const rows = (cols, V = vals, show = rtShow, defOf = k => RT_DEF[k.replace(/^o(?=efg|tov|orb|ftr)/, '')]) => cols.map(([k, l, dir]) => {
+    const all = Object.values(V).map(v => v[k]), rank = rankBy(all, dir), n = all.filter(v => v != null).length;
+    const at = code => { const v = V[code] ? V[code][k] : null, r = rank(v); return {v, r, w: r ? 100 * (n + 1 - r) / n : 0}; };
     const a = at(g.away), h = at(g.home);
-    const v = (x, code) => `<span class="v" data-team="${esc(code)}"${x.r ? ` data-r="${x.r}"` : ''}>${code === g.home ? `<small class="rk">${x.r || ''}</small>` : ''}${rtShow(k, x.v)}${code === g.away ? `<small class="rk">${x.r || ''}</small>` : ''}</span>`;
+    const v = (x, code) => `<span class="v" data-team="${esc(code)}"${x.r ? ` data-r="${x.r}"` : ''}>${code === g.home ? `<small class="rk">${x.r || ''}</small>` : ''}${show(k, x.v)}${code === g.away ? `<small class="rk">${x.r || ''}</small>` : ''}</span>`;
     const bar = (x, code, cls) => `<span class="bar ${cls}"><i style="${tc(code)};width:${x.w.toFixed(1)}%"></i></span>`;
-    return `<div data-k="${k}">${v(a, g.away)}${bar(a, g.away, 'a')}<span class="lb"${def(RT_DEF[k.replace(/^o(?=efg|tov|orb|ftr)/, '')])}>${t(l + '@stat')}</span>${bar(h, g.home, 'h')}${v(h, g.home)}</div>`;
+    return `<div data-k="${k}">${v(a, g.away)}${bar(a, g.away, 'a')}<span class="lb"${def(defOf(k))}>${t(l + '@stat')}</span>${bar(h, g.home, 'h')}${v(h, g.home)}</div>`;
   }).join('');
   const grp = l => `<div class="grp"><span></span><span></span><span${def(l === 'Defense' ? 'opp' : 'own')}>${t(l)}</span><span></span><span></span></div>`;
   $('#pv-rt').innerHTML = hd + rows(RT_COLS.ratings);
   $('#pv-ff').innerHTML = hd + grp('Offense') + rows(RT_COLS.factors.slice(0, 4)) + grp('Defense') + rows(RT_COLS.factors.slice(4));
+  const SV = styleAll(rt, zl);
+  $('#pv-style-sec').hidden = !SV[g.home] && !SV[g.away];
+  $('#pv-style').innerHTML = hd + rows(STYLE_COLS, SV, styleShow, k => STYLE_DEF[k]);
   const met = before.filter(x => x.hs != null && [x.home, x.away].sort().join() === [g.home, g.away].sort().join());
   $('#pv-meet').innerHTML = met.length ? met.map(gameCard).join('') : `<p class="empty">${t('First meeting this season.')}</p>`;
   $('#gm-pre').hidden = false;
@@ -2539,6 +2574,15 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['ftr', 'FT/FGA@stat', 'Free throw rate', 'Free throws made per field goal attempted.', 'FTM ÷ FGA'],
     ['own', '', 'Offense', 'The Offense columns are the club’s own figures: a higher eFG%, ORB%, FT/FGA and FT% and a lower TOV% are better.', ''],
     ['opp', '', 'Defense', 'The Defense columns are the opponents’ figures: a lower eFG%, ORB%, FT/FGA and FT% and a higher TOV% are better.', ''],
+  ]],
+  ['How they play', [
+    ['tpar', '3PA rate@stat', 'Three-point attempt rate', 'Share of the club’s field goal attempts that are threes.', '3PA ÷ FGA'],
+    ['paint', 'Paint share@stat', 'Paint share', 'Share of the club’s charted shots taken in the paint, the restricted area included.', '(restricted area + paint attempts) ÷ all attempts'],
+    ['astr', 'AST rate@stat', 'Assist rate', 'Share of the club’s baskets that were assisted.', 'AST ÷ FGM'],
+    ['cftr', 'FT rate@stat', 'Free-throw rate', 'How often the club gets to the line: free throws attempted per field goal attempted.', 'FTA ÷ FGA'],
+    ['size', 'Height@stat', 'Height on the floor', 'The club’s players’ height, each weighted by the minutes he played; players without a roster height are left out.', 'Σ (height × minutes) ÷ Σ minutes'],
+    ['bench', 'Bench share@stat', 'Bench share', 'Share of the club’s minutes played by players who did not start.', 'bench minutes ÷ all minutes'],
+    ['srank', '', 'Style rank', 'The small number beside a style figure is the club’s place among the 30, 1 the highest; it says how a club plays, not how well. Equal values share a place.', ''],
   ]],
   ['Standings', [
     ['w', 'W@stat', 'Wins', 'Games won.', ''],

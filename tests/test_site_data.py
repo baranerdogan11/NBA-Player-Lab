@@ -16,8 +16,8 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "tests", "fixtures"))
 import site_fixture  # noqa: E402
 from rounding import rnd  # noqa: E402
-from site_data import (HIGHS, LEAGUE_FLOOR, RT, STATS, STREAKS, check_highs, check_league_lineups, check_ratings, check_streaks, check_totals,  # noqa: E402
-                       doubles, game_score, streaks,
+from site_data import (HIGHS, LEAGUE_FLOOR, RT, STATS, STREAKS, check_highs, check_league_lineups, check_ratings, check_streaks, check_style, check_totals,  # noqa: E402
+                       doubles, game_score, inches, streaks,
                        write_league_lineups, write_lineups, write_ratings, write_site)
 
 checks = {}
@@ -81,6 +81,36 @@ def gate(*held):
 
 
 checks["the ratings gate passes when the lineups add up to the box scores"] = gate()
+
+
+def style_gate():
+    try:
+        check_style(out)
+        return True
+    except ValueError:
+        return False
+
+
+tall = {p["pid"]: inches(p["height"]) for p in players}
+checks["heights read as inches in either spelling, unknown as None"] = inches("6'8\"") == inches("6-8") == 80 and inches(None) is None and inches("") is None
+checks["a club's style is its players' seconds, bench seconds and height times seconds over its finals"] = all(
+    c["style"] == {"psec": sum(x["sec"] for g, b in boxes.items() for x in b["box"].get(t["code"], [])),
+                   "bench": sum(x["sec"] for g, b in boxes.items() for x in b["box"].get(t["code"], []) if not x["start"]),
+                   "hin": sum(tall[x["pid"]] * x["sec"] for g, b in boxes.items() for x in b["box"].get(t["code"], [])),
+                   "hsec": sum(x["sec"] for g, b in boxes.items() for x in b["box"].get(t["code"], []))}
+    for t in idx["teams"] for c in [rt[t["code"]]])
+checks["the style gate passes on the written ratings"] = style_gate()
+_rt = load("ratings.json")
+_rt["teams"][0]["for"]["ast"] += 1   # a team box assist no player has
+with open(os.path.join(out, "ratings.json"), "w") as f:
+    json.dump(_rt, f)
+checks["the style gate fails when the team box and the players' lines disagree"] = not style_gate()
+_rt["teams"][0]["for"]["ast"] -= 1
+_rt["teams"][0]["style"]["bench"] += 60
+with open(os.path.join(out, "ratings.json"), "w") as f:
+    json.dump(_rt, f)
+checks["the style gate fails when a club's bench minutes are not its box lines'"] = not style_gate()
+write_ratings(out, teams, site_fixture.team_lines(games, lines))
 gone = units[0]["gid"]
 write_lineups(out, teams, [u for u in units if u["gid"] != gone])
 checks["a game quarantined out of the lineups is taken off the box totals it is checked against"] = (
