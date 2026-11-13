@@ -193,7 +193,7 @@ test('every section starts closed, opens and closes, and stays open from club to
   await settled(page);
   await page.waitForFunction(club, CODE);
   const open = () => page.evaluate(() => [...document.querySelectorAll('#pg-team details.panel')].map(d => [d.id, d.open]));
-  expect((await open()).length).toBe(7);
+  expect((await open()).length).toBe(8);
   expect((await open()).filter(([, o]) => o)).toEqual([]);
   await page.click('#tm-zones-sec > summary');
   await page.click('#tm-roster-sec > summary');

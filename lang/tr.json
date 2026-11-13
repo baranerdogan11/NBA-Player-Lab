@@ -622,5 +622,13 @@
  "The Lab’s own ladder from numbers the site shows, not a forecast of the vote. In the award’s pool a player gets points for his place on three counts, 100 for the first and 0 for the last, equal values sharing a place: impact (RAPM), production (Game Score per game) and team (his club’s win percentage). The bar under each count is those points. MVP and Rookie share the formula.": "Lab’in sitede görünen sayılardan kurduğu kendi sıralaması; oylamanın tahmini değil. Ödülün havuzunda oyuncu üç ölçüdeki sırasına göre puan alır, birinci 100, sonuncu 0, eşit değerler aynı sırayı paylaşır: etki (RAPM), üretim (maç başına Game Score) ve takım (takımının galibiyet yüzdesi). Her ölçünün altındaki çubuk bu puandır. MVP ve Yılın çaylağı aynı formülü kullanır.",
  "Defensive ladder": "Savunma sıralaması",
  "The Lab’s own ladder, not a forecast of the vote, built as the MVP ladder is from three defensive counts: impact (D-RAPM), production (steals and blocks per game) and team (his club’s defensive rating, the lower the better).": "Lab’in kendi sıralaması; oylamanın tahmini değil. MVP sıralaması gibi, üç savunma ölçüsünden kurulur: etki (S-RAPM), üretim (maç başına top çalma ve blok) ve takım (takımının savunma reytingi, düşük olan iyi).",
- "MVP and Defensive pools": "MVP ve Savunma havuzları"
+ "MVP and Defensive pools": "MVP ve Savunma havuzları",
+ "Closing five": "Son beşlik",
+ "Close games": "Çekişmeli maçlar",
+ "No close games yet.": "Henüz çekişmeli maç yok.",
+ "G@stat": "M",
+ "Games closed": "Bitirdiği maçlar",
+ "Finals decided by 10 points or fewer, overtime included, and the club’s wins and losses in them.": "10 sayı ya da daha az farkla biten maçlar, uzatmalar dahil, ve takımın bu maçlardaki galibiyet ve mağlubiyetleri.",
+ "In each close game, the five players of the club with the most time on the court in its last five minutes (all of the overtime when it went to one), from who played when; equal time goes to the player with more minutes in the game. The top three groups and every player who closed are listed.": "Her çekişmeli maçta, son beş dakikada (uzatmaya giden maçta uzatmanın tamamında) sahada en uzun kalan beş oyuncu, kim ne zaman oynadı verisinden; süreler eşitse maçta daha çok süre alan oyuncu girer. En sık üç beşlik ve maçı bitiren her oyuncu listelenir.",
+ "Close games the group, or the player, closed, and the record in them.": "Beşliğin ya da oyuncunun bitirdiği çekişmeli maçlar ve bu maçlardaki galibiyet-mağlubiyet."
 }

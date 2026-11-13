@@ -130,6 +130,8 @@ a,button,select,.card{-webkit-tap-highlight-color:transparent}
 .units .nm{font:italic 400 13px/1.3 var(--serif);color:var(--ink2);white-space:nowrap}
 .units td,.units th{white-space:nowrap}
 @media (max-width:760px){.units .nm,.units .code{display:none}}
+#tm-close th:not(.l),#tm-close td:not(.l),#tm-closers th:not(.l),#tm-closers td:not(.l){width:84px}
+@media (max-width:760px){#tm-close td.unit{white-space:normal}#tm-close td.unit a{flex-direction:column;align-items:flex-start;gap:4px}#tm-close .nm{display:block;white-space:normal}}
 #lu .scroll+.scroll{margin-top:16px}
 .fives{display:grid;gap:20px;padding-bottom:4px}
 @media (min-width:1100px){.fives{grid-template-columns:1fr 1fr}}
@@ -177,7 +179,8 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 .dist td.bars{width:34%;min-width:70px;padding-top:6px;padding-bottom:6px}
 .dist .bars i{display:block;height:6px;margin:0;border:0;background:var(--A)}.dist .bars i+i{height:3px;margin-top:2px;background:var(--B)}
 .panel>summary .more{margin-right:4px}
-.panel>summary:has(.more)::after{margin-left:14px}
+.panel>summary:has(.more)::after,.panel>summary:has(.crec)::after{margin-left:14px}
+.panel>summary .crec{margin:0 4px 0 auto;font:italic 400 16px/1 var(--serif);text-transform:none;letter-spacing:0}.crec b{font-style:normal;font-weight:700}
 .zcourts{grid-template-columns:repeat(2,minmax(0,1fr))}
 @media (max-width:640px){.zcourts{grid-template-columns:1fr}}
 .zkey{grid-column:1/-1;flex-wrap:wrap;display:flex;align-items:center;justify-content:center;gap:4px;font:700 11px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase}
@@ -678,6 +681,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <details class="panel" id="tm-rt-sec"><summary><h2 data-t="Ratings">Ratings</h2></summary><div class="scroll"><table class="tbl rt" id="tm-rt"></table></div></details>
     <details class="panel" id="tm-ff-sec"><summary><h2 data-t="Four Factors">Four Factors</h2></summary><div class="scroll"><table class="tbl rt" id="tm-ff"></table></div></details>
     <details class="panel" id="tm-zones-sec" hidden><summary><h2 data-t="Shot performance">Shot performance</h2></summary><div class="courts zcourts" id="tm-zones"></div></details>
+    <details class="panel" id="tm-close-sec"><summary><h2><span data-t="Closing five">Closing five</span><span class="crec" id="tm-close-rec"></span></h2></summary><div class="scroll"><table class="tbl units" id="tm-close"></table></div><div class="scroll"><table class="tbl" id="tm-closers"></table></div></details>
     <details class="panel" id="tm-q-sec"><summary><h2 data-t="Quarter by quarter">Quarter by quarter</h2></summary><div class="scroll"><table class="tbl rt" id="tm-q"></table></div><div class="scroll"><table class="tbl rt" id="tm-qrec"></table></div></details>
   </section>
   <section class="pg" id="pg-leaders" hidden>
@@ -1544,8 +1548,61 @@ async function renderTeam(code, my) {
   $('#tm-zones-sec').hidden = !zt;
   $('#tm-zones').innerHTML = zt ? [['Offense', zt.for, false], ['Defense', zt.against, true]].map(([l, zs, against]) =>
     `<div data-side="${l.toLowerCase()}"><div class="court-h"><span${def('zgrade zones')}>${t(l)}</span></div>${zoneCourt(code, zs, zl.zones, against)}</div>`).join('') + zoneKey() : '';
+  closeRecord(code, G);
   document.title = `${tname(code)} · NBA Player Lab`;
 }
+
+// ---- Closing five: in each final decided by CLOSE points or fewer, the five players of the club with the most time on
+// the court in the game's last five minutes (all of a last overtime), from the game's rotation (site_data.rotation,
+// held to the box score); equal time goes to more minutes in the game, then the lower pid. Its games load once the
+// section is opened; a game without a rotation counts in the record only
+const CLOSE = 10, CLOSE_DS = 3000;
+const closeGames = (G, code) => G.filter(g => g.hs != null && (g.home === code || g.away === code) && Math.abs(g.hs - g.as) <= CLOSE);
+function closeRecord(code, G) {
+  const cg = closeGames(G, code), w = cg.filter(g => (g.home === code) === (g.hs > g.as)).length;
+  $('#tm-close-rec').innerHTML = `<span${def('close')}>${t('Close games')} <b>${w}-${cg.length - w}</b></span>`;
+  $('#tm-close-sec').dataset.code = code;
+  if ($('#tm-close-sec').open) closers(code);
+}
+// the club's five closers of one game: [pid, ...] sorted, or null without a rotation
+function closersOf(g, code) {
+  if (!g.rotation) return null;
+  const end = PSTART(played(g.periods) + 1), from = end - CLOSE_DS, mine = new Set(g.box[code].map(x => x.pid));
+  return Object.entries(g.rotation).filter(([p]) => mine.has(p)).map(([p, r]) => ({p,
+    late: r.reduce((s, [a, b]) => s + Math.max(0, Math.min(b, end) - Math.max(a, from)), 0), all: r.reduce((s, [a, b]) => s + b - a, 0)}))
+    .sort((x, y) => y.late - x.late || y.all - x.all || x.p.localeCompare(y.p)).slice(0, 5).map(x => x.p).sort();
+}
+async function closers(code) {
+  const sec = $('#tm-close-sec');
+  if (sec.dataset.done === code) return;
+  sec.dataset.done = code;
+  const G = (await get('games.json')).games, cg = closeGames(G, code), games = await Promise.all(cg.map(g => get(`games/${g.gid}.json`)));
+  if (sec.dataset.code !== code) return;
+  const names = {}, units = {}, men = {};
+  const add = (m, k, won, x) => { const u = m[k] || (m[k] = {...x, g: 0, w: 0}); u.g++; if (won) u.w++; };
+  for (const g of games) {
+    const five = closersOf(g, code);
+    if (!five) continue;
+    for (const x of g.box[code]) names[x.pid] = x.name;
+    const won = (g.home === code) === (g.hs > g.as);
+    add(units, five.join(), won, {pids: five});
+    for (const p of five) add(men, p, won, {pid: p});
+  }
+  const name = p => names[p] || p, order = (a, b) => b.g - a.g || b.w - a.w;
+  const us = Object.values(units).sort((a, b) => order(a, b) || a.pids.join().localeCompare(b.pids.join())).slice(0, 3);
+  const ms = Object.values(men).sort((a, b) => order(a, b) || name(a.pid).localeCompare(name(b.pid)));
+  const P = Object.fromEntries((await get(`${code}.json`)).players.map(p => [p.pid, sum(p.log).sec]));
+  $('#tm-close').setAttribute('style', tc(code));
+  $('#tm-close').innerHTML = `<thead><tr><th class="l"${def('closer')}>${t('Lineup@stat')}</th><th${def('closed')}>${t('G@stat')}</th><th${def('rec')}>${t('Record@stat')}</th></tr></thead><tbody>${us.length ? us.map(u => {
+    const top = u.pids.reduce((a, b) => (P[b] || 0) > (P[a] || 0) ? b : a);
+    return `<tr data-unit="${esc(u.pids.join(','))}"><td class="l unit"><a href="#${esc(code)}/${esc(top)}" aria-label="${esc(u.pids.map(name).join(', '))}"><span class="faces" style="${colours(code)}">${u.pids.map(p => face(p, name(p))).join('')}</span><span class="nm">${u.pids.map(p => EN(surname(name(p)))).join(' · ')}</span></a></td><td class="k">${u.g}</td><td>${u.w}-${u.g - u.w}</td></tr>`;
+  }).join('') : `<tr><td class="empty l" colspan="3">${t('No close games yet.')}</td></tr>`}</tbody>`;
+  $('#tm-closers').setAttribute('style', tc(code));
+  $('#tm-closers').hidden = !ms.length;
+  $('#tm-closers').innerHTML = `<thead><tr><th class="l"${def('closer')}>${t('Player')}</th><th${def('closed')}>${t('G@stat')}</th><th${def('rec')}>${t('Record@stat')}</th></tr></thead><tbody>${ms.map(m =>
+    `<tr data-pid="${esc(m.pid)}"><td class="l"><a href="#${esc(code)}/${esc(m.pid)}">${face(m.pid, name(m.pid))}${EN(name(m.pid))}</a></td><td class="k">${m.g}</td><td>${m.w}-${m.g - m.w}</td></tr>`).join('')}</tbody>`;
+}
+$('#tm-close-sec').addEventListener('toggle', e => { const d = e.target; if (d.open && d.dataset.code) closers(d.dataset.code).catch(() => { delete d.dataset.done; }); });
 
 $('#tm-pick').addEventListener('change', e => { location.hash = `team/${e.target.value}`; });
 
@@ -2470,6 +2527,9 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['astto', '', 'Assists to', 'The team-mates whose baskets the player assisted most this season, and the points those baskets made.', ''],
     ['sim', '', 'Similar role', 'The three players whose game looks most like his this season: usage, assist, turnover, offensive and defensive rebound, steal and block rates, three-point attempt rate and free-throw rate, each scaled across the league, from his own position group first. How well they shoot is left out, so a match is in style, not level. Players need 5 games and 15 minutes a game. Each one opens the two in Compare.', ''],
     ['onoff', '', 'On and off court', 'The club’s ratings with the player on the court, with the player off it, and the difference.', 'On − off'],
+    ['close', '', 'Close games', 'Finals decided by 10 points or fewer, overtime included, and the club’s wins and losses in them.', ''],
+    ['closer', '', 'Closing five', 'In each close game, the five players of the club with the most time on the court in its last five minutes (all of the overtime when it went to one), from who played when; equal time goes to the player with more minutes in the game. The top three groups and every player who closed are listed.', ''],
+    ['closed', 'G@stat', 'Games closed', 'Close games the group, or the player, closed, and the record in them.', ''],
     ['rank', '', 'Rank', 'The small number beside a rating is the club’s place among the 30, 1 the best; equal values share a place.', ''],
   ]],
   ['Four Factors', [
