@@ -647,5 +647,13 @@
  "Share of the club’s minutes played by players who did not start.": "Takımın dakikalarından ilk beşte başlamayan oyuncuların oynadığı pay.",
  "bench minutes ÷ all minutes": "yedek dakikaları ÷ tüm dakikalar",
  "Style rank": "Tarz sırası",
- "The small number beside a style figure is the club’s place among the 30, 1 the highest; it says how a club plays, not how well. Equal values share a place.": "Tarz değerinin yanındaki küçük sayı takımın 30 takım içindeki sırasıdır, 1 en yükseği; takımın ne kadar iyi değil, nasıl oynadığını söyler. Eşit değerler aynı sırayı paylaşır."
+ "The small number beside a style figure is the club’s place among the 30, 1 the highest; it says how a club plays, not how well. Equal values share a place.": "Tarz değerinin yanındaki küçük sayı takımın 30 takım içindeki sırasıdır, 1 en yükseği; takımın ne kadar iyi değil, nasıl oynadığını söyler. Eşit değerler aynı sırayı paylaşır.",
+ "Closing five": "Son beşlik",
+ "Close games": "Çekişmeli maçlar",
+ "No close games yet.": "Henüz çekişmeli maç yok.",
+ "G@stat": "M",
+ "Games closed": "Bitirdiği maçlar",
+ "Finals decided by 10 points or fewer, overtime included, and the club’s wins and losses in them.": "10 sayı ya da daha az farkla biten maçlar, uzatmalar dahil, ve takımın bu maçlardaki galibiyet ve mağlubiyetleri.",
+ "In each close game, the five players of the club with the most time on the court in its last five minutes (all of the overtime when it went to one), from who played when; equal time goes to the player with more minutes in the game. The top three groups and every player who closed are listed.": "Her çekişmeli maçta, son beş dakikada (uzatmaya giden maçta uzatmanın tamamında) sahada en uzun kalan beş oyuncu, kim ne zaman oynadı verisinden; süreler eşitse maçta daha çok süre alan oyuncu girer. En sık üç beşlik ve maçı bitiren her oyuncu listelenir.",
+ "Close games the group, or the player, closed, and the record in them.": "Beşliğin ya da oyuncunun bitirdiği çekişmeli maçlar ve bu maçlardaki galibiyet-mağlubiyet."
 }
