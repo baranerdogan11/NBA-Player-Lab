@@ -2,7 +2,7 @@
 // preview shows, its roster's averages are each Player page's tiles, and its ratings and Four Factors, values and
 // ranks, are the Standings ones. Standings, the game page and the preview link to it.
 import {test, expect} from '@playwright/test';
-/* global get, tname */
+/* global get, tname, teamVals */
 import {DESKTOP, prepare, settled, go} from './site.js';
 
 test.use(DESKTOP);
@@ -193,7 +193,7 @@ test('every section starts closed, opens and closes, and stays open from club to
   await settled(page);
   await page.waitForFunction(club, CODE);
   const open = () => page.evaluate(() => [...document.querySelectorAll('#pg-team details.panel')].map(d => [d.id, d.open]));
-  expect((await open()).length).toBe(7);
+  expect((await open()).length).toBe(8);
   expect((await open()).filter(([, o]) => o)).toEqual([]);
   await page.click('#tm-zones-sec > summary');
   await page.click('#tm-roster-sec > summary');
@@ -258,5 +258,53 @@ test('its results are every final, latest first, with the score and record the g
   const home = g.home === CODE, us = home ? g.hs : g.as, them = home ? g.as : g.hs;
   expect(rows[rows.length - 1].res.startsWith(`${us > them ? 'W' : 'L'} ${us}-${them}`)).toBe(true);
   expect(rows[rows.length - 1].rec).toBe(us > them ? '1-0' : '0-1');
+  expect(problems).toEqual([]);
+});
+
+// how a club plays, worked out here from the game files' box lines, the club files' heights and the zones in
+// shots/league.json, rounded half up once, and ranked among the 30 (1 the most)
+const half = (n, d, k = 1) => Math.floor((2 * n * 10 ** k + d) / (2 * d));
+async function styleOf(page) {
+  return page.evaluate(async () => {
+    const G = (await get('games.json')).games.filter(g => g.hs != null), lg = await get('shots/league.json'), rt = await get('ratings.json');
+    const tall = {};
+    for (const x of IDX.teams) for (const p of (await get(`${x.code}.json`)).players) { const m = /^(\d+)\D+(\d+)/.exec(p.height || ''); if (m) tall[p.pid] = 12 * +m[1] + +m[2]; }
+    const tot = {};
+    for (const g of G) for (const [code, side] of Object.entries((await get(`games/${g.gid}.json`)).box)) {
+      const c = tot[code] = tot[code] || {fga: 0, fgm: 0, fg3a: 0, fta: 0, ast: 0, psec: 0, bench: 0, hin: 0, hsec: 0};
+      for (const x of side) {
+        for (const k of ['fga', 'fgm', 'fg3a', 'fta', 'ast']) c[k] += x[k];
+        c.psec += x.sec; if (!x.start) c.bench += x.sec;
+        if (tall[x.pid] != null) { c.hin += tall[x.pid] * x.sec; c.hsec += x.sec; }
+      }
+    }
+    return {tot, zones: Object.fromEntries(Object.entries(lg.teams).map(([c, z]) => [c, z.for])), pace: Object.fromEntries(rt.teams.map(c => [c.code, teamVals(c).pace]))};
+  });
+}
+const styleWant = ({tot, zones, pace}) => Object.fromEntries(Object.entries(tot).map(([code, c]) => {
+  const z = zones[code], za = z.reduce((n, x) => n + x[1], 0);
+  return [code, {pace: pace[code], tpar: half(100 * c.fg3a, c.fga), paint: half(100 * (z[0][1] + z[1][1]), za), astr: half(100 * c.ast, c.fgm),
+    cftr: half(c.fta, c.fga, 3), size: c.hsec ? half(c.hin, c.hsec) : null, bench: half(100 * c.bench, c.psec)}];
+}));
+const styleText = (k, q) => q == null ? '–' : k === 'cftr' ? (q / 1000).toFixed(3).replace(/^0/, '') : k === 'size' ? `${Math.floor(q / 120)}'${((q % 120) / 10).toFixed(1)}"` : k === 'pace' ? (q / 10).toFixed(1) : `${(q / 10).toFixed(1)}%`;
+const styleRank = (V, code, k) => { const v = V[code][k]; return v == null ? null : 1 + Object.values(V).filter(x => x[k] != null && x[k] > v).length; };
+const STYLE_KEYS = ['pace', 'tpar', 'paint', 'astr', 'cftr', 'size', 'bench'];
+
+test('how they play is the club\'s box lines, heights and charted shots, ranked among the 30', async ({page}) => {
+  const problems = await prepare(page);
+  await page.goto(`./?l#team/${CODE}`);
+  await settled(page);
+  await page.waitForFunction(club, CODE);
+  await page.click('#tm-style-sec > summary');
+  const V = styleWant(await styleOf(page));
+  expect(Object.keys(V).length).toBe(30);
+  const shown = await page.evaluate(() => [...document.querySelectorAll('#tm-style [data-k]')].map(d => [d.dataset.k, d.querySelector('.v').textContent, d.querySelector('.rk').dataset.r, d.querySelector('.lb').dataset.def]));
+  expect(shown.map(r => r[0])).toEqual(STYLE_KEYS);
+  for (const [k, v, r, d] of shown) {
+    expect(v, k).toBe(styleText(k, V[CODE][k]));
+    expect(+r, `${k} rank`).toBe(styleRank(V, CODE, k));
+    expect(d, `${k} glossary`).toContain('srank');
+  }
+  expect(shown.find(r => r[0] === 'pace')[1], 'pace is the Ratings one').toBe(await page.evaluate(() => document.querySelector('#tm-rt [data-k="pace"] .v').textContent));
   expect(problems).toEqual([]);
 });
