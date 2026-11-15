@@ -112,8 +112,8 @@ DTSTAMP:20261115T000000Z
 DTSTART:20261115T000000Z
 DURATION:PT2H30M
 SUMMARY:Nuggets @ Pelicans
-DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
- 0231
+DESCRIPTION:Final: Nuggets 116\, Pelicans 108\nhttps://baranerdogan11.gith
+ ub.io/NBA-Player-Lab/?l#game/0022600231
 URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600231
 END:VEVENT
 BEGIN:VEVENT
@@ -128,8 +128,8 @@ URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600252
 END:VEVENT
 BEGIN:VEVENT
 UID:0022600266@nba-player-lab
-DTSTAMP:20261119T020000Z
-DTSTART:20261119T020000Z
+DTSTAMP:20261119T023000Z
+DTSTART:20261119T023000Z
 DURATION:PT2H30M
 SUMMARY:Celtics @ Nuggets
 DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
