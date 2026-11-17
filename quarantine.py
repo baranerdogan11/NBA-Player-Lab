@@ -72,6 +72,12 @@ def record(w, gate, failures, at=None):
     return entries
 
 
+def corrections_allowed(lines):
+    """The post-game stat corrections a season of so many box lines may carry before the games that differ are
+    quarantined: one per thousand box lines, at least two (warehouse_tests.py, assists.py, ft.py)."""
+    return max(2, lines // 1000)
+
+
 def add(failures, game, scope, reason):
     """Adds one failure to a {game: (scope, reason)} dict; box outranks the narrower scopes, and reasons are joined."""
     s, r = failures.get(game, (scope, ""))

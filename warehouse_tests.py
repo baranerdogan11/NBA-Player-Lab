@@ -135,7 +135,7 @@ for n, q in TESTS:
         systemic += 1
     for g, rows in (by or {}).items():
         quarantine.add(failures, g, scope(n), f"{n}: {len(rows)} rows, e.g. {rows[0]}")
-allowed = max(2, con.execute("select count(*) from box").fetchone()[0] // 1000)
+allowed = quarantine.corrections_allowed(con.execute("select count(*) from box").fetchone()[0])
 for n, q in TOLERATED:
     k, by = run(n, q, "WARN")
     # lines of a game another test already holds are left out with it, not counted against the corrections allowed

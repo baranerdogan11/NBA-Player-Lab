@@ -16,7 +16,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "tests", "fixtures"))
 import site_fixture  # noqa: E402
-from assists import allowed, from_warehouse, write_assists  # noqa: E402
+from assists import from_warehouse, write_assists  # noqa: E402
+from quarantine import corrections_allowed as allowed  # noqa: E402
 
 teams, players, games, lines = site_fixture.make(random.Random(7))
 baskets = site_fixture.passes(random.Random(17), games, lines)

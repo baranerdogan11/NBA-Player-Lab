@@ -57,11 +57,6 @@ def write_assists(out, teams, rows):
         json.dump({"zones": league, "players": dict(sorted(players.items()))}, f, separators=(",", ":"))
 
 
-def allowed(lines):
-    """The post-game corrections tolerated in a season of so many box lines, as in warehouse_tests.py."""
-    return max(2, lines // 1000)
-
-
 def from_warehouse(wh, skip=()):
     """(rows for write_assists(), {game: what differs}, player-games that differ, box lines checked) from the Parquet
     tables in the directory wh; the games in skip and the games whose credits or makes differ from the box score are
@@ -115,9 +110,9 @@ if __name__ == "__main__":
     rows, bad, n, lines = from_warehouse(wh, skip)
     for g, r in sorted(bad.items()):
         print(f"WARN game {g}: assist credits or makes differ from the box score, left out: {r}")
-    held = bad if n > allowed(lines) else {}
+    held = bad if n > quarantine.corrections_allowed(lines) else {}
     quarantine.record(wh, "assists", {g: ("assists", f"assist credits or makes differ from the box score: {r}") for g, r in held.items()})
     write_assists(out, load_teams(), rows)
     print(f"{SEASON}: assist pairs and assisted makes written to {os.path.join(out, 'assists')}; {len(bad)} games left out ({n} player-games differ, "
-          f"{allowed(lines)} allowed), {len(held)} quarantined, {len(skip)} held by an earlier gate")
+          f"{quarantine.corrections_allowed(lines)} allowed), {len(held)} quarantined, {len(skip)} held by an earlier gate")
     raise SystemExit(quarantine.exit_code(wh))
