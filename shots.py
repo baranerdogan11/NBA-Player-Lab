@@ -1,13 +1,16 @@
 """The shot charts' JSON: every field-goal attempt of the season's regular-season finals, by club and shooter.
 
 Files under <out>/shots/ (out is teams/<season>/):
-  <CODE>.json  {"code", "games": [gid, ...], "players": {pid: [[g, x, y, made, zone, type, dist], ...]}}, the club's shots in game order:
+  <CODE>.json  {"code", "games": [gid, ...], "players": {pid: [[g, x, y, made, zone, type, dist, period, clock, own, opp], ...]}}, the club's
+               shots in game order:
                g indexes games, x and y are the spot in tenths of a foot from the rim (the CDN's xLegacy and yLegacy:
                x > 0 is the shooter's right as he faces the basket, y grows away from the baseline; null when the feed has
                no spot, so the chart leaves it out but the zones still count it), made is 1 or 0, zone indexes ZONES and
                type indexes TYPES (how the shot came, from the feed's subType and descriptor); dist is how far out he shot from, in
                tenths of a foot (the feed's shotDistance, rounded; from the spot where the feed has none), and band(dist, zone)
-               puts it in BANDS.
+               puts it in BANDS; period and clock (tenths of a second left in it) say when he shot, and own and opp are the
+               score just after the shot as the play-by-play has it, his club's first (a make already counted); both are null
+               in a game whose scores do not follow the play-by-play shot by shot.
   league.json  {"zones": [[fgm, fga], ...], "types": [[fgm, fga], ...], "bands": [[fgm, fga], ...], "dist": tenths,
                "players": {pid: [fga, dist, fgm 27+, fga 27+]}, "teams": {CODE: {"for": [[fgm, fga], ...], "against": [[fgm, fga], ...]}}}: every
                club's attempts by zone, in ZONES order, by type, in TYPES order, and by distance band, in BANDS order, with the sum of
@@ -19,7 +22,9 @@ from_warehouse() reads warehouse/<season>/shots.parquet (warehouse.py) and check
 game against his box-score line, threes against his 3P line, so a chart always holds the shots of the FG column beside it
 and its two three-point zones add up to the 3P column. Every shot takes exactly one type, so a player's types in a game
 add up to his FGM-FGA too; check_types() checks that on the files as written, and check_bands() that his distance bands
-add up to his FGM-FGA and the three-point bands to his 3PM-3PA. A game that fails is quarantined (quarantine.py) and left out of
+add up to his FGM-FGA and the three-point bands to his 3PM-3PA. The score on a shot is the play-by-play's after it: it
+must move from the play before by the shot's value on the shooter's side when it went in, and not at all when it missed;
+check_context() checks the written files' periods, clocks and scores against the final scores. A game that fails is quarantined (quarantine.py) and left out of
 the charts, as is a game an earlier gate holds; the run fails only when the quarantine is systemic.
 usage: python shots.py [2026-27]   (reads warehouse/<season>/, writes teams/<season>/shots/)
 """
@@ -94,8 +99,9 @@ def zone(pts, area, x, y):
 
 
 def write_shots(out, teams, shots):
-    """teams: site_data.load_teams() rows. shots: gid, time (tip-off, for game order), team, pid, x, y, made, pts (2 or 3)
-    and the feed's area, sub_type, descriptor and distance in feet (or none)."""
+    """teams: site_data.load_teams() rows. shots: gid, time (tip-off, for game order), team, pid, x, y, made, pts (2 or 3),
+    the feed's area, sub_type, descriptor and distance in feet (or none), period, clock (seconds left in it) and own and
+    opp, the score after the shot with the shooter's club first."""
     by_team = {t["code"]: [] for t in teams}
     for s in shots:
         by_team[s["team"]].append(s)
@@ -132,7 +138,8 @@ def write_shots(out, teams, shots):
             for opp in clubs[s["gid"]] - {code}:
                 side[opp]["against"][z][0] += made
                 side[opp]["against"][z][1] += 1
-            players.setdefault(str(s["pid"]), []).append([g[s["gid"]], x, y, made, z, k, d])
+            score = [None, None] if s["own"] is None or s["opp"] is None else [int(s["own"]), int(s["opp"])]
+            players.setdefault(str(s["pid"]), []).append([g[s["gid"]], x, y, made, z, k, d, int(s["period"]), round(rnd(s["clock"], 1) * 10), *score])
         with open(os.path.join(out, "shots", f"{code}.json"), "w") as f:
             json.dump({"code": code, "games": games, "players": players}, f, separators=(",", ":"))
     with open(os.path.join(out, "shots", "league.json"), "w") as f:
@@ -149,11 +156,14 @@ class Mismatch(ValueError):
 
 def from_warehouse(wh, skip=()):
     """shots for write_shots() from the Parquet tables in the directory wh, leaving out the games in skip; raises
-    Mismatch if a player's shots in a game do not add up to his box-score FGM-FGA, or his threes to his 3PM-3PA, or a
-    shot has neither a distance nor a spot."""
+    Mismatch, naming every game that fails, if a player's shots in a game do not add up to his box-score FGM-FGA, or his
+    threes to his 3PM-3PA, or a shot has neither a distance nor a spot, or no period and clock inside it. A game where a
+    shot's score did not move from the play before by its value on the shooter's side when it went in (and not at all when
+    it missed), a stat correction the feed did not carry through, keeps its shots but none of their scores (own and opp
+    None), so the page shows no score it cannot trace."""
     import duckdb
     con = duckdb.connect()
-    for t in ("games", "box", "shots"):
+    for t in ("games", "box", "shots", "events"):
         con.execute(f"create view {t} as select * from read_parquet('{os.path.join(wh, t + '.parquet')}')")
     final = "join games g using (game) where g.game_type = 'regular' and g.final" + \
         (f" and g.game not in ({', '.join(repr(x) for x in sorted(skip))})" if skip else "")
@@ -164,20 +174,44 @@ def from_warehouse(wh, skip=()):
         select coalesce(s.game, b.game), coalesce(s.player, b.player), s.fgm, s.fga, b.fgm, b.fga, s.fg3m, s.fg3a, b.fg3m, b.fg3a
         from s full join b using (game, player) where s.fga is distinct from b.fga or s.fgm is distinct from b.fgm
                                                    or s.fg3a is distinct from b.fg3a or s.fg3m is distinct from b.fg3m""").fetchall()
+    games, msgs = {}, []
+    for r in bad:
+        games.setdefault(r[0], f"player {r[1]}: shots differ from the box score: shots {r[2]}-{r[3]} (3P {r[6]}-{r[7]}), box {r[4]}-{r[5]} (3P {r[8]}-{r[9]})")
     if bad:
-        games = {}
-        for r in bad:
-            games.setdefault(r[0], f"player {r[1]}: shots {r[2]}-{r[3]} (3P {r[6]}-{r[7]}), box {r[4]}-{r[5]} (3P {r[8]}-{r[9]})")
-        raise Mismatch(f"{len(bad)} player-games whose shots differ from the box score, e.g. game {bad[0][0]} player {bad[0][1]}: "
-                         f"shots {bad[0][2]}-{bad[0][3]} (3P {bad[0][6]}-{bad[0][7]}), box {bad[0][4]}-{bad[0][5]} (3P {bad[0][8]}-{bad[0][9]})", games)
+        msgs.append(f"{len(bad)} player-games whose shots differ from the box score, e.g. game {bad[0][0]} {games[bad[0][0]]}")
     far = con.execute(f"select s.game, any_value(s.player) from shots s {final} and s.distance is null and (s.x is null or s.y is null) group by all order by 1").fetchall()
+    for g, p in far:
+        games.setdefault(g, f"player {p}: a shot of no distance and no spot")
     if far:
-        raise Mismatch(f"{len(far)} games with a shot of no distance and no spot, e.g. game {far[0][0]} player {far[0][1]}",
-                       {g: f"player {p}: a shot of no distance and no spot" for g, p in far})
+        msgs.append(f"{len(far)} games with a shot of no distance and no spot, e.g. game {far[0][0]} player {far[0][1]}")
+    # the score on each shot against the play before it (the plays in the feed's order, those with a score)
+    off = con.execute(f"""
+        with e as (select game, action, score_home - coalesce(lag(score_home) over w, 0) as dh, score_away - coalesce(lag(score_away) over w, 0) as da
+                   from events where score_home is not null and score_away is not null window w as (partition by game order by order_no, action))
+        select s.game, s.player, s.period, s.clock, e.dh, e.da, s.made, s.pts,
+               s.period is null or s.period < 1 or s.clock is null or s.clock < 0 or s.clock > case when s.period <= 4 then 720 else 300 end as late
+        from shots s left join e using (game, action) {final}
+          and (late or e.dh is distinct from case when s.made and s.team = g.home then s.pts else 0 end
+                    or e.da is distinct from case when s.made and s.team = g.away then s.pts else 0 end)
+        order by s.game, s.action""").fetchall()
+    late = [r for r in off if r[8]]
+    for g, p, q, c, *_ in late:
+        games.setdefault(g, f"player {p}: a shot in period {q} at {c} s left")
+    if late:
+        msgs.append(f"{len(late)} shots of no period or clock inside it, e.g. game {late[0][0]} {games[late[0][0]]}")
+    if msgs:
+        raise Mismatch("; ".join(msgs), games)
     cur = con.execute(f"""select s.game as gid, strftime(g.tipoff_utc, '%Y-%m-%dT%H:%M:%SZ') as time, s.team, s.player::varchar as pid,
-                                 s.x, s.y, s.made, s.pts, s.area, s.sub_type, s.descriptor, s.distance from shots s {final} order by g.tipoff_utc, s.game, s.action""")
-    cols = [c[0] for c in cur.description]
-    return [dict(zip(cols, r)) for r in cur.fetchall()]
+                                 s.x, s.y, s.made, s.pts, s.area, s.sub_type, s.descriptor, s.distance, s.period, s.clock,
+                                 case when s.team = g.home then s.score_home else s.score_away end as own,
+                                 case when s.team = g.home then s.score_away else s.score_home end as opp
+                          from shots s {final} order by g.tipoff_utc, s.game, s.action""")
+    cols, unscored = [c[0] for c in cur.description], {r[0] for r in off}
+    rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+    for r in rows:
+        if r["gid"] in unscored:
+            r["own"] = r["opp"] = None
+    return rows
 
 
 def check_types(out, box):
@@ -244,6 +278,48 @@ def check_bands(out, box):
         raise ValueError(f"league distance bands {bands} do not split into its twos and threes {z}")
 
 
+def check_context(out, finals):
+    """Raises ValueError unless every shot in the files under <out>/shots/ has a period, a clock inside it (tenths of a
+    second, 7200 at most in the four quarters and 3000 in overtime) and a score no higher than its game's final (or none,
+    both null), and each player's scores in a game never go down as the clock runs. finals: {gid: {club: final score}} of
+    the games the files hold."""
+    for name in sorted(os.listdir(os.path.join(out, "shots"))):
+        if name == "league.json":
+            continue
+        f = json.load(open(os.path.join(out, "shots", name)))
+        code = f["code"]
+        for pid, rows in f["players"].items():
+            seen = {}
+            for r in rows:
+                gid = f["games"][r[0]]
+                if len(r) < 11 or not all(isinstance(v, int) for v in r[7:9]) or not (all(isinstance(v, int) for v in r[9:11]) or r[9:11] == [None, None]):
+                    raise ValueError(f"{name}: player {pid} has a shot of no period, clock or score: {r}")
+                q, c, own, opp = r[7:11]
+                if q < 1 or not 0 <= c <= (7200 if q <= 4 else 3000):
+                    raise ValueError(f"{name}: player {pid} in game {gid}: a shot in period {q} at {c} tenths of a second")
+                if own is None:
+                    continue
+                fin = finals.get(gid, {})
+                them = next((v for k, v in fin.items() if k != code), None)
+                if code not in fin or them is None or not 0 <= own <= fin[code] or not 0 <= opp <= them:
+                    raise ValueError(f"{name}: player {pid} in game {gid}: score {own}-{opp} on a shot, final {fin}")
+                seen.setdefault(gid, []).append((q, -c, own, opp))
+            for gid, xs in seen.items():
+                xs.sort()
+                if any(b[2] < a[2] or b[3] < a[3] for a, b in zip(xs, xs[1:])):
+                    raise ValueError(f"{name}: player {pid} in game {gid}: the score goes down between his shots")
+
+
+def finals(wh, games):
+    """{gid: {club: final score}} of the given games, from the warehouse directory wh."""
+    import duckdb
+    if not games:
+        return {}
+    rows = duckdb.connect().execute(f"""select game, home, away, home_score, away_score from read_parquet('{os.path.join(wh, "games.parquet")}')
+                                        where game in ({', '.join(repr(g) for g in sorted(games))})""").fetchall()
+    return {g: {h: hs, a: as_} for g, h, a, hs, as_ in rows}
+
+
 def box_lines(wh, games):
     """{(gid, pid): (fgm, fga, fg3m, fg3a)} of the ACTIVE box lines of the given games, from the warehouse directory wh."""
     import duckdb
@@ -267,10 +343,13 @@ if __name__ == "__main__":
     except Mismatch as e:
         bad = e.games
         shots = from_warehouse(wh, skip | set(bad))
-    quarantine.record(wh, "shots", {g: ("shots", f"shots differ from the box score, e.g. {r}") for g, r in bad.items()})
+    quarantine.record(wh, "shots", {g: ("shots", f"shot check failed, e.g. {r}") for g, r in bad.items()})
     write_shots(out, load_teams(), shots)
     box = box_lines(wh, {s["gid"] for s in shots})
     check_types(out, box)
     check_bands(out, box)
-    print(f"{SEASON}: shot charts written to {os.path.join(out, 'shots')}; {len(bad)} games quarantined, {len(skip)} held by an earlier gate")
+    check_context(out, finals(wh, {s["gid"] for s in shots}))
+    unscored = len({s["gid"] for s in shots if s["own"] is None})
+    print(f"{SEASON}: shot charts written to {os.path.join(out, 'shots')}; {len(bad)} games quarantined, {len(skip)} held by an earlier gate, "
+          f"{unscored} without shot scores")
     raise SystemExit(quarantine.exit_code(wh))
