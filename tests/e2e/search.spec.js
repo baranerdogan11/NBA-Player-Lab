@@ -63,3 +63,29 @@ test.describe('player search keys', () => {
     await expect(page.locator('#find-btn')).toBeFocused();
   });
 });
+
+// A picker long enough to have a search box (Compare's player pickers, the team picker) must survive the phone's keyboard:
+// tapping the box pops the keyboard up, which resizes or scrolls the window, and the menu used to close right then.
+test.describe('picker search on a phone', () => {
+  test.use(PHONE);
+  test('tapping the search box and typing keeps the menu open and filters it', async ({page}) => {
+    const problems = await prepare(page);
+    await page.goto('./?l#compare');
+    await settled(page);
+    await page.locator('#cmp-a + .sel').tap();
+    await expect(page.locator('#menu input')).toBeVisible();
+    const box = await page.locator('#menu').boundingBox();
+    expect(box && box.y, 'the sheet sits at the top, out of the keyboard\'s way').toBeLessThan(100);
+    await page.locator('#menu input').tap();
+    await page.setViewportSize({width: 390, height: 500});   // the keyboard comes up
+    await page.evaluate(() => { scrollBy(0, 40); dispatchEvent(new Event('scroll')); });
+    await expect(page.locator('#menu')).toBeVisible();
+    await page.keyboard.type('seng');
+    expect(await names(page)).toEqual(['Alperen Sengun']);
+    const pid = await rows(page).first().getAttribute('data-v');
+    await rows(page).first().tap();
+    await expect(page.locator('#menu')).toBeHidden();
+    await expect(page.locator('#cmp-a')).toHaveValue(/** @type {string} */ (pid));
+    expect(problems).toEqual([]);
+  });
+});

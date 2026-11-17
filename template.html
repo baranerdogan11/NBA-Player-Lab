@@ -208,7 +208,7 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 .menu li[aria-selected="true"]::after{content:"\2713";font-weight:900}
 .menu .empty{padding:10px}
 .menu li>.chip{flex:none}
-@media (max-width:760px){.veil{background:rgba(0,0,0,.35)}.menu{left:10px!important;right:10px;width:auto!important;top:auto!important;bottom:calc(12px + env(safe-area-inset-bottom));max-height:60vh!important}.menu.find{top:calc(10px + env(safe-area-inset-top))!important;bottom:auto;max-height:50vh!important}}
+@media (max-width:760px){.veil{background:rgba(0,0,0,.35)}.menu{left:10px!important;right:10px;width:auto!important;top:auto!important;bottom:calc(12px + env(safe-area-inset-bottom));max-height:60vh!important}.menu.find,.menu:has(>input:not([hidden])){top:calc(10px + env(safe-area-inset-top))!important;bottom:auto;max-height:50vh!important}}
 .tabs,.dates{display:flex;gap:10px;overflow-x:auto;padding:2px 6px 8px 2px;scrollbar-width:none}
 .tabs::-webkit-scrollbar,.dates::-webkit-scrollbar{display:none}
 .tabs button,.tabs a,.dates a{flex:none;border:2px solid var(--ink);background:var(--paper);padding:9px 14px;cursor:pointer;font:900 12px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--ink);text-decoration:none;box-shadow:3px 3px 0 var(--ink);transition:transform .1s}
@@ -2831,8 +2831,8 @@ document.addEventListener('keydown', e => {
   if (e.key !== '/' || e.altKey || e.ctrlKey || e.metaKey || OPEN || e.target.closest('input,textarea,select')) return;
   e.preventDefault(); openFind();
 });
-// the search sits at the top of a phone's screen, out of the keyboard's way, so the keyboard opening (a resize, a scroll) leaves it open
-const shut = () => { if (OPEN && OPEN.sel !== FIND) closeMenu(); };
+// a menu with a search box sits at the top of a phone's screen, out of the keyboard's way, so the keyboard opening (a resize, a scroll) leaves it open
+const shut = () => { if (OPEN && OPEN.sel !== FIND && document.activeElement !== Q) closeMenu(); };
 VEIL.addEventListener('click', closeMenu);
 window.addEventListener('resize', shut);
 window.addEventListener('scroll', shut, {passive: true});
