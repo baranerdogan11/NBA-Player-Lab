@@ -38,7 +38,7 @@ A port of [Euroleague Player Lab](https://github.com/baranerdogan11/Euroleague-P
   formula in Python (`rounding.py`)
 - `shots.py`: writes `teams/<season>/shots/<CODE>.json`, every field-goal attempt of the club's finals by shooter, for
   the shot charts on the Player and Game pages (a half court in the club's two colours, drawn as SVG by the page), each
-  shot tagged with one of five zones and its distance in tenths of a foot, and `shots/league.json`, the league's makes and
+  shot tagged with one of five zones, its distance in tenths of a foot, its period and clock and the score after it, and `shots/league.json`, the league's makes and
   attempts by zone and by distance band (0-3, 3-10, 10-16 ft, 16 ft to the arc, arc to 27, 27-30, 30+ ft) for the Player
   page's tables, and each player's average distance and threes from 27 feet out for Leaders; it stops if a player's
   shots in a game, or his distance bands, differ from his box-score FGM-FGA or his threes from his 3P

@@ -117,7 +117,7 @@ jobs:
       - name: Site JSON (teams/<season>/ from the warehouse tables)
         run: python site_data.py
 
-      - name: Shot charts (teams/<season>/shots/ from the warehouse; every player's shots match his box-score FG, or the game is quarantined)
+      - name: Shot charts (teams/<season>/shots/ from the warehouse; every player's shots match his box-score FG, or the game is quarantined; a game whose shot scores do not follow the play-by-play shows none)
         run: python shots.py
 
       - name: Assist pairs and assisted makes (teams/<season>/assists/ from the warehouse; every passer's pairs match his box-score AST and every player's makes his FGM, or the game is left out)
