@@ -445,6 +445,36 @@ html[data-theme="dark"] .fl-sum [data-team]{--A:color-mix(in srgb,var(--tc) 55%,
 .tape .bar{display:flex;height:100%;align-items:center}
 .tape .bar.a{justify-content:flex-end}
 .tape .bar i{display:block;height:14px;background:var(--A);mix-blend-mode:var(--blend);transition:width .5s var(--spring)}
+/* passing network: a ring of squares printed in ink over the club's second ink, arrows in its first */
+.pn-wrap{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:8px 32px;align-items:center}
+@media (max-width:760px){.pn-wrap{grid-template-columns:minmax(0,1fr)}}
+.pn{display:block;width:100%;max-width:520px;height:auto;margin:0 auto;--i:var(--np);-webkit-user-select:none;user-select:none}
+html[data-theme="dark"] .pn{--i:var(--nn)}
+.pn .ring{fill:none;stroke:var(--line);stroke-width:1.5}
+.pn .e path{fill:none;stroke:var(--A);mix-blend-mode:var(--blend)}
+.pn .e .hd{fill:var(--A);stroke:none}
+.pn .e .n{display:none;font:900 11px/1 var(--sans);text-anchor:middle;paint-order:stroke;stroke:var(--paper);stroke-width:3.5px;stroke-linejoin:round}
+.pn .e.one{display:none}
+.pn.f .e{display:none}
+.pn.f .e:is(.out,.in){display:inline;opacity:1}
+.pn.f .e.out .nb,.pn.f .e.in .na{display:inline}
+.pn.f .e.out .n{fill:var(--A)}
+.pn.f .e.in path{stroke:var(--i)}
+.pn.f .e.in :is(.hd,.n){fill:var(--i)}
+.pn.f .e.in .n{stroke:var(--paper)}
+.pn .nd{cursor:pointer;outline:none}
+.pn .nd .hit{fill:transparent}
+.pn .nd .sh{fill:var(--B);mix-blend-mode:var(--blend)}
+.pn .nd .bx{fill:var(--paper);stroke:var(--ink);stroke-width:2}
+.pn .nd .j{font:900 12px/1 var(--sans);text-anchor:middle;fill:var(--ink)}
+.pn .nd .lb{font:700 11px/1 var(--sans);fill:var(--ink)}
+.pn .nd .lb.sm{font-size:9.5px}
+.pn .nd:focus-visible .bx{stroke:var(--A);stroke-width:4}
+.pn.f .nd:not(.on,.nb){opacity:.25}
+.pn .nd.on .bx{fill:var(--A);stroke:var(--A)}
+.pn .nd.on .j{fill:var(--paper)}
+.pn .nd.on .lb{font-weight:900}
+.pnt td.rk{width:2ch;font-weight:900}
 .fp{display:grid;grid-template-columns:auto auto minmax(0,1fr) 2.6ch;align-items:center;column-gap:12px;margin-top:6px}
 .fp>div{display:contents}
 .fp>div>*{padding:8px 0;border-bottom:1px solid var(--line)}
@@ -722,6 +752,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <details class="panel" id="tm-next-sec"><summary><h2><span data-t="Up next">Up next</span><a class="more" id="tm-cal" data-t="Add to calendar">Add to calendar</a></h2></summary><div class="cards" id="tm-next"></div></details>
     <details class="panel" id="tm-past-sec"><summary><h2 data-t="Results">Results</h2></summary><div class="scroll"><table class="tbl" id="tm-past"></table></div></details>
     <details class="panel" id="tm-roster-sec"><summary><h2 data-t="Roster">Roster</h2></summary><div class="scroll"><table class="tbl" id="tm-roster"></table></div></details>
+    <details class="panel" id="tm-net-sec" hidden><summary><h2 data-t="Passing network">Passing network</h2></summary><div class="pn-wrap" id="tm-net"></div></details>
     <details class="panel" id="tm-rt-sec"><summary><h2 data-t="Ratings">Ratings</h2></summary><div class="scroll"><table class="tbl rt" id="tm-rt"></table></div></details>
     <details class="panel" id="tm-ff-sec"><summary><h2 data-t="Four Factors">Four Factors</h2></summary><div class="scroll"><table class="tbl rt" id="tm-ff"></table></div></details>
     <details class="panel" id="tm-zones-sec" hidden><summary><h2 data-t="Shot performance">Shot performance</h2></summary><div class="courts zcourts" id="tm-zones"></div></details>
@@ -1672,6 +1703,101 @@ async function renderTeam(code, my) {
     `<div data-side="${l.toLowerCase()}"><div class="court-h"><span${def('zgrade zones')}>${t(l)}</span></div>${zoneCourt(code, zs, zl.zones, against)}</div>`).join('') + zoneKey() : '';
   closeRecord(code, G);
   document.title = `${tname(code)} · NBA Player Lab`;
+  await drawNet(code, data, my);
+}
+
+// ---- Passing network: the club's season assist pairs (assists.py), each the plain sum of its per-game pairs as drawDuos
+// sums them. The ten players with the most assists given plus received sit on a ring in order of assists given, an arrow
+// from passer to scorer for every pair between them (bent to the passer's left, so A → B and B → A stay apart), and beside
+// it the club's top eight pairs. A player's tap keeps only his arrows: out in the club's first ink, in in its second
+const NET_R = 112, NET_N = 10, NET_TOP = 8;
+// the second ink for strokes: the club's second colour sunk until it reads on paper, lifted until it reads on the dark sheet
+const netInk = code => { const c2 = team(code).colors[1]; return `--np:${toward(c2, '#000000', x => lum(x) <= 0.25)};--nn:${toward(c2, '#ffffff', x => lum(x) >= 0.2)}`; };
+// a surname of more than nine letters goes onto two lines at the space or hyphen nearest its middle
+const netWrap = s => {
+  if (s.length <= 9) return [s];
+  const cuts = [...s.matchAll(/ |-/g)].map(m => m[0] === '-' ? m.index + 1 : m.index);
+  if (!cuts.length) return [s];
+  const at = cuts.reduce((a, b) => Math.abs(b - s.length / 2) < Math.abs(a - s.length / 2) ? b : a);
+  return [s.slice(0, at).trim(), s.slice(at).trim()];
+};
+const netPairs = f => {
+  const by = {};
+  for (const [, a, b, ast, pts] of f.pairs) {
+    const d = by[`${a}>${b}`] || (by[`${a}>${b}`] = {a, b, ast: 0, pts: 0});
+    d.ast += ast;
+    d.pts += pts;
+  }
+  return Object.values(by);
+};
+async function drawNet(code, data, my) {
+  const [f, L] = await Promise.all([get(`assists/${code}.json`).catch(() => null), get('leaders.json').catch(() => ({players: []}))]);
+  if (stale(my)) return;
+  const pairs = f ? netPairs(f) : [];
+  $('#tm-net-sec').hidden = !pairs.length;
+  if (!pairs.length) { $('#tm-net').innerHTML = ''; return; }
+  // names from the club's file, then the league's (a player who has left the club since)
+  const names = {}, jersey = {};
+  for (const x of L.players) names[x.pid] = x.name;
+  for (const x of data.players) { names[x.pid] = x.name; jersey[x.pid] = x.jersey; }
+  const name = p => names[p] || p, sur = {};
+  for (const p of new Set(pairs.flatMap(d => [d.a, d.b]))) (sur[surname(name(p))] = sur[surname(name(p))] || []).push(p);
+  const short = p => { const s = surname(name(p)); return sur[s] && sur[s].length > 1 ? `${name(p)[0]}. ${s}` : s; };
+  const given = {}, got = {};
+  for (const d of pairs) { given[d.a] = (given[d.a] || 0) + d.ast; got[d.b] = (got[d.b] || 0) + d.ast; }
+  const gv = p => given[p] || 0, gt = p => got[p] || 0;
+  const ring = Object.keys({...given, ...got}).sort((x, y) => (gv(y) + gt(y)) - (gv(x) + gt(x)) || gv(y) - gv(x) || name(x).localeCompare(name(y))).slice(0, NET_N)
+    .sort((x, y) => gv(y) - gv(x) || gt(y) - gt(x) || name(x).localeCompare(name(y)));
+  const at = {};
+  ring.forEach((p, i) => { const th = -Math.PI / 2 + 2 * Math.PI * i / ring.length; at[p] = {x: NET_R * Math.cos(th), y: NET_R * Math.sin(th), c: Math.cos(th), s: Math.sin(th)}; });
+  const edges = pairs.filter(d => at[d.a] && at[d.b]).sort((x, y) => x.ast - y.ast), max = Math.max(1, ...edges.map(d => d.ast));
+  const r1 = v => Math.round(v * 10) / 10;
+  const edge = d => {
+    const P = at[d.a], S = at[d.b], dx = S.x - P.x, dy = S.y - P.y, len = Math.hypot(dx, dy), k = 0.16 * len;
+    // the control point off the chord's middle, to the passer's left as he faces the scorer
+    const C = {x: (P.x + S.x) / 2 + dy / len * k, y: (P.y + S.y) / 2 - dx / len * k};
+    const unit = (a, b) => { const l = Math.hypot(b.x - a.x, b.y - a.y); return {x: (b.x - a.x) / l, y: (b.y - a.y) / l}; };
+    const u0 = unit(P, C), u1 = unit(C, S), w = 1 + 5 * Math.sqrt(d.ast / max), hl = 5 + 1.6 * w, hw = 3 + w;
+    const A = {x: P.x + u0.x * 17, y: P.y + u0.y * 17}, E = {x: S.x - u1.x * 18, y: S.y - u1.y * 18}, B = {x: E.x - u1.x * hl * 0.8, y: E.y - u1.y * hl * 0.8};
+    const H = {x: E.x - u1.x * hl, y: E.y - u1.y * hl};
+    // the count sits along the arrow toward the other player: near the scorer when the passer is picked, near the passer when the scorer is
+    const at2 = q => ({x: (1 - q) ** 2 * P.x + 2 * q * (1 - q) * C.x + q * q * S.x, y: (1 - q) ** 2 * P.y + 2 * q * (1 - q) * C.y + q * q * S.y}), Ma = at2(0.3), Mb = at2(0.68);
+    return `<g class="e${d.ast < 2 ? ' one' : ''}" data-a="${esc(d.a)}" data-b="${esc(d.b)}" data-n="${d.ast}" opacity="${r1(0.3 + 0.7 * d.ast / max)}"><title>${esc(short(d.a))} → ${esc(short(d.b))}: ${d.ast}</title>`
+      + `<path d="M${r1(A.x)} ${r1(A.y)}Q${r1(C.x)} ${r1(C.y)} ${r1(B.x)} ${r1(B.y)}" stroke-width="${r1(w)}"/>`
+      + `<path class="hd" d="M${r1(E.x)} ${r1(E.y)}L${r1(H.x - u1.y * hw)} ${r1(H.y + u1.x * hw)}L${r1(H.x + u1.y * hw)} ${r1(H.y - u1.x * hw)}Z"/>`
+      + `<text class="n na" x="${r1(Ma.x)}" y="${r1(Ma.y)}" dy=".35em">${d.ast}</text><text class="n nb" x="${r1(Mb.x)}" y="${r1(Mb.y)}" dy=".35em">${d.ast}</text></g>`;
+  };
+  const node = p => {
+    const {x, y, c, s} = at[p], j = jersey[p] != null && jersey[p] !== '' ? jersey[p] : initials(name(p)), lines = netWrap(short(p));
+    const lx = x + c * 24, ly = y + s * 24, anchor = c > 0.3 ? 'start' : c < -0.3 ? 'end' : 'middle';
+    const y0 = s < -0.3 ? ly - (lines.length - 1) * 12 : s > 0.3 ? ly + 8 : ly + 4 - (lines.length - 1) * 6;
+    return `<g class="nd" data-pid="${esc(p)}" role="button" tabindex="0" aria-pressed="false" aria-label="${esc(name(p))}"><circle class="hit" cx="${r1(x)}" cy="${r1(y)}" r="23"/><rect class="sh" x="${r1(x - 11)}" y="${r1(y - 12)}" width="26" height="26"/><rect class="bx" x="${r1(x - 13)}" y="${r1(y - 13)}" width="26" height="26"/>`
+      + `<text class="j" x="${r1(x)}" y="${r1(y)}" dy=".35em">${esc(j)}</text><text class="lb${lines.some(l => l.length > 9) ? ' sm' : ''}" text-anchor="${anchor}" lang="en">${lines.map((l, i) => `<tspan x="${r1(lx)}" y="${r1(y0 + i * 12)}">${esc(l)}</tspan>`).join('')}</text></g>`;
+  };
+  const top = [...pairs].sort((x, y) => duoSort(x, y) || name(x.a).localeCompare(name(y.a)) || name(x.b).localeCompare(name(y.b))).slice(0, NET_TOP);
+  let rank = 0;
+  const rows = top.map((d, i) => { if (!i || duoSort(d, top[i - 1])) rank = i + 1; return `<tr data-pair="${esc(d.a)}>${esc(d.b)}"><td class="rk">${rank}</td><td class="l"><a href="#${esc(code)}/${esc(d.a)}">${EN(short(d.a))}</a> → <a href="#${esc(code)}/${esc(d.b)}">${EN(short(d.b))}</a></td><td class="k">${d.ast}</td><td>${d.pts}</td></tr>`; });
+  const box = $('#tm-net');
+  box.setAttribute('style', `${tc(code)};${netInk(code)}`);
+  box.innerHTML = `<svg class="pn" viewBox="-200 -172 400 344" role="group" aria-label="${esc(t('Passing network'))}"><circle class="ring" r="${NET_R}"/><g>${edges.map(edge).join('')}</g><g>${ring.map(node).join('')}</g></svg>`
+    + `<div class="scroll"><table class="tbl pnt"><thead><tr><th></th><th class="l"${def('passnet duo')}>${t('Passer → scorer')}</th><th${def(STAT_DEF.AST)}>${t('AST@stat')}</th><th${def(STAT_DEF.PTS)}>${t('PTS@stat')}</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+  const svg = box.querySelector('svg');
+  const focus = p => {
+    svg.classList.toggle('f', !!p);
+    for (const n of svg.querySelectorAll('.nd')) { const on = n.dataset.pid === p; n.classList.toggle('on', on); n.setAttribute('aria-pressed', String(on)); n.classList.remove('nb'); }
+    for (const e of svg.querySelectorAll('.e')) {
+      const out = !!p && e.dataset.a === p, inn = !!p && e.dataset.b === p;
+      e.classList.toggle('out', out);
+      e.classList.toggle('in', inn);
+      if (out || inn) svg.querySelector(`.nd[data-pid="${out ? e.dataset.b : e.dataset.a}"]`).classList.add('nb');
+    }
+  };
+  const pick = n => focus(n && !n.classList.contains('on') ? n.dataset.pid : null);
+  svg.addEventListener('click', e => pick(/** @type {Element} */ (e.target).closest('.nd')));
+  svg.addEventListener('keydown', e => {
+    const n = /** @type {Element} */ (e.target).closest('.nd');
+    if (n && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); pick(n); }
+  });
 }
 
 // ---- Closing five: in each final decided by CLOSE points or fewer, the five players of the club with the most time on
@@ -2670,6 +2796,7 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['duo', '', 'Duos', 'A passer and the team-mate whose baskets he assisted: the assists between them and the points those baskets made, from the play-by-play. A passer’s duos in a game add up to his AST; a game whose assists the league corrected after the final is left out.', ''],
     ['astby', '', 'Assisted by', 'The team-mates who assisted the player’s baskets most this season, and the points those baskets made.', ''],
     ['astto', '', 'Assists to', 'The team-mates whose baskets the player assisted most this season, and the points those baskets made.', ''],
+    ['passnet', '', 'Passing network', 'The club’s ten players most involved in its assists this season, given and received, on a ring in order of assists given, with an arrow from passer to scorer for each pair; thicker arrows carry more assists. Pairs with one assist show when one of the two is picked. Beside it, the club’s eight pairs with the most assists.', ''],
     ['sim', '', 'Similar role', 'The three players whose game looks most like his this season: usage, assist, turnover, offensive and defensive rebound, steal and block rates, three-point attempt rate and free-throw rate, each scaled across the league, from his own position group first. How well they shoot is left out, so a match is in style, not level. Players need 5 games and 15 minutes a game. Each one opens the two in Compare.', ''],
     ['onoff', '', 'On and off court', 'The club’s ratings with the player on the court, with the player off it, and the difference.', 'On − off'],
     ['close', '', 'Close games', 'Finals decided by 10 points or fewer, overtime included, and the club’s wins and losses in them.', ''],
