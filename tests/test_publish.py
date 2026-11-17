@@ -1,12 +1,14 @@
 """Self-tests for due.py: which games count, and when the update workflow runs.
 usage: python tests/test_publish.py
 """
+import ast
 import os
+import re
 import sys
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from due import decide, final_games, open_games  # noqa: E402
+from due import BUILT_TYPES, decide, final_games, open_games  # noqa: E402
 
 
 def t(h, m=0):
@@ -17,7 +19,8 @@ sched = {"leagueSchedule": {"seasonYear": "2026-27", "gameDates": [{"games": [
     {"gameId": "0022600001", "gameStatus": 3}, {"gameId": "0022600002", "gameStatus": 2},
     {"gameId": "0012600050", "gameStatus": 3}, {"gameId": "0052600001", "gameStatus": 3},
     {"gameId": "0062600001", "gameStatus": 3}]}]}}
-assert final_games(sched, "2026-27") == {"0022600001", "0052600001"}, "only final regular, play-in and playoff games"
+assert final_games(sched, "2026-27") == {"0022600001", "0052600001", "0062600001"}, \
+    "only final regular, play-in, playoff and Cup final games: the ones fetch_season.py fetches"
 try:
     final_games(sched, "2027-28")
     raise AssertionError("a schedule for another season must stop the run")
@@ -41,4 +44,10 @@ night = {"leagueSchedule": {"seasonYear": "2026-27", "gameDates": [{"games": [
 assert open_games(night, "2026-27", t(23)) == {"0022600002", "0022600003"}, "tonight's built games not final yet"
 assert open_games(night, "2026-27", datetime(2026, 10, 21, 16, tzinfo=timezone.utc)) == set(), \
     "a game 14 hours past its tip-off no longer keeps the watcher up"
+# status.json counts every game with a box score in the warehouse (warehouse_tests.py), so due.py must count the game
+# types fetch_season.py fetches: a fetched game it did not count (the NBA Cup final) would keep the build one game ahead,
+# and the last game of every night would wait for the nightly run. fetch_season.py fetches on import, so it is read as text.
+fetch_src = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "fetch_season.py")).read()
+fetched = ast.literal_eval(re.search(r"^GAME_TYPES = (.+)$", fetch_src, re.M).group(1))
+assert {t[2] for t in BUILT_TYPES} == fetched, f"due.py counts {BUILT_TYPES}, fetch_season.py fetches {fetched}"
 print("test_publish: ok")
