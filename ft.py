@@ -112,11 +112,6 @@ def check_ft(out):
             raise ValueError(f"ft.json: {who} {c}: and-ones or pressure free throws out of range")
 
 
-def allowed(lines):
-    """The post-game corrections tolerated in a season of so many box lines, as in warehouse_tests.py."""
-    return max(2, lines // 1000)
-
-
 def from_warehouse(wh, skip=()):
     """(rows for write_ft(), {game: what differs}, player-games that differ, box lines checked) from the Parquet tables
     in the directory wh; the games in skip and the games whose free throws differ from the box score are left out."""
@@ -165,10 +160,10 @@ if __name__ == "__main__":
     rows, bad, n, lines = from_warehouse(wh, skip)
     for g, r in sorted(bad.items()):
         print(f"WARN game {g}: free throws differ from the box score, left out: {r}")
-    held = bad if n > allowed(lines) else {}
+    held = bad if n > quarantine.corrections_allowed(lines) else {}
     quarantine.record(wh, "ft", {g: ("ft", f"free throws differ from the box score: {r}") for g, r in held.items()})
     write_ft(out, load_teams(), rows, set(skip) | set(bad))
     check_ft(out)
     print(f"{SEASON}: free throws written to {os.path.join(out, 'ft.json')}; {len(bad)} games left out ({n} player-games differ, "
-          f"{allowed(lines)} allowed), {len(held)} quarantined, {len(skip)} held by an earlier gate")
+          f"{quarantine.corrections_allowed(lines)} allowed), {len(held)} quarantined, {len(skip)} held by an earlier gate")
     raise SystemExit(quarantine.exit_code(wh))
