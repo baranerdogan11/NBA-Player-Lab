@@ -247,8 +247,8 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 .hero .badge .face img{object-fit:contain;object-position:50% 100%;mix-blend-mode:normal;filter:drop-shadow(6px 6px 0 rgba(26,26,26,.3))}
 .hero .who{position:relative;min-width:0;background:var(--A);padding:16px 20px 18px;box-shadow:6px 6px 0 rgba(26,26,26,.3)}
 .hero .tag{display:flex;align-items:center;font:900 12px/1.2 var(--sans);text-transform:uppercase;letter-spacing:.16em}
-.hero .tag .mark{width:24px;height:24px;background:var(--paper);border-radius:50%;padding:2px}
-.hero .tag .mark img{inset:2px;width:20px;height:20px}
+.hero .tag .mark,.lead .facts .mark{width:24px;height:24px;background:var(--paper);border-radius:50%;padding:2px}
+.hero .tag .mark img,.lead .facts .mark img{inset:2px;width:20px;height:20px}
 .hero h1{font-size:clamp(38px,5.4vw,74px);line-height:.88;letter-spacing:-.04em;margin:10px 0 12px;text-transform:uppercase;overflow-wrap:anywhere;text-shadow:4px 4px 0 var(--B)}
 .hero .facts{display:flex;flex-wrap:wrap;gap:4px 18px;font:italic 400 17px/1.3 var(--serif)}
 .hero .facts b{font:900 15px/1 var(--sans);font-style:normal}
@@ -453,6 +453,26 @@ html[data-theme="dark"] .intro{--A:#0078b4}
 .intro .badge{width:150px;height:150px}
 .intro .badge i{width:80%;height:80%;border-radius:50%;background:var(--fluoro-pink);mix-blend-mode:multiply;box-shadow:10px 8px 0 var(--riso-blue);background-image:linear-gradient(90deg,transparent 48.5%,rgba(26,26,26,.6) 48.5% 51.5%,transparent 51.5%),radial-gradient(circle at 50% -40%,transparent 62%,rgba(26,26,26,.6) 62% 64.5%,transparent 64.5%),radial-gradient(circle at 50% 140%,transparent 62%,rgba(26,26,26,.6) 62% 64.5%,transparent 64.5%)}
 @media (max-width:760px){.intro .badge{width:110px;height:110px}}
+/* the front page: the night's best line as the lead story, a poster in his club's inks with his headshot, the night's
+   scores in a column beside it and the rest of the night's best under it; before the first final the intro stands alone */
+.lead{text-decoration:none;min-height:340px}
+.lead .facts span{display:flex;align-items:center}.lead .facts .mark{margin:0 7px}
+.lead-st{display:flex;flex-wrap:wrap;gap:6px 26px;margin-top:14px;padding-top:12px;border-top:2px solid color-mix(in srgb,var(--paper) 60%,transparent)}
+.lead-st span{font:900 10px/1.2 var(--sans);letter-spacing:.16em;text-transform:uppercase}
+.lead-st b{display:block;font:900 34px/1 var(--sans);letter-spacing:-.03em}
+.best.rest a:first-child{background:none}.best.rest a:first-child .v{font-size:20px}
+.best.rest a:first-child:hover{background:color-mix(in srgb,var(--riso-yellow) 30%,transparent)}
+@media (min-width:1000px){
+  .front.on{display:grid;grid-template-columns:minmax(0,1fr) 330px;grid-template-rows:auto 1fr;column-gap:32px;align-items:start}
+  .front.on #hm-scores{grid-column:2;grid-row:1/3}
+  .front.on #hm-rest{grid-column:1;grid-row:2;min-width:0}
+  .front.on #hm-games-h{padding-top:18px}
+  .front.on #hm-games{grid-template-columns:minmax(0,1fr);gap:12px;margin-top:14px}
+  .front.on .card{grid-template-columns:minmax(0,1fr) 34px;box-shadow:3px 3px 0 var(--ink)}
+  .front.on .card .row{padding:6px 10px;gap:8px}.front.on .card .row .chip{width:24px;height:24px}
+  .front.on .card .nm{font-size:12.5px}.front.on .card .sc{font-size:21px}.front.on .card .ft{font-size:9px}
+}
+@media (max-width:760px){.lead{min-height:0}.lead-st{gap:6px 18px}.lead-st b{font-size:26px}}
 .sec-h.on-floor{padding:30px 0 10px;border-bottom:4px solid var(--ink)}
 .sec-h .more,.panel>h2 .more,.panel>summary .more{margin-left:auto;font:italic 400 16px/1 var(--serif);text-transform:none;letter-spacing:0;text-decoration:underline;text-underline-offset:3px}
 .trio{display:grid;gap:12px 32px;grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -628,11 +648,15 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
 <main class="wrap">
   <div class="fail" id="fail" hidden><b data-t="Data unavailable">Data unavailable</b><span id="fail-sub"></span><button type="button" id="retry" data-t="Retry">Retry</button></div>
   <section class="pg" id="pg-home" hidden>
-    <div class="hero intro" id="hm-intro"></div>
-    <h2 class="sec-h on-floor" id="hm-games-h"></h2>
-    <div class="cards" id="hm-games"></div>
-    <div id="hm-mine-sec" hidden><h2 class="sec-h on-floor"><span data-t="My players">My players</span></h2><div class="list best" id="hm-mine"></div></div>
-    <div id="hm-best-sec" hidden><h2 class="sec-h on-floor"><span data-t="Best performances" data-def="best gs" tabindex="0">Best performances</span></h2><div class="list best" id="hm-best"></div></div>
+    <div class="front" id="hm-front">
+      <div class="hero intro" id="hm-intro"></div>
+      <a class="hero lead" id="hm-lead" hidden></a>
+      <div id="hm-scores"><h2 class="sec-h on-floor" id="hm-games-h"></h2><div class="cards" id="hm-games"></div></div>
+      <div id="hm-rest">
+        <div id="hm-best-sec" hidden><h2 class="sec-h on-floor"><span data-t="Best performances" data-def="best gs" tabindex="0">Best performances</span></h2><div class="list best" id="hm-best"></div></div>
+        <div id="hm-mine-sec" hidden><h2 class="sec-h on-floor"><span data-t="My players">My players</span></h2><div class="list best" id="hm-mine"></div></div>
+      </div>
+    </div>
     <h2 class="sec-h on-floor"><span data-t="Leaders">Leaders</span><a class="more" href="#leaders" data-t="See all">See all</a></h2>
     <div class="trio" id="hm-leaders"></div>
   </section>
@@ -2274,8 +2298,8 @@ function drawRuns(L) {
   }).join('');
 }
 
-// ---- Home: the season so far, the latest night with a final (or the first night to come), that night's five best
-// lines by Game Score (night.json, in tenths) and the top five on three boards; every value is drawn by the same code as its own page
+// ---- Home: the latest night with a final (or the season so far and the first night to come), that night's five best
+// lines by Game Score (night.json, in tenths), the first of them as the lead story, and the top five on three boards; every value is drawn by the same code as its own page
 async function renderHome(my) {
   const [G, L, B] = await Promise.all([get('games.json').then(d => d.games), get('leaders.json').then(d => d.players), get('night.json').catch(() => null)]);
   if (stale(my)) return;
@@ -2286,12 +2310,28 @@ async function renderHome(my) {
   const today = G.filter(g => g.date === day);
   $('#hm-games').innerHTML = today.length ? today.map(gameCard).join('') : `<p class="empty">${t('No games on this day.')}</p>`;
   const best = B && last && B.date === last ? B.rows : [];
+  // the lead story: the night's first line, with the game he played it in
+  const top = best[0], tg = top && G.find(g => g.gid === top.gid), lead = $('#hm-lead');
+  if (tg) {
+    const home = tg.home === top.team, opp = home ? tg.away : tg.home, us = home ? tg.hs : tg.as, them = home ? tg.as : tg.hs;
+    const st = (k, v, l) => `<span data-k="${k}"><b>${v}</b>${t(l + '@stat')}</span>`;
+    lead.href = `#${top.team}/${top.pid}/${top.gid}`;
+    lead.dataset.pid = top.pid; lead.dataset.gid = top.gid;
+    lead.setAttribute('style', colours(top.team));
+    lead.innerHTML = `<div class="badge">${face(top.pid, top.name, true)}</div><div class="who"><div class="tag">${logo(top.team, 'mark')}<span>${t('Best performance')} · ${fmtDate(tg.date, true)}</span></div><h1>${EN(top.name)}</h1>`
+      + `<div class="facts"><span>${home ? t('vs') : '@'}${logo(opp, 'mark')}${EN(tname(opp))}</span><span><b>${us > them ? t('W') : t('L')} ${us}-${them}</b></span></div>`
+      + `<div class="lead-st">${st('pts', top.pts, 'PTS')}${st('reb', top.reb, 'REB')}${st('ast', top.ast, 'AST')}${st('fg', `${top.fgm}-${top.fga}`, 'FG')}${st('gs', N(rdiv(top.gs, 10)), 'GmSc')}</div></div>`;
+  }
+  lead.hidden = !tg; $('#hm-intro').hidden = !!tg;
+  $('#hm-front').classList.toggle('on', !!tg);
+  $('#hm-best').classList.toggle('rest', !!tg);
   let rank = 0;
   $('#hm-best').innerHTML = best.map((x, i) => {
     if (!i || x.gs !== best[i - 1].gs) rank = i + 1;
+    if (!i && tg) return '';
     return `<a href="#${esc(x.team)}/${esc(x.pid)}/${esc(x.gid)}" data-pid="${esc(x.pid)}" data-gid="${esc(x.gid)}"><span class="rk">${rank}</span>${face(x.pid, x.name)}<span class="nm">${EN(x.name)}<small>${x.pts} ${t('PTS@stat')} · ${x.reb} ${t('REB@stat')} · ${x.ast} ${t('AST@stat')} · ${x.fgm}-${x.fga} ${t('FG@stat')}</small></span>${logo(x.team)}<b class="v">${N(rdiv(x.gs, 10))}<small>${t('GmSc@stat')}</small></b></a>`;
   }).join('');
-  $('#hm-best-sec').hidden = !best.length;
+  $('#hm-best-sec').hidden = best.length < (tg ? 2 : 1);
   // My players: each starred player under his current club (leaders.json), so a traded player still shows, with the last
   // game he played as his game log shows it; the latest game first
   const mine = STARS.map(pid => L.find(p => p.pid === pid)).filter(Boolean);

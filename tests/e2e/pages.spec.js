@@ -121,8 +121,15 @@ test.describe('opening page', () => {
     const problems = await prepare(page);
     await page.goto('./');
     await settled(page);
-    const rows = await page.evaluate(() => [...document.querySelectorAll('#hm-best a')].map(a => ({pid: a.dataset.pid, gid: a.dataset.gid, href: a.getAttribute('href'),
-      gs: a.querySelector('.v').firstChild.textContent, line: a.querySelector('.nm small').textContent})));
+    // the first of them is the lead story, the other four the list under it
+    const rows = await page.evaluate(() => {
+      const lead = document.querySelector('#hm-lead'), k = x => lead.querySelector(`[data-k="${x}"] b`).textContent;
+      return [{pid: lead.dataset.pid, gid: lead.dataset.gid, href: lead.getAttribute('href'), gs: k('gs'), line: `${k('pts')} PTS · ${k('reb')} REB · ${k('ast')} AST · ${k('fg')} FG`},
+        ...[...document.querySelectorAll('#hm-best a')].map(a => ({pid: a.dataset.pid, gid: a.dataset.gid, href: a.getAttribute('href'),
+          gs: a.querySelector('.v').firstChild.textContent, line: a.querySelector('.nm small').textContent}))];
+    });
+    await expect(page.locator('#hm-intro')).toBeHidden();
+    expect(await page.textContent('#hm-best a:first-child .rk')).toBe('2');
     expect(rows.length).toBe(5);
     // every line of the night's games, scored from its box score in tenths
     const all = await page.evaluate(async gids => {
@@ -136,7 +143,7 @@ test.describe('opening page', () => {
     }, await page.evaluate(() => [...document.querySelectorAll('#hm-games a.card')].map(a => a.dataset.gid)));
     const top = all.sort((x, y) => y.gs - x.gs || x.name.localeCompare(y.name) || x.pid.localeCompare(y.pid)).slice(0, 5);
     expect(rows.map(r => [r.pid, r.gid, r.gs, r.line])).toEqual(top.map(x => [x.pid, x.gid, (x.gs / 10).toFixed(1), x.line]));
-    await page.click('#hm-best a:first-child');
+    await page.click('#hm-lead h1');
     await page.waitForFunction(p => document.body.dataset.page === 'player' && document.querySelector('#player').value === p, rows[0].pid);
     expect(await page.evaluate(() => document.querySelector('#sc-game').value)).toBe(rows[0].gid);
     expect(await page.textContent('#sc .sel')).toContain(await page.evaluate(() => document.querySelector('#sc-game').selectedOptions[0].textContent));
