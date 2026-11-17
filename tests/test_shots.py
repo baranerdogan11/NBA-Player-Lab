@@ -41,9 +41,9 @@ tables = {
     + [{"game": "0012600001", "action": 1, "player": int(lines[0]["pid"]), "team": "BOS", "x": 0, "y": 10, "made": True, "pts": 2, "area": None,
         "sub_type": "DUNK", "descriptor": None, "distance": 1.0, "period": 1, "clock": 700.0, "score_home": 2, "score_away": 0}],
 }
-# the play-by-play: every shot, a period start before each game's first (no score) and a free throw after the first make
-tables["events"] = [{"game": s["game"], "action": s["action"], "order_no": 10 * s["action"], "score_home": s["score_home"], "score_away": s["score_away"]}
-                    for s in tables["shots"]] + [{"game": g, "action": -1, "order_no": -10, "score_home": None, "score_away": None} for g in home]
+# the play-by-play: every shot, in clock order, and a period start before each game's first (no score)
+tables["events"] = [{"game": s["game"], "action": s["action"], "order_no": round(10 * (1000 * s["period"] - s["clock"])), "score_home": s["score_home"],
+                     "score_away": s["score_away"]} for s in tables["shots"]] + [{"game": g, "action": -1, "order_no": -10, "score_home": None, "score_away": None} for g in home]
 con = duckdb.connect()
 
 

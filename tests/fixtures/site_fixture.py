@@ -137,12 +137,14 @@ def spots(rng, games, lines):
             sub, desc = KINDS[3 if three else 2][len(out) % len(KINDS[3 if three else 2])]
             out.append({"gid": x["gid"], "time": when[x["gid"]], "team": x["team"], "pid": x["pid"], "x": px, "y": py, "made": made,
                         "pts": 3 if three else 2, "sub_type": sub, "descriptor": desc})
-    # when, and the score after it: a game's shots spread evenly over four quarters in list order (the last one of a
-    # quarter with tenths on the clock), the score counting only the made shots
+    # when, and the score after it: a game's shots spread evenly over four quarters, the two clubs' taking turns (the
+    # last ones of a quarter with tenths on the clock), the score counting only the made shots
     by = {}
     for s in out:
-        by.setdefault(s["gid"], []).append(s)
-    for gid, xs in by.items():
+        by.setdefault(s["gid"], {}).setdefault(s["team"], []).append(s)
+    for sides in by.values():
+        a, b = sides.values()
+        xs = [s for i in range(max(len(a), len(b))) for s in (a[i:i + 1] + b[i:i + 1])]
         pts = {}
         for i, s in enumerate(xs):
             t = i * 2880 / len(xs)
