@@ -1,13 +1,10 @@
 """When the update workflow runs: a game has gone final since the last published build, or the nightly is due.
 Reads the NBA schedule (from the CDN's S3 origin) and the committed warehouse/<season>/status.json, prints its reasoning and writes run=true|false
-and final=<games> to $GITHUB_OUTPUT. warehouse_tests.py writes that file on every passing build;
-until it exists, --record=<games> stores the count and the time after a build, so the next check compares against what
-was published.
+and final=<games> to $GITHUB_OUTPUT. warehouse_tests.py writes that file on every passing build.
 While the gates hold a game (quarantine.json, see quarantine.py) the update also runs every RETRY_EVERY, for RETRY_FOR
 after the game was first held, so a corrected feed clears it the same night; after that the nightly retries it.
 With --watch it also prints how many of the night's games are still to go final, for watch.yml.
 usage: python due.py [--watch] [2026-27]
-       python due.py --record=<games> [2026-27]
 """
 import json
 import os
@@ -66,13 +63,6 @@ def main():
     status = json.load(open(path)) if os.path.exists(path) else {}
     q = os.path.join(os.path.dirname(path), "quarantine.json")
     held = [e["first_seen"] for e in json.load(open(q))["games"]] if os.path.exists(q) else []
-    record = [a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--record=")]
-    if record:
-        status.update(games=int(record[0]), checked_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        json.dump(status, open(path, "w"), indent=1)
-        print(f"recorded {path}: {status}")
-        return
     now = datetime.now(timezone.utc)
     req = urllib.request.Request(SCHEDULE)
     pending = -1
