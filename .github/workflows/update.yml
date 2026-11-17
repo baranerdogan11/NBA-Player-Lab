@@ -60,7 +60,7 @@ jobs:
           restore-keys: feeds-
 
       - name: Fetch new games (schedule, box scores, play-by-play)
-        if: (steps.due.outputs.run == 'true' || github.event.inputs.force == 'true') && hashFiles('fetch_season.py') != ''
+        if: steps.due.outputs.run == 'true' || github.event.inputs.force == 'true'
         run: |
           pip install -r requirements.txt
           python fetch_season.py
@@ -101,54 +101,39 @@ jobs:
 
       - name: Fetched feeds
         uses: actions/download-artifact@v8
-        continue-on-error: true      # no artifact until fetch_season.py lands
         with:
           name: feeds-${{ github.run_id }}
           path: cache/
 
-      # the pipeline stages run as they land in the repository; each one that exists must pass
       - name: Build warehouse
-        if: hashFiles('warehouse.py') != ''
         run: python warehouse.py
 
       - name: Warehouse gates (play-by-play totals match the official box score; quarantines a failing game; writes status.json)
-        if: hashFiles('warehouse_tests.py') != ''
         run: python warehouse_tests.py
 
       - name: Lineups and RAPM (stints from the substitution log; checks every game's five, seconds and points, quarantines a failing game)
-        if: hashFiles('warehouse.py') != ''
         run: python lineups.py && python rapm.py
 
       - name: Site JSON (teams/<season>/ from the warehouse tables)
-        if: hashFiles('warehouse.py') != ''
         run: python site_data.py
 
       - name: Shot charts (teams/<season>/shots/ from the warehouse; every player's shots match his box-score FG, or the game is quarantined)
-        if: hashFiles('warehouse.py') != ''
         run: python shots.py
 
       - name: Assist pairs and assisted makes (teams/<season>/assists/ from the warehouse; every passer's pairs match his box-score AST and every player's makes his FGM, or the game is left out)
-        if: hashFiles('warehouse.py') != ''
         run: python assists.py
 
       - name: Free throws attempt by attempt (teams/<season>/ft.json from the play-by-play; every player's free throws match his box-score FTM-FTA, or the game is left out)
-        if: hashFiles('warehouse.py') != ''
         run: python ft.py
 
       - name: Awards ladder (teams/<season>/awards.json from the published JSON; every row matches leaders.json and the box scores, every score is its parts' blend)
-        if: hashFiles('warehouse.py') != ''
         run: python awards.py
 
       - name: Similar role (profiles.py role rates, then teams/<season>/similar.json; every comp clears the floors and matches leaders.json)
-        if: hashFiles('warehouse.py') != ''
         run: python profiles.py && python similar.py
 
       - name: Build site
         run: python build.py
-
-      - name: Record the build (until warehouse_tests.py lands and writes status.json itself)
-        if: hashFiles('warehouse_tests.py') == ''
-        run: python due.py --record=${{ needs.fetch.outputs.final }}
 
       # smoke test: the built site, exactly as it will deploy, must draw every page without an error
       - uses: actions/setup-node@v7
