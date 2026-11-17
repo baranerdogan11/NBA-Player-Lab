@@ -18,9 +18,10 @@ from season import ROOT, season
 
 # the S3 origin behind cdn.nba.com: the CDN refuses scripted clients, the bucket serves the same files
 SCHEDULE = "https://nba-prod-us-east-1-mediaops-stats.s3.amazonaws.com/NBA/staticData/scheduleLeagueV2.json"
-# game ids start with the game type: 002 regular season, 004 playoffs, 005 play-in. Preseason (001), All-Star (003)
-# and the NBA Cup final (006) are not built.
-BUILT_TYPES = ("002", "004", "005")
+# game ids start with the game type: 002 regular season, 004 playoffs, 005 play-in, 006 NBA Cup final. These are the
+# games fetch_season.py fetches and warehouse_tests.py counts in status.json, so the two counts compare like with like
+# (the Cup final is in the warehouse though the site does not show it). Preseason (001) and All-Star (003) are not fetched.
+BUILT_TYPES = ("002", "004", "005", "006")
 NIGHTLY_UTC = (10, 0)   # the last West Coast games end by about 08:30 UTC; the nightly picks up corrections after that
 RETRY_EVERY = timedelta(minutes=30)   # fetch_season.py refreshes a new game's feeds every 30 minutes
 RETRY_FOR = timedelta(hours=24)
