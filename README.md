@@ -8,9 +8,9 @@ A port of [Euroleague Player Lab](https://github.com/baranerdogan11/Euroleague-P
 
 - `config.json`: the season every script works on (`2026-27`); any script also takes the season as its first argument
 - `build.py`: renders `index.html` from `template.html` with the build's metadata and the Turkish strings in `lang/tr.json`
-- `template.html`: the whole site, one page in the hardwood look (a maple court floor under frosted rounded panels, the
-  player's hero painted in the club's colours with court lines, a centre-court scoreboard, club-colour table headers;
-  the dark theme dims the arena lights). Five pages, on the header rail and on the phone's bottom bar: Player
+- `template.html`: the whole site, one page in the Game Night Program look (a two-ink risograph print on paper: each
+  club prints in its own two colours, the player's hero is a poster with his headshot, games are ticket stubs; the dark
+  theme prints on a dark sheet). Five pages, on the header rail and on the phone's bottom bar: Player
   (`#BOS/<pid>`), Compare (`#compare/<a>/<b>`), Standings (`#standings`), Games (`#games/<date>`, a final at `#game/<gid>`)
   and Leaders (`#leaders/<stat>`). Turkish strings are in `lang/tr.json`; club logos from NBA's CDN by `teams.json`'s team id (its two colours show when a logo is
   missing). Player pictures are NBA's headshots
@@ -24,10 +24,18 @@ A port of [Euroleague Player Lab](https://github.com/baranerdogan11/Euroleague-P
   device the Player page says which team in the league has the player. The league file says only who sat in which slot
   on which day for the current week, and Yahoo's totals for finished weeks; every other number is summed from the same
   box-score lines as the rest of the site. `tests/fixtures/league_fixture.mjs` writes a made-up, encrypted twelve-team league for the browser tests
+- The pipeline, run in this order by `.github/workflows/update.yml`: `due.py` (is a run due: a game gone final since
+  the last build, or the nightly), `fetch_season.py` (schedule, box scores and play-by-play from the NBA's game-data
+  bucket into `cache/`), `warehouse.py` (Parquet tables in `warehouse/<season>/`), `warehouse_tests.py` (SQL gates: the
+  play-by-play must agree with the box score; writes `status.json`), `lineups.py` and `rapm.py` (five-man stints from
+  the substitution log, on/off and RAPM), then the site writers below, `build.py`, a Playwright smoke test and `live.py`
+  (the public site serves the deployed commit). A game that fails a gate is held out of what that gate protects
+  (`quarantine.py`, `warehouse/<season>/quarantine.json`) while the rest of the night publishes
 - `site_data.py`: writes the JSON the page reads under `teams/<season>/`: `index.json` (clubs), `games.json` (schedule
   and finals), `<CODE>.json` (each player's log of box-score lines), `games/<gid>.json` (both box scores) and
   `leaders.json` (season totals), all from the same box-score lines. The page turns integer totals into averages and
-  percentages through one rule, `rdiv` (half away from zero, exact integer arithmetic), with the same formula in Python
+  percentages through one rule, `rdiv` (half up on the exact value, so 2.5 is 3 and -2.5 is -2, in integer arithmetic), with the same
+  formula in Python (`rounding.py`)
 - `shots.py`: writes `teams/<season>/shots/<CODE>.json`, every field-goal attempt of the club's finals by shooter, for
   the shot charts on the Player and Game pages (a half court in the club's two colours, drawn as SVG by the page), each
   shot tagged with one of five zones and its distance in tenths of a foot, and `shots/league.json`, the league's makes and
