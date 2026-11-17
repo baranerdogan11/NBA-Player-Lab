@@ -656,5 +656,9 @@
  "Games closed": "Bitirdiği maçlar",
  "Finals decided by 10 points or fewer, overtime included, and the club’s wins and losses in them.": "10 sayı ya da daha az farkla biten maçlar, uzatmalar dahil, ve takımın bu maçlardaki galibiyet ve mağlubiyetleri.",
  "In each close game, the five players of the club with the most time on the court in its last five minutes (all of the overtime when it went to one), from who played when; equal time goes to the player with more minutes in the game. The top three groups and every player who closed are listed.": "Her çekişmeli maçta, son beş dakikada (uzatmaya giden maçta uzatmanın tamamında) sahada en uzun kalan beş oyuncu, kim ne zaman oynadı verisinden; süreler eşitse maçta daha çok süre alan oyuncu girer. En sık üç beşlik ve maçı bitiren her oyuncu listelenir.",
- "Close games the group, or the player, closed, and the record in them.": "Beşliğin ya da oyuncunun bitirdiği çekişmeli maçlar ve bu maçlardaki galibiyet-mağlubiyet."
+ "Close games the group, or the player, closed, and the record in them.": "Beşliğin ya da oyuncunun bitirdiği çekişmeli maçlar ve bu maçlardaki galibiyet-mağlubiyet.",
+ "Made 3-pointer": "Üçlük isabet",
+ "Missed 3-pointer": "Üçlük kaçtı",
+ "Made 2-pointer": "İkilik isabet",
+ "Missed 2-pointer": "İkilik kaçtı"
 }

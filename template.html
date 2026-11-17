@@ -170,6 +170,15 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 .courts{display:grid;gap:20px;padding:0 0 16px}
 .courts.two{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
 .court{display:block;width:100%;max-width:560px;height:auto;margin:0 auto;border:2px solid var(--ink)}
+.court[data-tap]{cursor:crosshair;-webkit-tap-highlight-color:transparent}
+.court .sel{fill:none;stroke:var(--fluoro-pink);stroke-width:4;pointer-events:none}
+.shot-card{scroll-margin:12px 0 96px;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;max-width:560px;margin:10px auto 0;padding:8px 12px;background:var(--paper);border:2px solid var(--ink);box-shadow:3px 3px 0 var(--ink);font:700 13px/1.3 var(--sans)}
+.shot-card[hidden]{display:none}
+.shot-card a{color:inherit;font-weight:900}
+.shot-card b{font-weight:900;font-variant-numeric:tabular-nums}
+.shot-card .w{color:var(--good)}
+.shot-card .lo{color:var(--bad)}
+.shot-card .sc-score{font-variant-numeric:tabular-nums}
 .zones{max-width:560px;margin:14px auto 0}
 .zones i{display:inline-block;width:10px;height:10px;margin-right:8px;border:1.5px solid var(--ink);vertical-align:-1px}
 .zones i.hi{background:#ff4fa5}
@@ -938,14 +947,15 @@ const zoneHeat = (mine, lg) => mine.map(([m, n], z) => {
   const d = rq(100 * m, n) - rq(100 * lg[z][0], lg[z][1]);
   return d > 0 ? 'hi' : d < 0 ? 'lo' : '';
 });
-function court(code, shots, heat = []) {
+function court(code, shots, heat = [], tap = null) {
   const [c1, c2] = team(code) ? team(code).colors : ['#333333', '#999999'];
   const lane = light(c2) ? c1 : '#fff', ln = (c, w = 3) => `fill="none" stroke="${c}" stroke-width="${w}"`;
   const tint = heat.map((h, z) => h ? `<path class="z-${h}" data-z="${z}" d="${ZD[z]}" fill="${h === 'hi' ? '#ff4fa5' : '#0078b4'}" fill-rule="evenodd"/>` : '').join('');
   shots = shots.filter(s => s[1] != null);
+  if (tap) TAPS[tap.key] = {shots, info: tap.info};
   const made = shots.filter(s => s[3]).map(([, x, y]) => `<circle cx="${x}" cy="${-y}" r="6.5"/>`).join('');
   const miss = shots.filter(s => !s[3]).map(([, x, y]) => `M${x - 5} ${-y - 5}l10 10m0-10-10 10`).join('');
-  return `<svg class="court" viewBox="-280 -417.5 560 500" role="img" aria-label="${esc(t('Shot chart'))}"><rect x="-280" y="-417.5" width="560" height="500" fill="${c1}"/><rect x="-250" y="-417.5" width="500" height="470" fill="${FLOOR}"/>`
+  return `<svg class="court" viewBox="-280 -417.5 560 500" role="img" aria-label="${esc(t('Shot chart'))}"${tap ? ` data-tap="${tap.key}"` : ''}><rect x="-280" y="-417.5" width="560" height="500" fill="${c1}"/><rect x="-250" y="-417.5" width="500" height="470" fill="${FLOOR}"/>`
     + `<rect x="-80" y="-137.5" width="160" height="190" fill="${c2}" stroke="${lane}" stroke-width="3"/><path d="${[70, 110, 140, 170].map(d => `M-80 ${52.5 - d}h-9M80 ${52.5 - d}h9`).join('')}" ${ln(lane)}/>`
     + (tint ? `<g opacity=".22">${tint}</g>` : '')
     + `<path d="M-60 -137.5a60 60 0 0 1 120 0" ${ln(c1)}/><path d="M60 -137.5a60 60 0 0 1-120 0" ${ln(lane)} stroke-dasharray="10 9"/>`
@@ -953,12 +963,66 @@ function court(code, shots, heat = []) {
     + `<path d="M-30 12.5h60" ${ln(c1, 5)}/><path d="M0 12.5v-5" ${ln(c1, 2.5)}/><circle r="7.5" ${ln(c1, 2.5)}/><rect x="-250" y="-417.5" width="500" height="470" ${ln(c1, 5)}/>`
     + `<path d="${miss}" ${ln('#fff', 5)} stroke-linecap="round"/><path class="miss" d="${miss}" ${ln(c1, 2.5)} stroke-linecap="round"/><g class="made" fill="${c1}" stroke="#fff" stroke-width="1.5">${made}</g></svg>`;
 }
+// ---- A shot's moment (shot rows' period, clock in tenths of a second left, and the score after it, his club first): tap a
+// mark, or point at it, for the period and clock, the score as he let it go (a make's points taken back off), and how it went
+const TAPS = {}, SHOT_CARD = '<div class="shot-card" hidden aria-live="polite"></div>';
+const perShort = q => q <= 4 ? `${t('Q')}${q}` : q === 5 ? t('OT') : `${q - 4}${t('OT')}`;
+const shotClock = c => c < 600 ? `0:${String(Math.floor(c / 10)).padStart(2, '0')}.${c % 10}` : clock(Math.floor(c / 10));
+const shotInfo = (s, head, code, opp) => {
+  const three = s[4] >= 3, when = s[7] != null ? `<b data-k="when">${perShort(s[7])} ${shotClock(s[8])}</b>` : '';
+  const score = s[9] != null ? `<span class="sc-score" data-k="score">${esc(code)} ${s[9] - (s[3] ? three ? 3 : 2 : 0)}-${s[10]} ${esc(opp)}</span>` : '';
+  const how = s[3] ? three ? t('Made 3-pointer') : t('Made 2-pointer') : three ? t('Missed 3-pointer') : t('Missed 2-pointer');
+  return `${head}${when}${score}<span class="${s[3] ? 'w' : 'lo'}" data-k="made">${how}</span>${s[6] != null ? `<span>${feet(s[6], 1)}</span>` : ''}${s[5] != null ? `<span>${t(TN[s[5]])}</span>` : ''}`;
+};
+// the shot nearest the pointer, within r court units (tenths of a foot), as an index into the chart's shots
+const shotNear = (svg, e, r) => {
+  const T = TAPS[svg.dataset.tap], m = svg.getScreenCTM();
+  if (!T || !m) return -1;
+  const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
+  let best = -1, bd = r * r;
+  T.shots.forEach((s, i) => { const d = (s[1] - p.x) ** 2 + (-s[2] - p.y) ** 2; if (d <= bd) { best = i; bd = d; } });
+  return best;
+};
+const shotShow = (svg, i) => {
+  const T = TAPS[svg.dataset.tap], card = svg.parentNode.querySelector('.shot-card');
+  let ring = svg.querySelector('.sel');
+  if (!T || !card) return;
+  if (i < 0) { card.hidden = true; card.innerHTML = ''; if (ring) ring.remove(); return; }
+  const s = T.shots[i];
+  if (!ring) { svg.insertAdjacentHTML('beforeend', '<circle class="sel" r="12"/>'); ring = svg.querySelector('.sel'); }
+  ring.setAttribute('cx', s[1]); ring.setAttribute('cy', String(-s[2]));
+  card.innerHTML = T.info(s);
+  card.dataset.i = String(i);
+  card.hidden = false;
+};
+// a tap picks the nearest mark (again on it, or on open floor, puts the card away); a mouse shows the mark under it
+document.addEventListener('click', e => {
+  const svg = e.target.closest('svg.court[data-tap]');
+  if (!svg) return;
+  const i = shotNear(svg, e, 30), pin = i >= 0 && String(i) !== svg.dataset.pin ? String(i) : '';
+  svg.dataset.pin = pin;
+  shotShow(svg, pin ? i : -1);
+  const card = svg.parentNode.querySelector('.shot-card');
+  if (pin && card) card.scrollIntoView({block: 'nearest'});   // a phone's chart can fill the screen down to the tab bar
+});
+document.addEventListener('pointermove', e => {
+  if (e.pointerType !== 'mouse') return;
+  const svg = e.target.closest('svg.court[data-tap]');
+  if (!svg) return;
+  const i = shotNear(svg, e, 14);
+  shotShow(svg, i >= 0 ? i : svg.dataset.pin ? Number(svg.dataset.pin) : -1);
+});
+document.addEventListener('pointerout', e => {
+  const svg = e.target.closest('svg.court[data-tap]');
+  if (!svg || e.pointerType !== 'mouse' || (e.relatedTarget && svg.contains(e.relatedTarget))) return;
+  shotShow(svg, svg.dataset.pin ? Number(svg.dataset.pin) : -1);
+});
 // the Player page's chart: his season, or one game picked from his log, on the court of the club he shot for
 // with his zones against the league's below it (the season's league totals, for a game too)
 // and, from the assist credits (assists.py: made rows [gid, zone, assisted, makes]), the share of his makes a team-mate set up
 // and his shots by type against the league's (shots/league.json types), most attempts first,
 // and by distance band against the league's (shots/league.json bands, dist), with his average distance
-let SC = {pid: '', code: '', shots: [], club: {}, league: null, types: null, bands: null, made: null};
+let SC = {pid: '', code: '', shots: [], club: {}, games: {}, league: null, types: null, bands: null, made: null};
 const bandFg = shots => BN.map((_, b) => shots.reduce((a, s) => band(s[6], s[4]) === b ? [a[0] + s[3], a[1] + 1] : a, [0, 0]));
 const typeFg = shots => TN.map((_, k) => shots.reduce((a, s) => s[5] === k ? [a[0] + s[3], a[1] + 1] : a, [0, 0]));
 const zoneAst = made => ZN.map((_, z) => made.reduce((a, r) => r[1] === z ? [a[0] + r[2], a[1] + r[3]] : a, [0, 0]));
@@ -969,7 +1033,8 @@ const scPick = () => { const g = $('#sc-game').value, shots = g ? SC.shots.filte
 const shotsSvg = () => { const k = scPick(); return court(k.code, k.shots, k.heat); };
 const drawShots = () => {
   const k = scPick();
-  $('#sc-court').innerHTML = court(k.code, k.shots, k.heat);
+  $('#sc-court').innerHTML = court(k.code, k.shots, k.heat, {key: 'sc', info: s => { const x = SC.games[s[0]];
+    return shotInfo(s, x ? `<a href="#game/${esc(s[0])}" data-k="game">${fmtDate(x.date)} ${x.home ? t('vs') : '@'} ${esc(x.opp)}</a>` : '', SC.club[s[0]] || k.code, x ? x.opp : ''); }}) + SHOT_CARD;
   const [am, fm] = k.za ? k.za.reduce((a, [x, y]) => [a[0] + x, a[1] + y], [0, 0]) : [0, 0];
   $('#sc-unast').hidden = !fm;
   $('#sc-unast').innerHTML = fm ? `<span${def('unast')}>${t('Unassisted makes')}</span><span><b>${fm - am}/${fm}</b> · <b>${pct(fm - am, fm)}%</b></span>` : '';
@@ -1201,7 +1266,8 @@ async function renderPlayer(code, pid, my, gid) {
     Promise.all(clubs.map(c => get(`assists/${c}.json`).catch(() => null))), drawLineups(p, code, clubs, my), drawDuos(p, clubs, my), drawSimilar(p, L, my), drawSeason(p, code, my), drawFt(p, code, my)]);
   if (stale(my)) return;
   const made = asts.every(f => f && f.made) ? asts.flatMap(f => f.made.filter(r => r[1] === p.pid).map(r => [f.games[r[0]], r[2], r[3], r[4]])) : null;
-  SC = {pid: p.pid, code, shots: files.flatMap(f => f && f.players[p.pid] ? f.players[p.pid].map(s => [f.games[s[0]], s[1], s[2], s[3], s[4], s[5], s[6]]) : []), club: Object.fromEntries(played.map(x => [x.gid, x.team])),
+  SC = {pid: p.pid, code, shots: files.flatMap(f => f && f.players[p.pid] ? f.players[p.pid].map(s => [f.games[s[0]], ...s.slice(1)]) : []), club: Object.fromEntries(played.map(x => [x.gid, x.team])),
+    games: Object.fromEntries(played.map(x => [x.gid, x])),
     league: league && league.zones, types: league && league.types && league.types.length === TN.length ? league.types : null,
     bands: league && league.bands && league.bands.length === BN.length ? {bands: league.bands, fga: league.bands.map(c => c[1]), sum: league.dist} : null, made};
   const at = played.some(x => x.gid === gid) ? gid : '';
@@ -1860,11 +1926,15 @@ async function renderGame(gid, my) {
   BOX = Object.fromEntries(Object.values(g.box).flat().map(x => [x.pid, x]));
   const files = await Promise.all([g.away, g.home].map(c => get(`shots/${c}.json`).catch(() => null)));
   if (stale(my)) return;
-  courts = [g.away, g.home].map((c, i) => {
+  // each club's marks, with the shooter's id on each row; the share picture takes them without the tap, and on the page
+  // a mark's card names the shooter and links to his night
+  const own = [g.away, g.home], rows = own.map((c, i) => {
     const f = files[i], k = f ? f.games.indexOf(gid) : -1;
-    return court(c, k < 0 ? [] : Object.values(f.players).flatMap(s => s.filter(x => x[0] === k)));
+    return k < 0 ? [] : Object.entries(f.players).flatMap(([pid, s]) => s.filter(x => x[0] === k).map(x => Object.assign(x.slice(), {pid})));
   });
-  $('#gm-shots').innerHTML = [g.away, g.home].map((c, i) => `<div data-team="${esc(c)}"><div class="court-h">${logo(c)}${EN(tname(c))}</div>${courts[i]}</div>`).join('');
+  courts = own.map((c, i) => court(c, rows[i]));
+  const who = (c, s) => BOX[s.pid] ? `<a href="#${esc(c)}/${esc(s.pid)}/${esc(gid)}" data-k="who">${esc(BOX[s.pid].name)}</a>` : '';
+  $('#gm-shots').innerHTML = own.map((c, i) => `<div data-team="${esc(c)}"><div class="court-h">${logo(c)}${EN(tname(c))}</div>${court(c, rows[i], [], {key: `gm-${c}`, info: s => shotInfo(s, who(c, s), c, own[1 - i])})}${SHOT_CARD}</div>`).join('');
   setTimeout(() => prime('game'));
   // each club's five units with the most minutes in this game; their points for and against tie to the box score's +/-
   const lus = await Promise.all([g.away, g.home].map(c => get(`lineups/${c}.json`).catch(() => null)));
