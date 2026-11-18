@@ -11,6 +11,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 sys.path.insert(0, ROOT)
 import awards  # noqa: E402
 from assists import write_assists  # noqa: E402
+from clutch import BOX, in_clutch, write_clutch  # noqa: E402
+from clutch import STATS as CLUTCH  # noqa: E402
 from ft import write_ft  # noqa: E402
 from shots import write_shots, zone  # noqa: E402
 from site_data import RT, STATS, load_teams, period_start, rotation, write_league_lineups, write_lineups, write_ratings, write_site  # noqa: E402
@@ -298,6 +300,36 @@ def write_awards(out):
         json.dump(doc, f)
 
 
+def clutch_games(games, lines, shots):
+    """The clutch splits for write_clutch() from the shots of spots(): a game's clutch field goals are its shots in the
+    window with the score within the margin just before them (the rule check_clutch() holds the shot charts to), each one
+    20 seconds of clutch time, which the fourth quarter's five of each club (UNITS) plays; no free throws, assists or
+    turnovers."""
+    out = []
+    for g in (g for g in games if g["final"]):
+        clutch = [s for s in shots if s["gid"] == g["gid"]
+                  and in_clutch(s["period"], round(s["clock"] * 10), s["own"] - s["made"] * s["pts"] - s["opp"])]
+        ds, pts = min(200 * len(clutch), 3000), {g["home"]: 0, g["away"]: 0}
+        players = {}
+        stat = lambda t, p: players.setdefault((t, p), dict.fromkeys(CLUTCH[1:], 0))  # noqa: E731
+        for s in clutch:
+            x = stat(s["team"], s["pid"])
+            three = s["pts"] == 3
+            for k, n in (("fga", 1), ("fgm", s["made"]), ("fg3a", three), ("fg3m", three and s["made"]), ("pts", s["made"] * s["pts"])):
+                x[k] += n
+            pts[s["team"]] += s["made"] * s["pts"]
+        for t, o in ((g["home"], g["away"]), (g["away"], g["home"])):
+            box = [x for x in lines if x["gid"] == g["gid"] and x["team"] == t]
+            for i in UNITS[3] if ds else ():
+                x = stat(t, box[i]["pid"])
+                x["ds"], x["pm"] = ds, pts[t] - pts[o]
+        assert all(x[k] <= b[k] for (t, p), x in players.items() for b in lines if b["gid"] == g["gid"] and b["pid"] == p for k in BOX)
+        out.append((g["gid"], g["home"], g["away"], g["hs"], g["as"],
+                    {"ds": ds, "teams": {t: {"pts": pts[t], "opp": pts[o]} for t, o in ((g["home"], g["away"]), (g["away"], g["home"]))},
+                     "players": players}))
+    return out
+
+
 def free_throws(rng, games, lines):
     """Every box line's free throws as attempts for write_ft(): trips of two while two or more are left, a trip of three
     now and then, the last one a one-shot (an and-one every other time) or a technical; his makes spread over them at
@@ -340,5 +372,6 @@ if __name__ == "__main__":
     write_similar(out, players, lines)
     write_profiles(out, players, lines)
     write_ft(out, teams, free_throws(random.Random(19), games, lines))
+    write_clutch(out, teams, clutch_games(games, lines, shots))
     write_awards(out)
     print(f"fixture league written to {out}")
