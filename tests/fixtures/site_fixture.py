@@ -250,6 +250,45 @@ def write_similar(out, players, lines):
         json.dump({"keys": ["pts", "reb", "ast"], "games": 2, "mpg": 0, "players": comps}, f)
 
 
+def write_profiles(out, players, lines):
+    """profiles.json in percentiles.py's shape, without pandas (the browser job has none): every player with two games is
+    ranked in his position's first letter (G, F, C) on per-minute stand-ins for the twelve rates, ahead of a group-mate
+    when his rate is higher (lower for turnovers, which counts as ahead); fewer games, no profile. The last club's
+    players have no on/off, so an unknown rate is covered too."""
+    import json
+    keys = ["usg", "ast_pct", "tov_pct", "oreb_pct", "dreb_pct", "stl_pct", "blk_pct", "fg3a_rate", "fta_rate", "ts", "pps", "onoff"]
+    tot = {}
+    for x in lines:
+        if x["sec"] > 0:
+            t = tot.setdefault(x["pid"], {"gp": 0, **{k: 0 for k in ("sec", "pts", "fga", "fta", "ftm", "fg3a", "tov", "ast", "oreb", "dreb", "stl", "blk", "pm")}})
+            t["gp"] += 1
+            for k in t:
+                if k != "gp":
+                    t[k] += x[k]
+    meta = {p["pid"]: p for p in players}
+    last = players[-1]["team"]
+    rate = {}
+    for pid, t in tot.items():
+        if t["gp"] < 2:
+            continue
+        plays, m = t["fga"] + 0.44 * t["fta"] + t["tov"], t["sec"]
+        r = [plays / m, t["ast"] / m, t["tov"] / plays if plays else None, t["oreb"] / m, t["dreb"] / m, t["stl"] / m, t["blk"] / m,
+             t["fg3a"] / t["fga"] if t["fga"] else None, t["fta"] / t["fga"] if t["fga"] else None,
+             t["pts"] / (2 * plays - 2 * t["tov"]) if plays > t["tov"] else None, (t["pts"] - t["ftm"]) / t["fga"] if t["fga"] else None,
+             None if meta[pid]["team"] == last else t["pm"] / m]
+        rate[pid] = (meta[pid]["pos"][0], r)
+    groups, out_players = {}, {}
+    for g in sorted({g for g, _ in rate.values()}):
+        mem = sorted(pid for pid, (h, _) in rate.items() if h == g)
+        pools = [[rate[q][1][i] for q in mem if rate[q][1][i] is not None] for i in range(len(keys))]
+        groups[g] = [len(v) for v in pools]
+        for pid in mem:
+            r = rate[pid][1]
+            out_players[pid] = [g, [None if r[i] is None else sum(v > r[i] if keys[i] == "tov_pct" else v < r[i] for v in pools[i]) for i in range(len(keys))]]
+    with open(os.path.join(out, "profiles.json"), "w") as f:
+        json.dump({"keys": keys, "role": 9, "lower": ["tov_pct"], "games": 2, "mpg": 0, "pool": 3, "groups": groups, "players": out_players}, f)
+
+
 def write_awards(out):
     """awards.json from awards.py, over the fixture's own files."""
     import json
@@ -299,6 +338,7 @@ if __name__ == "__main__":
     write_assists(out, teams, makes(shots, assists))
     write_ratings(out, teams, team_lines(games, lines))
     write_similar(out, players, lines)
+    write_profiles(out, players, lines)
     write_ft(out, teams, free_throws(random.Random(19), games, lines))
     write_awards(out)
     print(f"fixture league written to {out}")

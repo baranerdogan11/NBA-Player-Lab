@@ -196,7 +196,7 @@ test.describe('roster', () => {
 
 test.describe('profile sections', () => {
   test.use(DESKTOP);
-  const SECS = ['sc', 'ft', 'lu', 'duo', 'sim', 'log-sec'];
+  const SECS = ['sc', 'ft', 'lu', 'duo', 'prof', 'sim', 'log-sec'];
   const states = page => page.evaluate(() => [...document.querySelectorAll('#pg-player details.panel')].map(d => [d.id, d.open]));
   test('every section of the profile starts closed when the page is opened', async ({page}) => {
     const problems = await prepare(page);
@@ -221,7 +221,7 @@ test.describe('profile sections', () => {
     expect(await page.locator('#sc-court').isVisible()).toBe(true);
     expect(problems, 'the page reported errors').toEqual([]);
   });
-  for (const [id, body] of [['sc', '#sc-court'], ['lu', '#onoff'], ['duo', '#duo-cols'], ['sim', '#sims'], ['log-sec', '#log']]) {
+  for (const [id, body] of [['sc', '#sc-court'], ['lu', '#onoff'], ['duo', '#duo-cols'], ['prof', '#prof-body'], ['sim', '#sims'], ['log-sec', '#log']]) {
     test(`the ${id} heading opens and closes its section, kept from player to player, closed again on the next visit`, async ({page}) => {
       const problems = await prepare(page);
       await page.goto('./?l#BOS');
