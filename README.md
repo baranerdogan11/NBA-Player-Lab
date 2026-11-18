@@ -55,6 +55,13 @@ A port of [Euroleague Player Lab](https://github.com/baranerdogan11/Euroleague-P
   minutes of the fourth quarter or overtime, within five points), by player, club (for and against) and league; a game
   where a player's free throws differ from his box-score FTM-FTA is left out, and more of them than one per thousand box
   lines quarantines those games
+- `clutch.py`: writes `teams/<season>/clutch.json`, the clutch splits on the NBA's definition (the last five minutes of
+  the fourth quarter or an overtime, the score within five): each player's clutch time on the floor (who was on the floor
+  from the substitution log, as for the lineups), his points, field goals, threes, free throws, assists and turnovers in
+  plays made with the score within five just before them, and his clutch +/-; each club's finals with clutch time, its
+  record in them and its clutch points for and against. A game where a club's clutch points from the running score differ
+  from its players' plays, or a player's time on the floor from the lineup stints, is quarantined; the file must match the
+  box scores, `games.json`'s results and the shot charts' clutch attempts
 - `profiles.py` and `similar.py`: `profiles.py` turns each player's season box-score lines into role rates (usage,
   assist, turnover, rebound, steal and block percentages, three-point and free-throw rates) and a position group;
   `similar.py` writes `teams/<season>/similar.json`, each regular's three nearest players by those role rates alone
