@@ -126,6 +126,9 @@ jobs:
       - name: Free throws attempt by attempt (teams/<season>/ft.json from the play-by-play; every player's free throws match his box-score FTM-FTA, or the game is left out)
         run: python ft.py
 
+      - name: Clutch splits (teams/<season>/clutch.json from the play-by-play and the substitution log; every club's clutch points follow its players' plays and every player's floor time the lineup stints, or the game is quarantined; the file matches the box scores and the shot charts)
+        run: python clutch.py
+
       - name: Awards ladder (teams/<season>/awards.json from the published JSON; every row matches leaders.json and the box scores, every score is its parts' blend)
         run: python awards.py
 
