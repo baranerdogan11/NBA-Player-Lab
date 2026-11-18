@@ -26,7 +26,6 @@ import json
 import os
 
 import quarantine
-from lineups import PERIOD_SEC, _v, play_order, plays, seconds_on, stints
 from rounding import rnd
 
 CLUTCH_DS, CLUTCH_MARGIN = 3000, 5    # the window, tenths of a second left in the fourth quarter or an overtime; the margin
@@ -44,6 +43,7 @@ def walk(actions, starters, home):
     """One game's clutch splits from its events (dicts, warehouse names), {team: set of five} and the home club's code.
     Returns {"ds": clutch time, "teams": {team: {"pts", "opp"}}, "players": {(team, pid): {stat: n}}, "on": {(team, pid):
     seconds on the floor over the game}, "credit": {team: clutch points of its players' own plays}}."""
+    from lineups import PERIOD_SEC, _v, play_order, plays   # pandas, which the browser tests' fixture does without
     teams = list(starters)
     on = {t: set(starters[t]) for t in teams}
     away = next((t for t in teams if t != home), None)
@@ -117,6 +117,7 @@ def walk(actions, starters, home):
 
 def problems(game, starters, home, box):
     """What fails the gate in one game's walk(): box is {(team, pid): box-score line with sec and the BOX counts}."""
+    from lineups import seconds_on, stints
     bad = []
     for t, v in game["teams"].items():
         if v["pts"] != game["credit"][t]:
