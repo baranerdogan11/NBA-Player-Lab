@@ -279,6 +279,10 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 .hero .runs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .hero .run{padding:5px 9px;border:2px solid var(--ink);background:var(--riso-yellow);color:#1a1a1a;font:900 12px/1 var(--sans);text-transform:uppercase;letter-spacing:.08em;box-shadow:3px 3px 0 var(--ink)}
 .hero a.run{text-decoration:none}
+.cline{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;padding:10px 0;border-bottom:2px solid var(--ink);font:italic 400 16px/1.3 var(--serif)}
+.cline b{font:900 15px/1 var(--sans);font-style:normal}
+.cline .ch{padding:5px 9px;border:2px solid var(--ink);background:var(--riso-yellow);color:#1a1a1a;font:900 12px/1 var(--sans);font-style:normal;text-transform:uppercase;letter-spacing:.08em}
+.panel .cline{margin:0 0 10px}
 .hero .run.lad{background:var(--paper);color:var(--ink)}
 /* awards ladder: under each count, a bar of its rank points (0 to 100) */
 .tbl.aw .cp{min-width:62px}
@@ -723,6 +727,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <a class="lgb" id="lg-badge" href="#league" hidden></a>
     <div class="pick"><select id="team" data-kind="team" aria-label="Team" data-ta="Team"></select><select id="from" data-kind="country" aria-label="From" data-ta="From"></select><select id="player" data-kind="player" aria-label="Player" data-ta="Player"></select><a class="arr" id="prev" aria-label="Previous player" data-ta="Previous player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="arr" id="next" aria-label="Next player" data-ta="Next player"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 5.5 6.5 6.5-6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
     <div class="tiles five" id="tiles"></div>
+    <div class="cline" id="clutch" hidden></div>
     <details class="panel" id="sc"><summary><h2 data-t="Shot chart">Shot chart</h2></summary><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div><div class="fm-h unast" id="sc-unast" hidden></div><div class="scroll zones" id="sc-zones"></div><div class="scroll zones" id="sc-types" hidden></div><div class="zones dist" id="sc-dist" hidden></div></details>
     <details class="panel" id="ft" hidden><summary><h2 data-t="Free throws">Free throws</h2></summary><div class="scroll"><table class="tbl" id="ft-tbl"></table></div></details>
     <details class="panel" id="lu" hidden><summary><h2 data-t="Lineups">Lineups</h2></summary><div class="scroll"><table class="tbl" id="onoff"></table></div><div class="scroll"><table class="tbl" id="fives"></table></div></details>
@@ -776,7 +781,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <details class="panel" id="tm-rt-sec"><summary><h2 data-t="Ratings">Ratings</h2></summary><div class="scroll"><table class="tbl rt" id="tm-rt"></table></div></details>
     <details class="panel" id="tm-ff-sec"><summary><h2 data-t="Four Factors">Four Factors</h2></summary><div class="scroll"><table class="tbl rt" id="tm-ff"></table></div></details>
     <details class="panel" id="tm-zones-sec" hidden><summary><h2 data-t="Shot performance">Shot performance</h2></summary><div class="courts zcourts" id="tm-zones"></div></details>
-    <details class="panel" id="tm-close-sec"><summary><h2><span data-t="Closing five">Closing five</span><span class="crec" id="tm-close-rec"></span></h2></summary><div class="scroll"><table class="tbl units" id="tm-close"></table></div><div class="scroll"><table class="tbl" id="tm-closers"></table></div></details>
+    <details class="panel" id="tm-close-sec"><summary><h2><span data-t="Closing five">Closing five</span><span class="crec" id="tm-close-rec"></span></h2></summary><div class="cline" id="tm-clutch" hidden></div><div class="scroll"><table class="tbl units" id="tm-close"></table></div><div class="scroll"><table class="tbl" id="tm-closers"></table></div></details>
     <details class="panel" id="tm-q-sec"><summary><h2 data-t="Quarter by quarter">Quarter by quarter</h2></summary><div class="scroll"><table class="tbl rt" id="tm-q"></table></div><div class="scroll"><table class="tbl rt" id="tm-qrec"></table></div></details>
   </section>
   <section class="pg" id="pg-leaders" hidden>
@@ -785,6 +790,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <div class="tabs" id="ld-size" role="group" aria-label="Lineup" data-ta="Lineup" hidden></div>
     <div class="tabs" id="ld-aw" role="group" aria-label="Award" data-ta="Award" hidden></div>
     <section class="panel" id="ld-sec"><div class="scroll"><table class="tbl" id="ld"></table></div></section>
+    <section class="panel" id="ld-clutch" hidden><div class="scroll"><table class="tbl" id="ld-cl"></table></div></section>
     <section class="panel" id="ld-lu" hidden><div class="scroll"><table class="tbl units" id="ld-units"></table></div></section>
     <div id="ld-form" hidden>
       <section class="panel"><h2 data-t="Trending up" data-def="trend floor-trend" tabindex="0">Trending up</h2><div class="scroll"><table class="tbl trend" id="ld-up"></table></div></section>
@@ -1308,6 +1314,7 @@ async function renderPlayer(code, pid, my, gid) {
     $('#sim').hidden = true;
     $('#prof').hidden = true;
     $('#ft').hidden = true;
+    $('#clutch').hidden = true;
     $('#log').innerHTML = `<tbody><tr><td class="empty">${t('No players yet.')}</td></tr></tbody>`;
     remember(code);
     return;
@@ -1346,7 +1353,7 @@ async function renderPlayer(code, pid, my, gid) {
   const played = log.filter(x => x.sec > 0), clubs = [...new Set([code, ...played.map(x => x.team)])];
   drawForm(played, code);
   const [files, league, asts] = await Promise.all([Promise.all(clubs.map(c => get(`shots/${c}.json`).catch(() => null))), get('shots/league.json').catch(() => null),
-    Promise.all(clubs.map(c => get(`assists/${c}.json`).catch(() => null))), drawLineups(p, code, clubs, my), drawDuos(p, clubs, my), drawSimilar(p, L, my), drawProfile(p, my), drawSeason(p, code, my), drawFt(p, code, my)]);
+    Promise.all(clubs.map(c => get(`assists/${c}.json`).catch(() => null))), drawLineups(p, code, clubs, my), drawDuos(p, clubs, my), drawSimilar(p, L, my), drawProfile(p, my), drawSeason(p, code, my), drawFt(p, code, my), drawClutch(p, my)]);
   if (stale(my)) return;
   const made = asts.every(f => f && f.made) ? asts.flatMap(f => f.made.filter(r => r[1] === p.pid).map(r => [f.games[r[0]], r[2], r[3], r[4]])) : null;
   SC = {pid: p.pid, code, shots: files.flatMap(f => f && f.players[p.pid] ? f.players[p.pid].map(s => [f.games[s[0]], ...s.slice(1)]) : []), club: Object.fromEntries(played.map(x => [x.gid, x.team])),
@@ -1360,6 +1367,28 @@ async function renderPlayer(code, pid, my, gid) {
   drawShots();
   setTimeout(() => prime('player'));
   document.title = `${p.name} · NBA Player Lab`;
+}
+// ---- Clutch (clutch.json): the last five minutes of the fourth quarter or of an overtime with the score within five.
+// players: pid -> [g, ds, pts, fgm, fga, fg3m, fg3a, ftm, fta, ast, tov, pm], teams: code -> [g, w, l, ds, pts, opp]; ds is
+// time in tenths of a second, shown as minutes and seconds through the one rounding rule
+const cmin = ds => clock(rq(ds, 10, 0));
+const cpart = (label, v, k) => `<span data-k="${k}">${t(label)} <b>${v}</b></span>`;
+// his clutch line under the season tiles, once he has played clutch time
+async function drawClutch(p, my) {
+  const C = await get('clutch.json').catch(() => null);
+  if (stale(my)) return;
+  const c = C && C.players && C.players[p.pid], el = $('#clutch');
+  el.hidden = !(c && c[1] > 0);
+  el.innerHTML = el.hidden ? '' : `<span class="ch"${def('clutch')}>${t('Clutch')}</span>${cpart('G@stat', c[0], 'g')}${cpart('MIN@stat', cmin(c[1]), 'min')}${cpart('PTS@stat', c[2], 'pts')}${cpart('FG@stat', `${c[3]}-${c[4]}`, 'fg')}${cpart('3P@stat', `${c[5]}-${c[6]}`, 'fg3')}${cpart('FT@stat', `${c[7]}-${c[8]}`, 'ft')}${cpart('+/-@stat', N(signed(String(c[11]))), 'pm')}`;
+}
+// the club's clutch record, at the top of Closing five: its finals with clutch time, its record in them, clutch points
+// for and against and the difference
+async function clutchRecord(code, my) {
+  const C = await get('clutch.json').catch(() => null);
+  if (stale(my)) return;
+  const c = C && C.teams && C.teams[code], el = $('#tm-clutch');
+  el.hidden = !(c && c[0] > 0);
+  el.innerHTML = el.hidden ? '' : `<span class="ch"${def('clutch clutchrec')}>${t('Clutch')}</span>${cpart('G@stat', c[0], 'g')}${cpart('Record@stat', `${c[1]}-${c[2]}`, 'rec')}${cpart('MIN@stat', cmin(c[3]), 'min')}${cpart('PTS@stat', `${c[4]}-${c[5]}`, 'pts')}${cpart('+/-@stat', N(signed(String(c[4] - c[5]))), 'pm')}`;
 }
 // ---- On a run: his active streaks of three games or more (leaders.json), double-doubles first, at most two
 const RUN_MIN = 3;
@@ -1764,6 +1793,7 @@ async function renderTeam(code, my) {
   $('#tm-zones').innerHTML = zt ? [['Offense', zt.for, false], ['Defense', zt.against, true]].map(([l, zs, against]) =>
     `<div data-side="${l.toLowerCase()}"><div class="court-h"><span${def('zgrade zones')}>${t(l)}</span></div>${zoneCourt(code, zs, zl.zones, against)}</div>`).join('') + zoneKey() : '';
   closeRecord(code, G);
+  clutchRecord(code, my);
   document.title = `${tname(code)} · NBA Player Lab`;
   await drawNet(code, data, my);
 }
@@ -2370,25 +2400,27 @@ const board = (L, stat) => {
 async function renderLeaders(stat, my, rookies, size, award) {
   let L = (await get('leaders.json')).players;
   if (stale(my)) return;
-  if (!LEAD[stat] && stat !== 'form' && stat !== 'ftsplit' && stat !== 'range' && stat !== 'highs' && stat !== 'lineups' && stat !== 'streaks' && stat !== 'awards') stat = 'pts';
+  if (!LEAD[stat] && stat !== 'form' && stat !== 'ftsplit' && stat !== 'clutch' && stat !== 'range' && stat !== 'highs' && stat !== 'lineups' && stat !== 'streaks' && stat !== 'awards') stat = 'pts';
   const wide = stat === 'highs' || stat === 'lineups' || stat === 'awards';
   rookies = rookies && !wide;
   if (rookies) L = L.filter(p => p.rookie);
-  $('#ld-tabs').innerHTML = [...Object.entries(LEAD), ['form', ['Trending']], ['ftsplit', ['Free throws']], ['range', ['Range']], ['lineups', ['Lineups@board']], ['streaks', ['Streaks']], ['awards', ['Awards']], ['highs', ['Season highs']]].map(([k, [l]]) => `<a href="#leaders/${k}${rookies && k !== 'highs' && k !== 'lineups' && k !== 'awards' ? '/rookies' : ''}" aria-current="${k === stat}" data-def="${LEAD_DEF[k]}">${t(l)}</a>`).join('');
+  $('#ld-tabs').innerHTML = [...Object.entries(LEAD), ['form', ['Trending']], ['ftsplit', ['Free throws']], ['clutch', ['Clutch']], ['range', ['Range']], ['lineups', ['Lineups@board']], ['streaks', ['Streaks']], ['awards', ['Awards']], ['highs', ['Season highs']]].map(([k, [l]]) => `<a href="#leaders/${k}${rookies && k !== 'highs' && k !== 'lineups' && k !== 'awards' ? '/rookies' : ''}" aria-current="${k === stat}" data-def="${LEAD_DEF[k]}">${t(l)}</a>`).join('');
   const rk = $('#ld-rook');
   rk.parentElement.hidden = wide;
   rk.setAttribute('aria-pressed', String(rookies));
   rk.dataset.stat = stat;
-  $('#ld-sec').hidden = stat === 'form' || stat === 'ftsplit' || stat === 'range' || stat === 'streaks' || wide;
+  $('#ld-sec').hidden = stat === 'form' || stat === 'ftsplit' || stat === 'clutch' || stat === 'range' || stat === 'streaks' || wide;
   $('#ld-aw').hidden = $('#ld-awards').hidden = stat !== 'awards';
   $('#ld-form').hidden = stat !== 'form';
   $('#ld-ft').hidden = stat !== 'ftsplit';
+  $('#ld-clutch').hidden = stat !== 'clutch';
   $('#ld-range').hidden = stat !== 'range';
   $('#ld-highs').hidden = stat !== 'highs';
   $('#ld-runs').hidden = stat !== 'streaks';
   $('#ld-size').hidden = $('#ld-lu').hidden = stat !== 'lineups';
   if (stat === 'form') return drawTrend(L);
   if (stat === 'ftsplit') return drawFtBoards(L, await get('ft.json').catch(() => null), my);
+  if (stat === 'clutch') { const C = await get('clutch.json').catch(() => null); return stale(my) ? undefined : drawClutchBoard(L, C); }
   if (stat === 'streaks') return drawRuns(L);
   if (stat === 'range') {
     const P = await get('shots/league.json').then(d => d.players || {}).catch(() => ({}));
@@ -2455,6 +2487,31 @@ function drawFtBoards(L, F, my) {
   $('#ld-press-up').innerHTML = table(6, press, 1);
   $('#ld-press-dn').innerHTML = table(6, press, -1);
 }
+
+// ---- Clutch board (clutch.json): every player with a minute of clutch time for each game his club has played, ranked
+// by clutch points; a heading (minutes, points, FG%, +/-) ranks by that column instead, on the shown value, then the name.
+// Places are shared on equal values; 25 rows, as the other boards
+const CLUTCH_FLOOR = 600;   // tenths of a second of clutch time per club game
+const CL_SORT = {min: c => c[1], pts: c => c[2], fgp: c => c[4] ? rq(100 * c[3], c[4]) : -1, pm: c => c[11]};
+let CL_BY = 'pts', CL_DATA = null;
+function drawClutchBoard(L, C) {
+  CL_DATA = {L, C};
+  const P = (C && C.players) || {}, key = CL_SORT[CL_BY];
+  const rows = L.map(p => ({p, c: P[p.pid]})).filter(({p, c}) => { const tg = team(p.team) ? team(p.team).gp : 0; return c && tg && c[1] >= CLUTCH_FLOOR * tg; })
+    .sort((x, y) => key(y.c) - key(x.c) || x.p.name.localeCompare(y.p.name)).slice(0, 25);
+  const th = (k, l, d) => `<th data-sort="${k}"${k === CL_BY ? ' aria-sort="descending"' : ''}${defSort(d)}><button type="button" class="sort">${t(l)}</button></th>`;
+  let rank = 0, prev = null;
+  $('#ld-cl').innerHTML = `<thead><tr><th${def('place')}>#</th><th class="l">${t('Player')}</th><th class="l">${t('Team')}</th><th${def('clutch floor-clutch')}>${t('G@stat')}</th>${th('min', 'MIN@stat', 'clutch floor-clutch')}${th('pts', 'PTS@stat', 'clutch pts')}<th${def('clutch fg')}>${t('FG@stat')}</th>${th('fgp', 'FG%@stat', 'clutch fgp')}<th${def('clutch fg3')}>${t('3P@stat')}</th><th${def('clutch ft')}>${t('FT@stat')}</th>${th('pm', '+/-@stat', 'clutch clutchpm')}</tr></thead><tbody>${rows.length ? rows.map(({p, c}, i) => {
+    if (key(c) !== prev) { rank = i + 1; prev = key(c); }
+    return `<tr data-pid="${esc(p.pid)}"><td>${rank}</td><td class="l"><a href="#${esc(p.team)}/${esc(p.pid)}">${esc(p.name)}</a></td><td class="l">${logo(p.team)}${esc(p.team)}</td><td>${c[0]}</td><td${CL_BY === 'min' ? ' class="k"' : ''}>${cmin(c[1])}</td><td${CL_BY === 'pts' ? ' class="k"' : ''}>${c[2]}</td><td>${c[3]}-${c[4]}</td><td${CL_BY === 'fgp' ? ' class="k"' : ''}>${pct(c[3], c[4])}</td><td>${c[5]}-${c[6]}</td><td>${c[7]}-${c[8]}</td><td${CL_BY === 'pm' ? ' class="k"' : ''}>${N(signed(String(c[11])))}</td></tr>`;
+  }).join('') : `<tr><td class="empty l" colspan="11">${t('No player qualifies yet.')}</td></tr>`}</tbody>`;
+}
+$('#ld-cl').addEventListener('click', e => {
+  const th = /** @type {HTMLElement | null} */ (/** @type {Element} */ (e.target).closest('th[data-sort]'));
+  if (!th || !CL_DATA) return;
+  CL_BY = th.getAttribute('aria-sort') ? 'pts' : th.dataset.sort || 'pts';
+  drawClutchBoard(CL_DATA.L, CL_DATA.C);
+});
 
 // ---- Range (shots/league.json players: pid -> [FGA, sum of distances in tenths of a foot, makes and attempts from 27 feet
 // out]): the most deep threes made, from 10 attempts, and the longest average shot distance, from 100 attempts; ten each,
@@ -2953,6 +3010,11 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['floor-mvp', '', 'MVP and Defensive pools', 'On pace for the 65-game line of the NBA’s awards rule: a game counts at 20 minutes, and up to two games of 15 to 19 minutes count too.', 'Counted games × 82 ≥ 65 × club games'],
     ['floor-roy', '', 'Rookie pool', 'Players in their first NBA season who played 70% of the club’s games at 15 minutes a game.', ''],
   ]],
+  ['Clutch', [
+    ['clutch', '', 'Clutch', 'The last five minutes of the fourth quarter or of an overtime with the score within five points, the NBA’s definition. Time is clutch while the score stands within five; a play is clutch when the score was within five just before it. A player’s clutch minutes are his time on the court in it, from the substitution log, and his points, shots and free throws come from his clutch plays.', ''],
+    ['clutchpm', '+/-@stat', 'Clutch plus-minus', 'The club’s clutch points minus its opponent’s while the player was on the court; free throws count for the five on the court at the foul, as in the box score.', ''],
+    ['clutchrec', '', 'Clutch record', 'The club’s finals with clutch time, its wins and losses in them, its clutch minutes and its clutch points for and against.', ''],
+  ]],
   ['Leader boards', [
     ['place', '', 'Place', 'A player’s place on a board, 1 the best; equal values share a place.', ''],
     ['ma', 'M-A@stat', 'Made-attempted', 'Shots made and shots attempted over the season.', ''],
@@ -2960,6 +3022,7 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['floor-fg', '', 'FG% and TS% boards', 'Also 300 made field goals over 82 games, in proportion to the club’s games so far.', ''],
     ['floor-fg3', '', '3P% board', 'Also 82 made threes over 82 games, in proportion to the club’s games so far.', ''],
     ['floor-ft', '', 'FT% board', 'Also 125 made free throws over 82 games, in proportion to the club’s games so far.', ''],
+    ['floor-clutch', '', 'Clutch board', 'A minute of clutch time for every game the club has played.', ''],
     ['floor-ft1', '', 'Free-throw boards', 'Three free throws attempted for every game the club has played.', ''],
     ['floor-ftpress', '', 'Pressure board', 'Also one pressure free throw attempted for every three games the club has played.', ''],
     ['floor-busy', '', 'Usage, RAPM and foul boards', 'Also 15 minutes a game.', ''],
@@ -2985,7 +3048,7 @@ const defBody = r => `<span>${esc(t(r[3]))}</span>${r[4] ? `<code>${esc(t(r[4]))
 // the Leaders boards: each one's stat and its floor
 const LEAD_DEF = {pts: 'pts floor-pg', reb: 'reb floor-pg', ast: 'ast floor-pg', stl: 'stl floor-pg', blk: 'blk floor-pg', fg3m: 'fg3 floor-pg', min: 'min floor-pg',
   fg: 'fgp floor-pg floor-fg', fg3: 'fg3p floor-pg floor-fg3', ft: 'ftp floor-pg floor-ft', ts: 'ts floor-pg floor-fg', usg: 'usg floor-pg floor-busy', uast: 'unast floor-pg floor-unast', fd: 'fd floor-pg floor-busy', ftar: 'ftar floor-pg floor-busy', pf36: 'pf36 floor-pg floor-busy',
-  rapm: 'rapm floor-pg floor-busy', orapm: 'orapm floor-pg floor-busy', drapm: 'drapm floor-pg floor-busy', form: 'trend floor-trend', ftsplit: 'ft1 ftpress floor-ft1', range: 'deep dist floor-range', lineups: 'lineup pair floor-units', streaks: 'runs dd td', awards: 'ladder dladder', highs: 'highs'};
+  rapm: 'rapm floor-pg floor-busy', orapm: 'orapm floor-pg floor-busy', drapm: 'drapm floor-pg floor-busy', form: 'trend floor-trend', ftsplit: 'ft1 ftpress floor-ft1', clutch: 'clutch floor-clutch', range: 'deep dist floor-range', lineups: 'lineup pair floor-units', streaks: 'runs dd td', awards: 'ladder dladder', highs: 'highs'};
 // a stat label (as tiles and table headings name it) and its entry
 const STAT_DEF = {PTS: 'pts', REB: 'reb', OREB: 'oreb', DREB: 'dreb', AST: 'ast', STL: 'stl', BLK: 'blk', TOV: 'tov', PF: 'pf', FD: 'fd', FTR: 'ftar', FG: 'fg', '3P': 'fg3', FT: 'ft',
   'FG%': 'fgp', '3P%': 'fg3p', 'FT%': 'ftp', 'TS%': 'ts', '+/-': 'pm', MIN: 'min', GP: 'gp', Result: 'result',
