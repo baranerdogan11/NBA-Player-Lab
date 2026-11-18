@@ -543,6 +543,24 @@ html[data-theme="dark"] .intro{--A:#0078b4}
 .sims small{display:flex;align-items:center;gap:4px;font:italic 400 13px/1 var(--serif);color:var(--ink2)}
 .sims .mark{width:18px;height:18px;margin:0}
 @media (max-width:420px){.sims .face{width:52px;height:52px;font-size:15px}.sims .nm{font-size:12px}}
+.prof{display:grid;grid-template-columns:1fr 1fr;gap:8px 36px;padding-bottom:16px}
+.prof h3{font:900 12px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;margin:6px 0 8px}
+.pr{display:grid;grid-template-columns:minmax(0,9em) minmax(0,1fr) 2.2em;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}
+.pr .l{font:italic 400 15px/1.2 var(--serif);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pr .bar{position:relative;display:block;height:12px;border:2px solid var(--ink);background:var(--paper)}
+.pr .bar b{position:absolute;top:0;bottom:0;left:0;background:var(--ink2)}
+.pr .v{font:900 15px/1 var(--sans);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.pr.two{grid-template-columns:2.2em minmax(0,1fr) 2.2em}
+.pr.two .v:first-child{text-align:left}
+.pr.two .mid{display:grid;gap:5px;min-width:0}
+.pr.two .l{text-align:center}
+.pr.two .bar{background:linear-gradient(90deg,transparent calc(50% - 1px),var(--line) calc(50% - 1px) calc(50% + 1px),transparent calc(50% + 1px)),var(--paper)}
+.pr .bar i{position:absolute;top:50%;width:14px;height:14px;transform:translate(-50%,-50%);background:var(--A);border:2px solid var(--ink)}
+.pr .bar i.a{border-radius:50%}
+.pgrp{display:flex;justify-content:space-between;gap:12px;margin:-4px 0 6px;font:italic 400 15px/1.2 var(--serif);color:var(--ink2)}
+.pgrp span{display:flex;align-items:center;gap:6px}
+.pgrp i{flex:none;width:12px;height:12px;background:var(--A);border:2px solid var(--ink)}.pgrp i.a{border-radius:50%}
+@media (max-width:760px){.prof{grid-template-columns:1fr;gap:4px}}
 .duos .faces .face+.face{margin-left:-8px;box-shadow:0 0 0 2px var(--paper)}
 #log td.best{background:var(--riso-yellow);color:#1a1a1a;font-weight:900}
 .best .nm small{white-space:normal}
@@ -714,6 +732,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <details class="panel" id="ft" hidden><summary><h2 data-t="Free throws">Free throws</h2></summary><div class="scroll"><table class="tbl" id="ft-tbl"></table></div></details>
     <details class="panel" id="lu" hidden><summary><h2 data-t="Lineups">Lineups</h2></summary><div class="scroll"><table class="tbl" id="onoff"></table></div><div class="scroll"><table class="tbl" id="fives"></table></div></details>
     <details class="panel" id="duo" hidden><summary><h2 data-t="Duos">Duos</h2></summary><div class="fives" id="duo-cols"></div></details>
+    <details class="panel" id="prof" hidden><summary><h2 data-t="Profile">Profile</h2><span class="crec" id="prof-grp"></span></summary><div class="prof" id="prof-body"></div></details>
     <details class="panel" id="sim" hidden><summary><h2 data-t="Similar role">Similar role</h2></summary><div class="sims" id="sims"></div></details>
     <details class="panel" id="log-sec"><summary><h2 data-t="Game log">Game log</h2></summary><div class="season" id="season" hidden><div class="sea-h"><div class="pick"><select id="sea-stat" data-kind="stat" aria-label="Stat" data-ta="Stat"></select></div><div class="sea-key" id="sea-key"></div></div><div class="scroll"><div class="sea-in" id="sea-in"></div></div><div class="sea-tip" id="sea-tip" aria-live="polite"></div></div><div class="gform" id="form" hidden></div><div class="scroll"><table class="tbl" id="log"></table></div></details>
   </section>
@@ -721,6 +740,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <div class="pick"><select id="cmp-a" data-kind="player" aria-label="First player" data-ta="First player"></select><select id="cmp-b" data-kind="player" aria-label="Second player" data-ta="Second player"></select></div>
     <div class="vs" id="cmp-vs"></div>
     <section class="panel"><div class="scroll"><table class="tbl cmp" id="cmp"></table></div></section>
+    <section class="panel" id="cmp-prof" hidden><h2 data-t="Profile">Profile</h2><div class="pgrp" id="cmp-pgrp"></div><div class="prof" id="cmp-pbody"></div></section>
   </section>
   <section class="pg" id="pg-standings" hidden>
     <div class="tabs" id="st-tabs" role="group" aria-label="Table" data-ta="Table"></div>
@@ -1217,6 +1237,37 @@ async function drawSimilar(p, L, my) {
   $('#sims').innerHTML = rows.map(x => `<a href="#compare/${esc(p.pid)}/${esc(x.pid)}" data-pid="${esc(x.pid)}" style="${colours(x.team)}">${face(x.pid, x.name)}<span class="nm">${EN(surname(x.name))}</span><small>${logo(x.team, 'mark')}<span class="cd">${esc(x.team)}</span></small></a>`).join('');
 }
 
+// Profile: where a player stands in his position group on each rate of profiles.json, as a percentile rounded once
+// (ahead of so many of the group's ranked players, out of the group); role bars in one ink, efficiency bars cool to hot
+const PROF_ROWS = {usg: ['USG%', 'usg'], ast_pct: ['AST%@stat', 'astp'], tov_pct: ['Ball security', 'tovsafe'], oreb_pct: ['OREB%@stat', 'orebp'],
+  dreb_pct: ['DREB%@stat', 'drebp'], stl_pct: ['STL%@stat', 'stlp'], blk_pct: ['BLK%@stat', 'blkp'], fg3a_rate: ['3PA rate@stat', 'p3par'],
+  fta_rate: ['FTR@stat', 'ftar'], ts: ['TS%@stat', 'ts'], pps: ['PTS/shot@stat', 'pps'], onoff: ['On/off@stat', 'onoff']};
+const GROUP_NAME = {G: 'Among {n} guards', F: 'Among {n} forwards', C: 'Among {n} centres'};
+// a player's percentiles [[key, value or null]] and his group's line, or null when he is not ranked
+const profileOf = (P, pid) => {
+  const x = P && P.players[pid];
+  if (!x) return null;
+  const pool = P.groups[x[0]];
+  return {grp: t(GROUP_NAME[x[0]], {n: Math.max(...pool)}), v: P.keys.map((k, i) => [k, x[1][i] == null || !pool[i] ? null : Number(rq(100 * x[1][i], pool[i], 0))])};
+};
+const heat = v => `color-mix(in srgb,var(${v < 50 ? '--riso-blue' : '--fluoro-pink'}) ${Math.abs(2 * v - 100)}%,var(--muted))`;
+const profLabel = k => `<span class="l"${def(PROF_ROWS[k][1])}>${t(PROF_ROWS[k][0])}</span>`;
+// both halves: Role (the first P.role keys) and Efficiency, each row drawn by row(key, index)
+const profHalves = (P, row) => [['Role', P.keys.slice(0, P.role)], ['Efficiency', P.keys.slice(P.role)]]
+  .map(([h, ks]) => `<div class="pf"><h3>${t(h)}</h3>${ks.map(k => row(k, P.keys.indexOf(k))).join('')}</div>`).join('');
+async function drawProfile(p, my) {
+  const P = await get('profiles.json').catch(() => null);
+  if (stale(my)) return;
+  const me = profileOf(P, p.pid);
+  $('#prof').hidden = !me;
+  if (!me || !P) return;
+  $('#prof-grp').textContent = me.grp;
+  $('#prof-body').innerHTML = profHalves(P, (k, i) => {
+    const v = me.v[i][1];
+    return `<div class="pr" data-k="${k}">${profLabel(k)}<i class="bar">${v == null ? '' : `<b style="width:${v}%${i >= P.role ? `;background:${heat(v)}` : ''}"></b>`}</i><span class="v">${v == null ? '–' : v}</span></div>`;
+  });
+}
+
 // ---- Player
 // the country picked on the Player page (pl-from): the player list is then everyone in the league from there, by club;
 // it lets go when the page shows a player from elsewhere or another club is picked
@@ -1261,6 +1312,7 @@ async function renderPlayer(code, pid, my, gid) {
     $('#lu').hidden = true;
     $('#duo').hidden = true;
     $('#sim').hidden = true;
+    $('#prof').hidden = true;
     $('#ft').hidden = true;
     $('#clutch').hidden = true;
     $('#log').innerHTML = `<tbody><tr><td class="empty">${t('No players yet.')}</td></tr></tbody>`;
@@ -1301,7 +1353,7 @@ async function renderPlayer(code, pid, my, gid) {
   const played = log.filter(x => x.sec > 0), clubs = [...new Set([code, ...played.map(x => x.team)])];
   drawForm(played, code);
   const [files, league, asts] = await Promise.all([Promise.all(clubs.map(c => get(`shots/${c}.json`).catch(() => null))), get('shots/league.json').catch(() => null),
-    Promise.all(clubs.map(c => get(`assists/${c}.json`).catch(() => null))), drawLineups(p, code, clubs, my), drawDuos(p, clubs, my), drawSimilar(p, L, my), drawSeason(p, code, my), drawFt(p, code, my), drawClutch(p, my)]);
+    Promise.all(clubs.map(c => get(`assists/${c}.json`).catch(() => null))), drawLineups(p, code, clubs, my), drawDuos(p, clubs, my), drawSimilar(p, L, my), drawProfile(p, my), drawSeason(p, code, my), drawFt(p, code, my), drawClutch(p, my)]);
   if (stale(my)) return;
   const made = asts.every(f => f && f.made) ? asts.flatMap(f => f.made.filter(r => r[1] === p.pid).map(r => [f.games[r[0]], r[2], r[3], r[4]])) : null;
   SC = {pid: p.pid, code, shots: files.flatMap(f => f && f.players[p.pid] ? f.players[p.pid].map(s => [f.games[s[0]], ...s.slice(1)]) : []), club: Object.fromEntries(played.map(x => [x.gid, x.team])),
@@ -1500,6 +1552,16 @@ async function renderCompare(a, b, my) {
     const va = v(A), vb = v(B), better = k === 'Games' ? 0 : va > vb ? 1 : vb > va ? 2 : 0;
     return `<tr><td class="${better === 1 ? 'best' : ''}">${f(A)}</td><td class="m"${CMP_DEF[k] ? def(CMP_DEF[k]) : ''}>${t(k)}</td><td class="${better === 2 ? 'best' : ''}">${f(B)}</td></tr>`;
   }).join('')}</tbody>`;
+  const P = await get('profiles.json').catch(() => null);
+  if (stale(my)) return;
+  const pa = profileOf(P, A.pid), pb = profileOf(P, B.pid);
+  $('#cmp-prof').hidden = !(pa || pb);
+  if (P && (pa || pb)) {
+    $('#cmp-pgrp').innerHTML = `<span>${pa ? `<i class="a" style="${colours(A.team)}"></i>${esc(pa.grp)}` : ''}</span><span>${pb ? `${esc(pb.grp)}<i class="b" style="${colours(B.team)}"></i>` : ''}</span>`;
+    const val = (x, i) => x ? x.v[i][1] : null, mark = (v, cls, p) => v == null ? '' : `<i class="${cls}" style="left:${v}%;${colours(p.team)}"></i>`;
+    $('#cmp-pbody').innerHTML = profHalves(P, (k, i) => { const a = val(pa, i), b = val(pb, i);
+      return `<div class="pr two" data-k="${k}"><span class="v">${a == null ? '–' : a}</span><span class="mid">${profLabel(k)}<i class="bar">${mark(a, 'a', A)}${mark(b, 'b', B)}</i></span><span class="v">${b == null ? '–' : b}</span></div>`; });
+  }
   if (location.hash !== `#compare/${A.pid}/${B.pid}`) history.replaceState(null, '', `#compare/${A.pid}/${B.pid}`);
 }
 $('#cmp-a').addEventListener('change', () => { location.hash = `compare/${$('#cmp-a').value}/${$('#cmp-b').value}`; });
@@ -2860,6 +2922,17 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['closer', '', 'Closing five', 'In each close game, the five players of the club with the most time on the court in its last five minutes (all of the overtime when it went to one), from who played when; equal time goes to the player with more minutes in the game. The top three groups and every player who closed are listed.', ''],
     ['closed', 'G@stat', 'Games closed', 'Close games the group, or the player, closed, and the record in them.', ''],
     ['rank', '', 'Rank', 'The small number beside a rating is the club’s place among the 30, 1 the best; equal values share a place.', ''],
+  ]],
+  ['Profile', [
+    ['profile', '', 'Profile', 'Where the player stands among the regulars of his position group (guards, forwards, centres) on each rate: the share of them he is ahead of, so 90 means ahead of nine in ten. Role bars show what he does, not how well; efficiency bars run from cold to hot. A player’s group is the position he started at most, or for a reserve the starters’ group his role is closest to. Players need 3 games and 12 minutes a game, and a group 20 such players. Every rate is from the season’s box scores.', 'ahead ÷ group'],
+    ['astp', 'AST%@stat', 'Assist percentage', 'Share of his club’s baskets while he is on the court that he assisted.', '100 × AST ÷ (MIN ÷ (club MIN ÷ 5) × club FGM − FGM)'],
+    ['tovsafe', '', 'Ball security', 'Turnovers per play, turned around: the fewer he gives away, the higher he ranks.', 'TOV ÷ (FGA + 0.44 × FTA + TOV)'],
+    ['orebp', 'OREB%@stat', 'Offensive rebound percentage', 'Share of his club’s missed shots he rebounds while on the court.', '100 × OREB × (club MIN ÷ 5) ÷ (MIN × (club OREB + opponent DREB))'],
+    ['drebp', 'DREB%@stat', 'Defensive rebound percentage', 'Share of the opponent’s missed shots he rebounds while on the court.', '100 × DREB × (club MIN ÷ 5) ÷ (MIN × (club DREB + opponent OREB))'],
+    ['stlp', 'STL%@stat', 'Steal percentage', 'Share of the opponent’s possessions he ends with a steal while on the court.', '100 × STL × (club MIN ÷ 5) ÷ (MIN × opponent possessions)'],
+    ['blkp', 'BLK%@stat', 'Block percentage', 'Share of the opponent’s two-point attempts he blocks while on the court.', '100 × BLK × (club MIN ÷ 5) ÷ (MIN × opponent 2PA)'],
+    ['p3par', '3PA rate@stat', 'Three-point attempt rate', 'Share of his field goal attempts that are threes.', '3PA ÷ FGA'],
+    ['pps', 'PTS/shot@stat', 'Points per shot', 'Points from field goals per field goal attempted.', '(PTS − FTM) ÷ FGA'],
   ]],
   ['Four Factors', [
     ['efg', 'eFG%@stat', 'Effective field goal percentage', 'Field goal percentage with a made three worth one and a half twos.', '(FGM + 0.5 × 3PM) ÷ FGA'],
