@@ -132,6 +132,9 @@ jobs:
       - name: Similar role (profiles.py role rates, then teams/<season>/similar.json; every comp clears the floors and matches leaders.json)
         run: python profiles.py && python similar.py
 
+      - name: Role profile (teams/<season>/profiles.json, each regular's rank in his position group; counts match profiles.parquet's percentiles, players match leaders.json)
+        run: python percentiles.py
+
       - name: Build site
         run: python build.py
 

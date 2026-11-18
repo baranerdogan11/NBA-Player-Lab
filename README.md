@@ -60,6 +60,11 @@ A port of [Euroleague Player Lab](https://github.com/baranerdogan11/Euroleague-P
   `similar.py` writes `teams/<season>/similar.json`, each regular's three nearest players by those role rates alone
   (no efficiency), from his own position group first, for the Player page's Similar role row. Only players with five
   games and 15 minutes a game get comps or are one, and every one of them must match `leaders.json`'s games and seconds
+- `percentiles.py`: writes `teams/<season>/profiles.json`, where each player profiles.py ranks (3 games, 12 minutes a
+  game, a position group of at least 20 such players) stands in his group on the nine role rates and on true shooting,
+  points per shot and on/off: how many of the group he is ahead of (fewer turnovers counts as ahead) and the group's
+  size, so the page rounds the percentile once; the counts must give back profiles.py's percentiles and every player
+  must match `leaders.json`'s games and seconds
 - `awards.py`: writes `teams/<season>/awards.json`, the Lab's awards ladder: MVP and Rookie (50% RAPM, 30% Game Score
   per game, 20% club win percentage) and Defensive Player (50% D-RAPM, 30% steals and blocks per game, 20% club
   defensive rating), each part as rank points in the award's pool, from the published JSON alone; every row must match
