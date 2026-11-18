@@ -916,16 +916,31 @@ const remember = h => { LAST = h; try { localStorage.setItem('pl-last', h); } ca
 // #league[/roster|board|pick|team/<t>] (and the invite link #league/<id>/<key>)
 // ---- the site opens on Home: every fresh open (the home-screen icon, a new or restored tab, a relaunched phone browser)
 // starts there, whatever address it carries, and so does a tab brought back after half an hour in the background. A shared
-// link (link() adds ?l, dropped on arrival), the league invite link and a reload within half an hour keep their page.
+// link (link() adds ?l, dropped on arrival), the league invite link and a reload within half an hour keep their page, and so
+// does a link on the site opened in a new tab or window (right-click, long-press, middle or ctrl/cmd-click): pressing it
+// notes its address for two minutes, and a new tab that opens on that address keeps it.
 const AWAY = 30 * 60 * 1000;
 let SEEN = 0;
 try { SEEN = Number(localStorage.getItem('pl-seen')) || 0; } catch (e) {}
 const NAV = (/** @type {PerformanceNavigationTiming | undefined} */ (performance.getEntriesByType('navigation')[0]))?.type || 'navigate';
 const away = () => SEEN > 0 && Date.now() - SEEN >= AWAY;
 const seen = () => { SEEN = Date.now(); try { localStorage.setItem('pl-seen', String(SEEN)); } catch (e) {} };
+const PRESS = 2 * 60 * 1000;
+const pressed = e => {
+  const a = /** @type {HTMLAnchorElement | null} */ (/** @type {Element} */ (e.target).closest?.('a[href^="#"]'));
+  if (a && a.hash.length > 1) try { localStorage.setItem('pl-press', JSON.stringify([a.hash, Date.now()])); } catch (err) {}
+};
+document.addEventListener('pointerdown', pressed, true);
+document.addEventListener('contextmenu', pressed, true);
+const opened = () => {
+  try {
+    const [h, at] = JSON.parse(localStorage.getItem('pl-press') || '[]');
+    return h === location.hash && Date.now() - at >= 0 && Date.now() - at < PRESS;
+  } catch (e) { return false; }
+};
 function opening() {
   const q = new URLSearchParams(location.search), shared = q.has('l');
-  const keep = shared || /^#league\/\d+\//.test(location.hash) || (NAV === 'reload' && !away());
+  const keep = shared || /^#league\/\d+\//.test(location.hash) || (NAV === 'reload' && !away()) || (NAV === 'navigate' && opened());
   q.delete('l');
   const url = location.pathname + (q.toString() ? `?${q}` : '') + (keep ? location.hash : '');
   if (url !== location.pathname + location.search + location.hash) history.replaceState(null, '', url);
