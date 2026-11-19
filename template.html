@@ -506,6 +506,7 @@ html[data-theme="dark"] .pn{--i:var(--nn)}
 .lm-card .v{font:900 17px/1 var(--sans)}
 .lm-card .w{color:var(--good,#1d7a4c)}.lm-card .lo{color:var(--bad,#c2185b)}
 .lm-card .rk{font:italic 400 12px/1 var(--serif);color:var(--muted)}
+#hm-map>.panel{margin-top:0;border-top:0}
 @media (max-width:560px){.lm-plot{padding-left:32px}.lm-d{width:26px;height:26px}.lm-card>a{flex-basis:100%}}
 .pnt td.rk{width:2ch;font-weight:900}
 .fp{display:grid;grid-template-columns:auto auto minmax(0,1fr) 2.6ch;align-items:center;column-gap:12px;margin-top:6px}
@@ -745,6 +746,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
       <div id="hm-rest">
         <div id="hm-best-sec" hidden><h2 class="sec-h on-floor"><span data-t="Best performances" data-def="best gs" tabindex="0">Best performances</span></h2><div class="list best" id="hm-best"></div></div>
         <div id="hm-mine-sec" hidden><h2 class="sec-h on-floor"><span data-t="My players">My players</span></h2><div class="list best" id="hm-mine"></div></div>
+        <div id="hm-map-sec" hidden><h2 class="sec-h on-floor"><span data-t="League map">League map</span><a class="more" href="#standings/map" data-t="See all">See all</a></h2><div id="hm-map"></div></div>
       </div>
     </div>
     <h2 class="sec-h on-floor"><span data-t="Leaders">Leaders</span><a class="more" href="#leaders" data-t="See all">See all</a></h2>
@@ -1727,9 +1729,10 @@ function teamRatings(view, clubs, standing) {
 // ---- League map: each club placed by its ORtg (across) and DRtg (down the sheet, the lowest at the top), the values
 // and ranks Ratings shows (teamVals, rankBy). Both axes share one scale, so the diagonal is a net rating of zero; the
 // dashed lines are the league's rating, every point scored over every possession (one value for offense and defense),
-// rounded once by rq. A logo picked (the best net rating to begin with) shows its three ratings under the sheet
+// rounded once by rq. A logo picked (the best net rating to begin with) shows its three ratings under the sheet. Standings
+// draws it as st-map, Home as hm-map-box, from the same ratings.json
 const LM_CARD = {};
-function teamMap(clubs) {
+function teamMap(clubs, id = 'st-map') {
   const rows = clubs.map(c => ({code: c.code, v: teamVals(c)})).filter(r => r.v.ortg != null && r.v.drtg != null);
   if (!rows.length) return `<section class="panel"><p class="empty">–</p></section>`;
   const cols = RT_COLS.ratings.slice(0, 3), rank = {};
@@ -1752,21 +1755,24 @@ function teamMap(clubs) {
     }).join('');
   }
   const dots = rows.map(r => `<button type="button" class="lm-d" data-team="${r.code}" data-ortg="${rtShow('ortg', r.v.ortg)}" data-drtg="${rtShow('drtg', r.v.drtg)}" style="left:${at(r.v.ortg)}%;top:${at(r.v.drtg)}%" aria-label="${esc(tname(r.code))}">${logo(r.code, 'mark')}</button>`).join('');
-  return `<section class="panel" id="st-map"><div class="lm-plot"><span class="lm-ax y"${def(RT_DEF.drtg)}>${t('DRtg@stat')}</span><div class="lm" role="group" aria-label="${esc(t('League map'))}"${lg == null ? '' : ` data-lg="${rtShow('ortg', lg)}"`}>`
+  return `<section class="panel lm-sec" id="${id}"><div class="lm-plot"><span class="lm-ax y"${def(RT_DEF.drtg)}>${t('DRtg@stat')}</span><div class="lm" role="group" aria-label="${esc(t('League map'))}"${lg == null ? '' : ` data-lg="${rtShow('ortg', lg)}"`}>`
     + `<svg class="lm-bg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${bg}</svg>`
     + ticks.map(q => `<span class="tx" style="left:${at(q)}%">${tk(q)}</span><span class="ty" style="top:${at(q)}%">${tk(q)}</span>`).join('')
-    + `${dots}</div><span class="lm-ax x"${def(RT_DEF.ortg)}>${t('ORtg@stat')}</span></div><div class="lm-card" id="st-map-card" aria-live="polite"></div></section>`;
+    + `${dots}</div><span class="lm-ax x"${def(RT_DEF.ortg)}>${t('ORtg@stat')}</span></div><div class="lm-card" id="${id}-card" aria-live="polite"></div></section>`;
 }
 function lmPick(b) {
   if (!b) return;
-  for (const x of document.querySelectorAll('#st-map .lm-d.on')) x.classList.remove('on');
+  const sec = b.closest('.lm-sec');
+  for (const x of sec.querySelectorAll('.lm-d.on')) x.classList.remove('on');
   b.classList.add('on');
-  const card = $('#st-map-card');
+  const card = sec.querySelector('.lm-card');
   card.dataset.team = b.dataset.team;
   card.innerHTML = LM_CARD[b.dataset.team] || '';
 }
-$('#st-body').addEventListener('click', e => { const b = e.target.closest('.lm-d'); if (b) lmPick(b); });
-$('#st-body').addEventListener('pointerover', e => { const b = e.target.closest('.lm-d'); if (b && e.pointerType === 'mouse') lmPick(b); });
+for (const el of [$('#st-body'), $('#hm-map')]) {
+  el.addEventListener('click', e => { const b = e.target.closest('.lm-d'); if (b) lmPick(b); });
+  el.addEventListener('pointerover', e => { const b = e.target.closest('.lm-d'); if (b && e.pointerType === 'mouse') lmPick(b); });
+}
 // ---- Quarter by quarter, from the score by period of every final in games.json (the box score's, as on the game page):
 // each club's points for and against in each of the four quarters, its margin per game in each (rounded once by rq,
 // ranked like a rating), and its record when leading, trailing or level at half-time and after three quarters.
@@ -2710,7 +2716,7 @@ function drawRuns(L) {
 // ---- Home: the latest night with a final (or the season so far and the first night to come), that night's five best
 // lines by Game Score (night.json, in tenths), the first of them as the lead story, and the top five on three boards; every value is drawn by the same code as its own page
 async function renderHome(my) {
-  const [G, L, B] = await Promise.all([get('games.json').then(d => d.games), get('leaders.json').then(d => d.players), get('night.json').catch(() => null)]);
+  const [G, L, B, RT] = await Promise.all([get('games.json').then(d => d.games), get('leaders.json').then(d => d.players), get('night.json').catch(() => null), get('ratings.json').catch(() => null)]);
   if (stale(my)) return;
   const played = G.filter(g => g.hs != null), last = played.length ? played[played.length - 1].date : null;
   const day = last || (G.find(g => g.hs == null) || {}).date;
@@ -2752,6 +2758,11 @@ async function renderHome(my) {
   }).sort((a, b) => (b.x ? b.x.date : '').localeCompare(a.x ? a.x.date : ''));
   $('#hm-mine').innerHTML = lines.map(({p, x}) => `<a href="#${esc(p.team)}/${esc(p.pid)}${x ? `/${esc(x.gid)}` : ''}" data-pid="${esc(p.pid)}"${x ? ` data-gid="${esc(x.gid)}"` : ''}>${face(p.pid, p.name)}<span class="nm">${EN(p.name)}<small>${x ? `${fmtDate(x.date, true)} · ${x.home ? t('vs') : '@'} ${esc(x.opp)} · ${x.pts} ${t('PTS@stat')} · ${x.reb} ${t('REB@stat')} · ${x.ast} ${t('AST@stat')}` : t('No games yet.')}</small></span>${logo(p.team)}</a>`).join('');
   $('#hm-mine-sec').hidden = !lines.length;
+  // the league map, as Standings draws it (teamMap), once a club has a rating
+  const map = RT ? teamMap(RT.teams, 'hm-map-box') : '';
+  $('#hm-map-sec').hidden = !map.includes('lm-d');
+  $('#hm-map').innerHTML = map.includes('lm-d') ? map : '';
+  lmPick($('#hm-map .lm-d'));
   $('#hm-leaders').innerHTML = ['pts', 'reb', 'ast'].map(stat => {
     const rows = board(L, stat).slice(0, 5);
     return `<section class="panel" data-stat="${stat}"><h2${def(LEAD_DEF[stat])}>${t(LEAD[stat][0])}</h2><div class="list">${rows.length ? rows.map(({p, v, rank}) =>
