@@ -478,6 +478,35 @@ html[data-theme="dark"] .pn{--i:var(--nn)}
 .pn .nd.on .bx{fill:var(--A);stroke:var(--A)}
 .pn .nd.on .j{fill:var(--paper)}
 .pn .nd.on .lb{font-weight:900}
+/* league map: the 30 logos on one square sheet, ORtg across, DRtg down with the best at the top */
+.lm-plot{position:relative;max-width:640px;margin:22px auto 0;padding:0 0 30px 38px}
+.lm{position:relative;aspect-ratio:1;border:2px solid var(--ink)}
+.lm-bg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.lm-bg line{vector-effect:non-scaling-stroke;stroke:var(--line);stroke-width:1}
+.lm-bg .z{stroke:var(--B);stroke-width:2;mix-blend-mode:var(--blend)}
+.lm-bg .lg{stroke:var(--A);stroke-width:1.5;stroke-dasharray:5 4}
+.lm .tx,.lm .ty{position:absolute;font:700 11px/1 var(--sans);color:var(--muted);white-space:nowrap}
+.lm .tx{top:calc(100% + 7px);transform:translateX(-50%)}
+.lm .ty{right:calc(100% + 7px);transform:translateY(-50%)}
+.lm-ax{position:absolute;font:900 10.5px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase}
+.lm-ax.x{right:0;bottom:0}
+.lm-ax.y{left:0;top:-18px}
+.lm-d{position:absolute;z-index:1;width:34px;height:34px;padding:0;border:0;background:none;transform:translate(-50%,-50%);cursor:pointer;transition:transform .15s var(--spring)}
+.lm-d .mark{width:100%;height:100%;margin:0}
+.lm-d .mark:not(.on){background:var(--c1);box-shadow:3px 0 0 var(--c2)}
+.lm-d .mark b{display:block;font:900 9px/1 var(--sans);color:#fff}
+.lm-d .mark.on b{display:none}
+.lm-d:hover{z-index:2;transform:translate(-50%,-50%) scale(1.15)}
+.lm-d:focus-visible{outline:3px solid var(--A);outline-offset:2px}
+.lm-d.on{z-index:3;outline:3px solid var(--A);outline-offset:3px;transform:translate(-50%,-50%) scale(1.15)}
+.lm-card{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;max-width:640px;margin:10px auto 0;padding:12px 0;border-top:2px solid var(--ink)}
+.lm-card>a{display:flex;align-items:center;font:900 15px/1.1 var(--sans);color:var(--ink);text-decoration:none;margin-right:auto}
+.lm-card>span{display:inline-flex;align-items:baseline;gap:6px}
+.lm-card .lb{font:900 10.5px/1 var(--sans);letter-spacing:.12em;text-transform:uppercase}
+.lm-card .v{font:900 17px/1 var(--sans)}
+.lm-card .w{color:var(--good,#1d7a4c)}.lm-card .lo{color:var(--bad,#c2185b)}
+.lm-card .rk{font:italic 400 12px/1 var(--serif);color:var(--muted)}
+@media (max-width:560px){.lm-plot{padding-left:32px}.lm-d{width:26px;height:26px}.lm-card>a{flex-basis:100%}}
 .pnt td.rk{width:2ch;font-weight:900}
 .fp{display:grid;grid-template-columns:auto auto minmax(0,1fr) 2.6ch;align-items:center;column-gap:12px;margin-top:6px}
 .fp>div{display:contents}
@@ -1605,7 +1634,7 @@ const dots = s => s.length ? `<i class="form">${s.slice(-10).map(w => `<b class=
 async function renderStandings(view, my) {
   const G = (await get('games.json')).games;
   if (stale(my)) return;
-  view = ['east', 'west', 'league', 'ratings', 'factors', 'quarters'].includes(view) ? view : 'conf';
+  view = ['east', 'west', 'league', 'ratings', 'factors', 'map', 'quarters'].includes(view) ? view : 'conf';
   const R = records(G);
   const order = (x, y) => (y.w * (x.w + x.l) - x.w * (y.w + y.l)) || (y.w - x.w) || ((y.pf - y.pa) - (x.pf - x.pa)) || x.code.localeCompare(y.code);
   const table = (title, rows) => {
@@ -1617,12 +1646,19 @@ async function renderStandings(view, my) {
     }).join('')}</tbody></table></div></section>`;
   };
   const all = Object.values(R).sort(order);
-  const views = [['conf', 'Conferences'], ['east', 'East'], ['west', 'West'], ['league', 'League'], ['ratings', 'Ratings'], ['factors', 'Four Factors'], ['quarters', 'Quarter by quarter']];
+  const views = [['conf', 'Conferences'], ['east', 'East'], ['west', 'West'], ['league', 'League'], ['ratings', 'Ratings'], ['factors', 'Four Factors'], ['map', 'League map'], ['quarters', 'Quarter by quarter']];
   $('#st-tabs').innerHTML = views.map(([k, l]) => `<a href="#standings/${k}" aria-current="${k === view}">${t(l)}</a>`).join('');
   if (view === 'ratings' || view === 'factors') {
     const rt = await get('ratings.json');
     if (stale(my)) return;
     $('#st-body').innerHTML = teamRatings(view, rt.teams, all);
+    return;
+  }
+  if (view === 'map') {
+    const rt = await get('ratings.json');
+    if (stale(my)) return;
+    $('#st-body').innerHTML = teamMap(rt.teams);
+    lmPick($('#st-map .lm-d'));
     return;
   }
   if (view === 'quarters') {
@@ -1688,6 +1724,49 @@ function teamRatings(view, clubs, standing) {
     : `<tr>${team}${cols.map(th).join('')}</tr>`;
   return `<section class="panel"><div class="scroll"><table class="tbl rt" id="st-${view}"><thead>${head}</thead><tbody>${rows.map((r, i) => `<tr data-team="${r.code}" data-i="${i}"><td class="l"><a href="#team/${r.code}">${logo(r.code)}<span class="full">${EN(tname(r.code))}</span><span class="abbr">${esc(r.code)}</span></a></td>${cols.map(([k]) => cell(k, r.v[k])).join('')}</tr>`).join('')}</tbody></table></div></section>`;
 }
+// ---- League map: each club placed by its ORtg (across) and DRtg (down the sheet, the lowest at the top), the values
+// and ranks Ratings shows (teamVals, rankBy). Both axes share one scale, so the diagonal is a net rating of zero; the
+// dashed lines are the league's rating, every point scored over every possession (one value for offense and defense),
+// rounded once by rq. A logo picked (the best net rating to begin with) shows its three ratings under the sheet
+const LM_CARD = {};
+function teamMap(clubs) {
+  const rows = clubs.map(c => ({code: c.code, v: teamVals(c)})).filter(r => r.v.ortg != null && r.v.drtg != null);
+  if (!rows.length) return `<section class="panel"><p class="empty">–</p></section>`;
+  const cols = RT_COLS.ratings.slice(0, 3), rank = {};
+  for (const [k, , dir] of cols) rank[k] = rankBy(rows.map(r => r.v[k]), dir);
+  rows.sort((x, y) => (y.v.net - x.v.net) || x.code.localeCompare(y.code));
+  const pts = clubs.reduce((n, c) => n + c.for.pts, 0), poss = clubs.reduce((n, c) => n + P100(c.for), 0), lg = poss >= 100 ? rq(10000 * pts, poss) : null;
+  const vals = rows.flatMap(r => [r.v.ortg, r.v.drtg]), step = Math.max(...vals) - Math.min(...vals) > 300 ? 100 : 50;
+  const lo = Math.floor((Math.min(...vals) - 15) / step) * step, hi = Math.ceil((Math.max(...vals) + 15) / step) * step;
+  const at = q => (100 * (q - lo) / (hi - lo)).toFixed(2);
+  const ticks = [];
+  for (let q = lo + step; q < hi; q += step) ticks.push(q);
+  const tk = q => N(String(q / 10));
+  const bg = ticks.map(q => `<line x1="${at(q)}" x2="${at(q)}" y1="0" y2="100"/><line y1="${at(q)}" y2="${at(q)}" x1="0" x2="100"/>`).join('')
+    + '<line class="z" x1="0" y1="0" x2="100" y2="100"/>'
+    + (lg == null ? '' : `<line class="lg" x1="${at(lg)}" x2="${at(lg)}" y1="0" y2="100"/><line class="lg" y1="${at(lg)}" y2="${at(lg)}" x1="0" x2="100"/>`);
+  for (const r of rows) {
+    LM_CARD[r.code] = `<a href="#team/${r.code}">${logo(r.code)}${EN(tname(r.code))}</a>` + cols.map(([k, l]) => {
+      const v = r.v[k], c = signedK(k) && v ? ` ${v > 0 ? 'w' : 'lo'}` : '';
+      return `<span data-k="${k}"><b class="lb"${def(RT_DEF[k])}>${t(l + '@stat')}</b><span class="v${c}">${rtShow(k, v)}</span><small class="rk">${rank[k](v)}</small></span>`;
+    }).join('');
+  }
+  const dots = rows.map(r => `<button type="button" class="lm-d" data-team="${r.code}" data-ortg="${rtShow('ortg', r.v.ortg)}" data-drtg="${rtShow('drtg', r.v.drtg)}" style="left:${at(r.v.ortg)}%;top:${at(r.v.drtg)}%" aria-label="${esc(tname(r.code))}">${logo(r.code, 'mark')}</button>`).join('');
+  return `<section class="panel" id="st-map"><div class="lm-plot"><span class="lm-ax y"${def(RT_DEF.drtg)}>${t('DRtg@stat')}</span><div class="lm" role="group" aria-label="${esc(t('League map'))}"${lg == null ? '' : ` data-lg="${rtShow('ortg', lg)}"`}>`
+    + `<svg class="lm-bg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${bg}</svg>`
+    + ticks.map(q => `<span class="tx" style="left:${at(q)}%">${tk(q)}</span><span class="ty" style="top:${at(q)}%">${tk(q)}</span>`).join('')
+    + `${dots}</div><span class="lm-ax x"${def(RT_DEF.ortg)}>${t('ORtg@stat')}</span></div><div class="lm-card" id="st-map-card" aria-live="polite"></div></section>`;
+}
+function lmPick(b) {
+  if (!b) return;
+  for (const x of document.querySelectorAll('#st-map .lm-d.on')) x.classList.remove('on');
+  b.classList.add('on');
+  const card = $('#st-map-card');
+  card.dataset.team = b.dataset.team;
+  card.innerHTML = LM_CARD[b.dataset.team] || '';
+}
+$('#st-body').addEventListener('click', e => { const b = e.target.closest('.lm-d'); if (b) lmPick(b); });
+$('#st-body').addEventListener('pointerover', e => { const b = e.target.closest('.lm-d'); if (b && e.pointerType === 'mouse') lmPick(b); });
 // ---- Quarter by quarter, from the score by period of every final in games.json (the box score's, as on the game page):
 // each club's points for and against in each of the four quarters, its margin per game in each (rounded once by rq,
 // ranked like a rating), and its record when leading, trailing or level at half-time and after three quarters.
