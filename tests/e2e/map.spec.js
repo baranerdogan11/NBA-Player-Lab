@@ -1,6 +1,7 @@
 // The league map: every club's logo sits at its ORtg (across) and DRtg (down, the lowest at the top) as Ratings shows
 // them, on one scale for both axes; a logo picked shows the club's ORtg, DRtg and net rating with the ranks Ratings
-// gives, the best net rating picked on arrival; it fits a phone without a sideways scroll and reads in Turkish.
+// gives, the best net rating picked on arrival; it fits a phone without a sideways scroll and reads in Turkish. Home
+// carries the same map, logo for logo.
 import {test, expect} from '@playwright/test';
 import {PHONE, prepare, settled, go, noSidewaysScroll} from './site.js';
 
@@ -40,6 +41,23 @@ test('each logo stands at the club\'s ratings, and a pick shows the Ratings valu
     expect(await page.$$eval('#st-map .lm-d.on', bs => bs.map(x => x.dataset.team))).toEqual([c]);
     expect(await page.getAttribute('#st-map-card a', 'href')).toBe(`#team/${c}`);
   }
+  expect(problems, 'the page reported errors').toEqual([]);
+});
+
+test('Home shows the same map as Standings', async ({page}) => {
+  const problems = await prepare(page);
+  const read = sel => page.$$eval(`${sel} .lm-d`, bs => bs.map(b => [b.dataset.team, b.dataset.ortg, b.dataset.drtg, b.style.left, b.style.top]));
+  await page.goto('./?l#standings/map');
+  await settled(page);
+  await page.waitForFunction(ready);
+  const st = await read('#st-map'), stCard = await page.innerHTML('#st-map-card');
+  await go(page, '#home', () => document.querySelectorAll('#hm-map .lm-d').length === 30 && !!document.querySelector('#hm-map-box-card a'));
+  expect(await page.isHidden('#hm-map-sec')).toBe(false);
+  expect(await read('#hm-map')).toEqual(st);
+  expect(await page.innerHTML('#hm-map-box-card')).toBe(stCard);
+  await page.click('#hm-map .lm-d[data-team="SAC"]', {force: true});
+  expect(await page.getAttribute('#hm-map-box-card', 'data-team')).toBe('SAC');
+  expect(await page.getAttribute('#hm-map-sec .more', 'href')).toBe('#standings/map');
   expect(problems, 'the page reported errors').toEqual([]);
 });
 
