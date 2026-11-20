@@ -507,7 +507,14 @@ html[data-theme="dark"] .pn{--i:var(--nn)}
 .lm-card .w{color:var(--good,#1d7a4c)}.lm-card .lo{color:var(--bad,#c2185b)}
 .lm-card .rk{font:italic 400 12px/1 var(--serif);color:var(--muted)}
 #hm-map>.panel{margin-top:0;border-top:0}
-@media (max-width:560px){.lm-plot{padding-left:32px}.lm-d{width:26px;height:26px}.lm-card>a{flex-basis:100%}}
+/* player map: rotation players' headshots by USG% across and TS% up, on the league map's sheet */
+#ld-pos{margin-top:14px}
+.pm .lm-d{width:30px;height:30px;border-radius:50%}
+.pm .lm-d .face{width:100%;height:100%;box-shadow:inset 0 0 0 2px var(--c1,var(--ink))}
+.pm-card>a .face{margin-right:8px}
+.pm-card>a small{display:block;margin-top:3px;font:700 11px/1 var(--sans);color:var(--muted)}
+.pm-card>a small .mark{width:14px;height:14px;margin:0 4px 0 0;vertical-align:-2px}
+@media (max-width:560px){.lm-plot{padding-left:32px}.lm-d{width:26px;height:26px}.pm .lm-d{width:22px;height:22px}.lm-card>a{flex-basis:100%}}
 .pnt td.rk{width:2ch;font-weight:900}
 .fp{display:grid;grid-template-columns:auto auto minmax(0,1fr) 2.6ch;align-items:center;column-gap:12px;margin-top:6px}
 .fp>div{display:contents}
@@ -837,6 +844,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
       <section class="panel"><h2 data-t="Deep threes" data-def="deep floor-range" tabindex="0">Deep threes</h2><div class="scroll"><table class="tbl trend" id="ld-deep"></table></div></section>
       <section class="panel"><h2 data-t="Average distance" data-def="dist floor-range" tabindex="0">Average distance</h2><div class="scroll"><table class="tbl trend" id="ld-far"></table></div></section>
     </div>
+    <div id="ld-map" hidden><div class="tabs" id="ld-pos" role="group" aria-label="Position" data-ta="Position"></div><div id="ld-pm"></div></div>
     <div class="trio" id="ld-highs" hidden></div>
     <div class="trio" id="ld-runs" hidden></div>
     <section class="panel" id="ld-awards" hidden><div class="scroll"><table class="tbl aw" id="ld-award"></table></div></section>
@@ -2500,11 +2508,11 @@ const board = (L, stat) => {
 async function renderLeaders(stat, my, rookies, size, award) {
   let L = (await get('leaders.json')).players;
   if (stale(my)) return;
-  if (!LEAD[stat] && stat !== 'form' && stat !== 'ftsplit' && stat !== 'clutch' && stat !== 'range' && stat !== 'highs' && stat !== 'lineups' && stat !== 'streaks' && stat !== 'awards') stat = 'pts';
-  const wide = stat === 'highs' || stat === 'lineups' || stat === 'awards';
+  if (!LEAD[stat] && stat !== 'form' && stat !== 'ftsplit' && stat !== 'clutch' && stat !== 'range' && stat !== 'highs' && stat !== 'lineups' && stat !== 'streaks' && stat !== 'awards' && stat !== 'map') stat = 'pts';
+  const wide = stat === 'highs' || stat === 'lineups' || stat === 'awards' || stat === 'map';
   rookies = rookies && !wide;
   if (rookies) L = L.filter(p => p.rookie);
-  $('#ld-tabs').innerHTML = [...Object.entries(LEAD), ['form', ['Trending']], ['ftsplit', ['Free throws']], ['clutch', ['Clutch']], ['range', ['Range']], ['lineups', ['Lineups@board']], ['streaks', ['Streaks']], ['awards', ['Awards']], ['highs', ['Season highs']]].map(([k, [l]]) => `<a href="#leaders/${k}${rookies && k !== 'highs' && k !== 'lineups' && k !== 'awards' ? '/rookies' : ''}" aria-current="${k === stat}" data-def="${LEAD_DEF[k]}">${t(l)}</a>`).join('');
+  $('#ld-tabs').innerHTML = [...Object.entries(LEAD), ['map', ['Player map']], ['form', ['Trending']], ['ftsplit', ['Free throws']], ['clutch', ['Clutch']], ['range', ['Range']], ['lineups', ['Lineups@board']], ['streaks', ['Streaks']], ['awards', ['Awards']], ['highs', ['Season highs']]].map(([k, [l]]) => `<a href="#leaders/${k}${rookies && k !== 'highs' && k !== 'lineups' && k !== 'awards' && k !== 'map' ? '/rookies' : ''}" aria-current="${k === stat}" data-def="${LEAD_DEF[k]}">${t(l)}</a>`).join('');
   const rk = $('#ld-rook');
   rk.parentElement.hidden = wide;
   rk.setAttribute('aria-pressed', String(rookies));
@@ -2516,8 +2524,10 @@ async function renderLeaders(stat, my, rookies, size, award) {
   $('#ld-clutch').hidden = stat !== 'clutch';
   $('#ld-range').hidden = stat !== 'range';
   $('#ld-highs').hidden = stat !== 'highs';
+  $('#ld-map').hidden = stat !== 'map';
   $('#ld-runs').hidden = stat !== 'streaks';
   $('#ld-size').hidden = $('#ld-lu').hidden = stat !== 'lineups';
+  if (stat === 'map') return drawPlayerMap(L, award);
   if (stat === 'form') return drawTrend(L);
   if (stat === 'ftsplit') return drawFtBoards(L, await get('ft.json').catch(() => null), my);
   if (stat === 'clutch') { const C = await get('clutch.json').catch(() => null); return stale(my) ? undefined : drawClutchBoard(L, C); }
@@ -2543,6 +2553,59 @@ async function renderLeaders(stat, my, rookies, size, award) {
     `<tr data-pid="${esc(p.pid)}"><td>${rank}</td><td class="l"><a href="#${esc(p.team)}/${esc(p.pid)}">${esc(p.name)}</a></td><td class="l">${logo(p.team)}${esc(p.team)}</td><td>${p.gp}</td>${extra ? `<td>${extra(p)}</td>` : ''}<td class="k">${v}</td></tr>`
   ).join('') : `<tr><td class="empty l" colspan="6">${t('No player qualifies yet.')}</td></tr>`}</tbody>`;
 }
+
+// ---- Player map: every player on the usage board's floor (busy: 70% of the club's games, 15 minutes a game), his
+// headshot at his USG% (across) and TS% (up), each the value its board shows (tenths rounded once, as usg and ts). The
+// scale comes from the whole pool, so the position filter (the roster position's first letter: G, F, C) keeps every
+// face where it was. Dashed lines: the league's TS% over every player's totals, and a usage of 20, the minute-weighted
+// average by construction (a club's five on the floor finish all its plays). A face picked (the highest usage in view
+// to begin with) shows his USG% and TS% with their ranks among the faces shown, and his points a game
+const PM_POS = [['', 'All'], ['G', 'Guards'], ['F', 'Forwards'], ['C', 'Centres']];
+const PM_CARD = {};
+const usgQ = s => rq(100 * (25 * s.fga + 11 * s.fta + 25 * s.tov) * s.tm_sec, 5 * s.sec * (25 * s.tm_fga + 11 * s.tm_fta + 25 * s.tm_tov));
+const tsQ = s => rq(2500 * s.pts, 50 * s.fga + 22 * s.fta);
+function drawPlayerMap(L, pos) {
+  pos = PM_POS.some(([k]) => k && k === pos) ? pos : '';
+  $('#ld-pos').innerHTML = PM_POS.map(([k, l]) => `<a href="#leaders/map${k ? '/' + k : ''}" aria-current="${k === pos}">${t(l)}</a>`).join('');
+  const pool = L.filter(s => s.gp > 0 && s.fga + s.fta > 0 && busy(s, team(s.team) ? team(s.team).gp : 0)).map(s => ({p: s, u: usgQ(s), ts: tsQ(s)}));
+  const rows = pool.filter(r => !pos || (r.p.pos || '')[0] === pos);
+  if (!rows.length) { $('#ld-pm').innerHTML = `<section class="panel"><p class="empty">${t('No player qualifies yet.')}</p></section>`; return; }
+  const span = vals => [Math.floor((Math.min(...vals) - 15) / 50) * 50, Math.ceil((Math.max(...vals) + 15) / 50) * 50];
+  const [ulo, uhi] = span(pool.map(r => r.u)), [tlo, thi] = span(pool.map(r => r.ts));
+  const ax = q => (100 * (q - ulo) / (uhi - ulo)).toFixed(2), ay = q => (100 * (thi - q) / (thi - tlo)).toFixed(2);
+  const all = L.reduce((a, s) => [a[0] + s.pts, a[1] + 50 * s.fga + 22 * s.fta], [0, 0]), lgTs = all[1] ? rq(2500 * all[0], all[1]) : null;
+  const ticks = (lo, hi) => { const q = []; for (let v = lo + 50; v < hi; v += 50) q.push(v); return q; };
+  const bg = ticks(ulo, uhi).map(q => `<line x1="${ax(q)}" x2="${ax(q)}" y1="0" y2="100"/>`).join('') + ticks(tlo, thi).map(q => `<line y1="${ay(q)}" y2="${ay(q)}" x1="0" x2="100"/>`).join('')
+    + (200 > ulo && 200 < uhi ? `<line class="lg" x1="${ax(200)}" x2="${ax(200)}" y1="0" y2="100"/>` : '')
+    + (lgTs != null && lgTs > tlo && lgTs < thi ? `<line class="lg" y1="${ay(lgTs)}" y2="${ay(lgTs)}" x1="0" x2="100"/>` : '');
+  const ru = rankBy(rows.map(r => r.u), 1), rt = rankBy(rows.map(r => r.ts), 1);
+  for (const r of rows) {
+    const p = r.p;
+    PM_CARD[p.pid] = `<a href="#${esc(p.team)}/${esc(p.pid)}">${face(p.pid, p.name)}<span>${EN(p.name)}<small>${logo(p.team, 'mark')}${EN(tname(p.team))}${p.pos ? ` · ${esc(p.pos)}` : ''}</small></span></a>`
+      + `<span data-k="usg"><b class="lb"${def('usg')}>${t('USG%')}</b><span class="v">${N(fq(r.u))}</span><small class="rk">${ru(r.u)}</small></span>`
+      + `<span data-k="ts"><b class="lb"${def('ts')}>${t('TS%@stat')}</b><span class="v">${N(fq(r.ts))}</span><small class="rk">${rt(r.ts)}</small></span>`
+      + `<span data-k="pts"><b class="lb"${def('pts')}>${t('PTS@stat')}</b><span class="v">${avg(p.pts, p.gp)}</span></span>`;
+  }
+  // the busiest drawn last, on top
+  const dots = [...rows].sort((x, y) => x.u - y.u || y.p.name.localeCompare(x.p.name)).map(r => `<button type="button" class="lm-d" data-pid="${esc(r.p.pid)}" data-team="${esc(r.p.team)}" data-usg="${N(fq(r.u))}" data-ts="${N(fq(r.ts))}" style="left:${ax(r.u)}%;top:${ay(r.ts)}%;${colours(r.p.team)}" aria-label="${esc(r.p.name)}">${face(r.p.pid, r.p.name)}</button>`).join('');
+  const tk = q => N(String(q / 10));
+  $('#ld-pm').innerHTML = `<section class="panel lm-sec" id="ld-pmap"><div class="lm-plot"><span class="lm-ax y"${def('ts')}>${t('TS%@stat')}</span><div class="lm pm" role="group" aria-label="${esc(t('Player map'))}"${lgTs == null ? '' : ` data-lg="${N(fq(lgTs))}"`}>`
+    + `<svg class="lm-bg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${bg}</svg>`
+    + ticks(ulo, uhi).map(q => `<span class="tx" style="left:${ax(q)}%">${tk(q)}</span>`).join('') + ticks(tlo, thi).map(q => `<span class="ty" style="top:${ay(q)}%">${tk(q)}</span>`).join('')
+    + `${dots}</div><span class="lm-ax x"${def('usg')}>${t('USG%')}</span></div><div class="lm-card pm-card" id="ld-pmap-card" aria-live="polite"></div></section>`;
+  const top = rows.reduce((m, r) => (r.u > m.u || (r.u === m.u && r.p.name < m.p.name) ? r : m));
+  pmPick($(`#ld-pmap .lm-d[data-pid="${CSS.escape(top.p.pid)}"]`));
+}
+function pmPick(b) {
+  if (!b) return;
+  for (const x of $$('#ld-pmap .lm-d.on')) x.classList.remove('on');
+  b.classList.add('on');
+  const card = $('#ld-pmap-card');
+  card.dataset.pid = b.dataset.pid;
+  card.innerHTML = PM_CARD[b.dataset.pid] || '';
+}
+$('#ld-pm').addEventListener('click', e => { const b = e.target.closest('.lm-d'); if (b) pmPick(b); });
+$('#ld-pm').addEventListener('pointerover', e => { const b = e.target.closest('.lm-d'); if (b && e.pointerType === 'mouse') pmPick(b); });
 
 $('#ld-rook').addEventListener('click', e => { const b = e.currentTarget; location.hash = `leaders/${b.dataset.stat}${b.getAttribute('aria-pressed') === 'true' ? '' : '/rookies'}`; });
 
@@ -3151,7 +3214,7 @@ const def = ids => ids ? ` data-def="${ids}" tabindex="0"` : '';
 const defName = r => { const ab = r[1] ? t(r[1]) : '', nm = t(r[2]); return ab && ab !== nm ? `<b>${esc(ab)}</b> ${esc(nm)}` : `<b>${esc(nm)}</b>`; };
 const defBody = r => `<span>${esc(t(r[3]))}</span>${r[4] ? `<code>${esc(t(r[4]))}</code>` : ''}`;
 // the Leaders boards: each one's stat and its floor
-const LEAD_DEF = {pts: 'pts floor-pg', reb: 'reb floor-pg', ast: 'ast floor-pg', stl: 'stl floor-pg', blk: 'blk floor-pg', fg3m: 'fg3 floor-pg', min: 'min floor-pg',
+const LEAD_DEF = {map: 'usg ts floor-busy', pts: 'pts floor-pg', reb: 'reb floor-pg', ast: 'ast floor-pg', stl: 'stl floor-pg', blk: 'blk floor-pg', fg3m: 'fg3 floor-pg', min: 'min floor-pg',
   fg: 'fgp floor-pg floor-fg', fg3: 'fg3p floor-pg floor-fg3', ft: 'ftp floor-pg floor-ft', ts: 'ts floor-pg floor-fg', usg: 'usg floor-pg floor-busy', uast: 'unast floor-pg floor-unast', fd: 'fd floor-pg floor-busy', ftar: 'ftar floor-pg floor-busy', pf36: 'pf36 floor-pg floor-busy',
   rapm: 'rapm floor-pg floor-busy', orapm: 'orapm floor-pg floor-busy', drapm: 'drapm floor-pg floor-busy', form: 'trend floor-trend', ftsplit: 'ft1 ftpress floor-ft1', clutch: 'clutch floor-clutch', range: 'deep dist floor-range', lineups: 'lineup pair floor-units', streaks: 'runs dd td', awards: 'ladder dladder', highs: 'highs'};
 // a stat label (as tiles and table headings name it) and its entry
