@@ -707,5 +707,11 @@
  "The club’s clutch points minus its opponent’s while the player was on the court; free throws count for the five on the court at the foul, as in the box score.": "Oyuncu sahadayken takımının kritik anlarda attığı sayılardan rakibin attıkları çıkarılır; serbest atışlar, kutu skordaki gibi faul anında sahada olan beşliğe yazılır.",
  "The club’s finals with clutch time, its wins and losses in them, its clutch minutes and its clutch points for and against.": "Takımın kritik anlar yaşanan maçları, bu maçlardaki galibiyet ve mağlubiyetleri, kritik dakikaları ve kritik anlarda attığı ve yediği sayılar.",
  "A minute of clutch time for every game the club has played.": "Takımın oynadığı her maç için bir dakika kritik an süresi.",
- "League map": "Lig haritası"
+ "League map": "Lig haritası",
+ "Player map": "Oyuncu haritası",
+ "All": "Tümü",
+ "Guards": "Gardlar",
+ "Forwards": "Forvetler",
+ "Centres": "Pivotlar",
+ "Position": "Mevki"
 }
