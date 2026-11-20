@@ -509,6 +509,7 @@ html[data-theme="dark"] .pn{--i:var(--nn)}
 #hm-map>.panel{margin-top:0;border-top:0}
 /* player map: rotation players' headshots by USG% across and TS% up, on the league map's sheet */
 #ld-pos{margin-top:14px}
+.pm-f{display:flex;flex-wrap:wrap;align-items:flex-end;gap:0 18px}.pm-f .pick{margin-top:14px}
 .pm .lm-d{width:30px;height:30px;border-radius:50%}
 .pm .lm-d .face{width:100%;height:100%;box-shadow:inset 0 0 0 2px var(--c1,var(--ink))}
 .pm-card>a .face{margin-right:8px}
@@ -844,7 +845,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
       <section class="panel"><h2 data-t="Deep threes" data-def="deep floor-range" tabindex="0">Deep threes</h2><div class="scroll"><table class="tbl trend" id="ld-deep"></table></div></section>
       <section class="panel"><h2 data-t="Average distance" data-def="dist floor-range" tabindex="0">Average distance</h2><div class="scroll"><table class="tbl trend" id="ld-far"></table></div></section>
     </div>
-    <div id="ld-map" hidden><div class="tabs" id="ld-pos" role="group" aria-label="Position" data-ta="Position"></div><div id="ld-pm"></div></div>
+    <div id="ld-map" hidden><div class="pm-f"><div class="tabs" id="ld-pos" role="group" aria-label="Position" data-ta="Position"></div><div class="pick"><select id="ld-mteam" data-kind="team" aria-label="Team" data-ta="Team"></select></div></div><div id="ld-pm"></div></div>
     <div class="trio" id="ld-highs" hidden></div>
     <div class="trio" id="ld-runs" hidden></div>
     <section class="panel" id="ld-awards" hidden><div class="scroll"><table class="tbl aw" id="ld-award"></table></div></section>
@@ -991,7 +992,7 @@ document.addEventListener('visibilitychange', () => {
 const PAGES = ['home', 'player', 'compare', 'standings', 'games', 'game', 'team', 'leaders', 'privacy', 'glossary', 'league'];
 let seq = 0;
 async function route() {
-  const [a = '', b, c] = decodeURIComponent(location.hash.slice(1)).split('/');
+  const [a = '', b, c, d] = decodeURIComponent(location.hash.slice(1)).split('/');
   const my = ++seq;
   const page = a === '' ? 'home' : PAGES.includes(a) && a !== 'player' ? a : 'player';
   $('#wipe').classList.add('on');
@@ -1005,7 +1006,7 @@ async function route() {
     else if (page === 'games') await renderGames(b, my);
     else if (page === 'game') await renderGame(b, my);
     else if (page === 'team') await renderTeam(b, my);
-    else if (page === 'leaders') await renderLeaders(b, my, c === 'rookies', c === '2' ? 2 : 5, c);
+    else if (page === 'leaders') await renderLeaders(b, my, c === 'rookies', c === '2' ? 2 : 5, c, d);
     else if (page === 'privacy') document.title = `${t('Privacy')} · NBA Player Lab`;
     else if (page === 'glossary') renderGlossary();
     else if (page === 'league') await renderLeague(b, c, my);
@@ -2505,7 +2506,7 @@ const board = (L, stat) => {
 };
 // the Rookies switch (#leaders/<stat>/rookies) keeps every board to players in their first NBA season, floors unchanged;
 // the season highs stay league-wide
-async function renderLeaders(stat, my, rookies, size, award) {
+async function renderLeaders(stat, my, rookies, size, award, club) {
   let L = (await get('leaders.json')).players;
   if (stale(my)) return;
   if (!LEAD[stat] && stat !== 'form' && stat !== 'ftsplit' && stat !== 'clutch' && stat !== 'range' && stat !== 'highs' && stat !== 'lineups' && stat !== 'streaks' && stat !== 'awards' && stat !== 'map') stat = 'pts';
@@ -2527,7 +2528,7 @@ async function renderLeaders(stat, my, rookies, size, award) {
   $('#ld-map').hidden = stat !== 'map';
   $('#ld-runs').hidden = stat !== 'streaks';
   $('#ld-size').hidden = $('#ld-lu').hidden = stat !== 'lineups';
-  if (stat === 'map') return drawPlayerMap(L, award);
+  if (stat === 'map') return drawPlayerMap(L, award, club);
   if (stat === 'form') return drawTrend(L);
   if (stat === 'ftsplit') return drawFtBoards(L, await get('ft.json').catch(() => null), my);
   if (stat === 'clutch') { const C = await get('clutch.json').catch(() => null); return stale(my) ? undefined : drawClutchBoard(L, C); }
@@ -2556,19 +2557,23 @@ async function renderLeaders(stat, my, rookies, size, award) {
 
 // ---- Player map: every player on the usage board's floor (busy: 70% of the club's games, 15 minutes a game), his
 // headshot at his USG% (across) and TS% (up), each the value its board shows (tenths rounded once, as usg and ts). The
-// scale comes from the whole pool, so the position filter (the roster position's first letter: G, F, C) keeps every
-// face where it was. Dashed lines: the league's TS% over every player's totals, and a usage of 20, the minute-weighted
+// scale comes from the whole pool, so the position filter (the roster position's first letter: G, F, C) and the club
+// filter (#leaders/map/<G|F|C|all>/<club>, both at once) keep every face where it was. Dashed lines: the league's TS% over every player's totals, and a usage of 20, the minute-weighted
 // average by construction (a club's five on the floor finish all its plays). A face picked (the highest usage in view
 // to begin with) shows his USG% and TS% with their ranks among the faces shown, and his points a game
 const PM_POS = [['', 'All'], ['G', 'Guards'], ['F', 'Forwards'], ['C', 'Centres']];
 const PM_CARD = {};
 const usgQ = s => rq(100 * (25 * s.fga + 11 * s.fta + 25 * s.tov) * s.tm_sec, 5 * s.sec * (25 * s.tm_fga + 11 * s.tm_fta + 25 * s.tm_tov));
 const tsQ = s => rq(2500 * s.pts, 50 * s.fga + 22 * s.fta);
-function drawPlayerMap(L, pos) {
+const pmHash = (pos, club) => `#leaders/map${pos || club ? '/' + (pos || 'all') : ''}${club ? '/' + club : ''}`;
+function drawPlayerMap(L, pos, club) {
   pos = PM_POS.some(([k]) => k && k === pos) ? pos : '';
-  $('#ld-pos').innerHTML = PM_POS.map(([k, l]) => `<a href="#leaders/map${k ? '/' + k : ''}" aria-current="${k === pos}">${t(l)}</a>`).join('');
+  club = team(club) ? club : '';
+  $('#ld-pos').innerHTML = PM_POS.map(([k, l]) => `<a href="${pmHash(k, club)}" aria-current="${k === pos}">${t(l)}</a>`).join('');
+  $('#ld-mteam').innerHTML = `<option value=""${club ? '' : ' selected'}>${t('All teams')}</option>` + IDX.teams.map(x => `<option value="${x.code}"${x.code === club ? ' selected' : ''}>${esc(x.city)} ${esc(x.name)}</option>`).join('');
+  $('#ld-mteam').dataset.pos = pos;
   const pool = L.filter(s => s.gp > 0 && s.fga + s.fta > 0 && busy(s, team(s.team) ? team(s.team).gp : 0)).map(s => ({p: s, u: usgQ(s), ts: tsQ(s)}));
-  const rows = pool.filter(r => !pos || (r.p.pos || '')[0] === pos);
+  const rows = pool.filter(r => (!pos || (r.p.pos || '')[0] === pos) && (!club || r.p.team === club));
   if (!rows.length) { $('#ld-pm').innerHTML = `<section class="panel"><p class="empty">${t('No player qualifies yet.')}</p></section>`; return; }
   const span = vals => [Math.floor((Math.min(...vals) - 15) / 50) * 50, Math.ceil((Math.max(...vals) + 15) / 50) * 50];
   const [ulo, uhi] = span(pool.map(r => r.u)), [tlo, thi] = span(pool.map(r => r.ts));
@@ -2604,6 +2609,7 @@ function pmPick(b) {
   card.dataset.pid = b.dataset.pid;
   card.innerHTML = PM_CARD[b.dataset.pid] || '';
 }
+$('#ld-mteam').addEventListener('change', e => { location.hash = pmHash(e.target.dataset.pos, e.target.value); });
 $('#ld-pm').addEventListener('click', e => { const b = e.target.closest('.lm-d'); if (b) pmPick(b); });
 $('#ld-pm').addEventListener('pointerover', e => { const b = e.target.closest('.lm-d'); if (b && e.pointerType === 'mouse') pmPick(b); });
 
