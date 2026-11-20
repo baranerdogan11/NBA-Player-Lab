@@ -13,6 +13,13 @@
    "scope": "lineups",
    "reason": "2 problems: game 0022600264: 1642847 +/- on the floor -11, box -13; game 0022600264: 1643555 +/- on the floor 0, box 2",
    "first_seen": "2026-11-19T03:42:11Z"
+  },
+  {
+   "game": "0022600272",
+   "gate": "flow",
+   "scope": "flow",
+   "reason": "game 0022600272: play-by-play score after period 1 is [26, 34], periods say [26, 33]",
+   "first_seen": "2026-11-20T03:26:21Z"
   }
  ]
 }
