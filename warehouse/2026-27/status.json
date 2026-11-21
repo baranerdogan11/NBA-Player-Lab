@@ -1,6 +1,6 @@
 {
  "season": "2026-27",
- "checked_at": "2026-11-21T04:21:58Z",
+ "checked_at": "2026-11-21T04:57:13Z",
  "rows": {
   "teams": 30,
   "games": 1274,
@@ -9,7 +9,7 @@
   "box": 6721,
   "team_box": 464,
   "periods": 1884,
-  "events": 138509,
+  "events": 138508,
   "shots": 40776
  },
  "games": 232,
