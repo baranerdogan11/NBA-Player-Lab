@@ -189,6 +189,11 @@ def makes(shots, baskets):
 UNITS = [[0, 1, 2, 3, 4], [0, 5, 6, 7, 8], [0, 1, 2, 3, 4], [0, 1, 2, 3, 5]]   # the five of each quarter, by place in the box
 
 
+def garbage(g):
+    """A final the fixture gives garbage time: one won by 30 or more."""
+    return abs(g["hs"] - g["as"]) >= 30
+
+
 def stints(games, lines):
     """One stint a quarter: each side's five of UNITS, the quarter's score, and the side's counts spread over the
     quarters. Sets every box line's plus-minus to the margin while he was on the floor, as the feed's box score does,
@@ -210,9 +215,16 @@ def stints(games, lines):
                 share = lambda rows, k: sum(x[k] for x in rows) * (q + 1) // 4 - sum(x[k] for x in rows) * q // 4  # noqa: E731
                 for j in UNITS[q]:
                     side[j]["pm"] += score[i] - score[1 - i]
-                out.append({"gid": g["gid"], "time": g["time"], "team": c, "players": [side[j]["pid"] for j in UNITS[q]], "sec": 720,
-                            "pts": score[i], "opp_pts": score[1 - i], **{k: share(side, k) for k in ("fga", "oreb", "tov", "fta")},
-                            **{f"opp_{k}": share(opp, k) for k in ("fga", "oreb", "tov", "fta")}})
+                row = {"gid": g["gid"], "time": g["time"], "team": c, "players": [side[j]["pid"] for j in UNITS[q]], "sec": 720,
+                       "pts": score[i], "opp_pts": score[1 - i], **{k: share(side, k) for k in ("fga", "oreb", "tov", "fta")},
+                       **{f"opp_{k}": share(opp, k) for k in ("fga", "oreb", "tov", "fta")}}
+                if q == 3 and garbage(g):
+                    # the second half of a blowout's fourth quarter is garbage time: the quarter cut in two
+                    late = {k: v // 2 if isinstance(v, int) else v for k, v in row.items()}
+                    out += [{**row, **{k: v - late[k] for k, v in row.items() if isinstance(v, int)}, "sec": 360, "gt": False},
+                            {**late, "sec": 360, "gt": True}]
+                else:
+                    out.append(row)
         g["rotation"] = {p: r for c in (g["home"], g["away"])
                          for p, r in rotation([(u["players"], u["sec"], u["pts"], u["opp_pts"]) for u in out if u["gid"] == g["gid"] and u["team"] == c]).items()}
     return out

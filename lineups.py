@@ -8,7 +8,10 @@ players who appear in a play before being subbed in.
 
 A stint is a stretch with the same ten players. For each club it records the seconds, both clubs' points (from the
 running score, so they always add up to the final) and the box-score counts behind the possession estimate the site
-uses everywhere: possessions = FGA - OREB + TOV + 0.44 FTA.
+uses everywhere: possessions = FGA - OREB + TOV + 0.44 FTA. And whether it is garbage time (gt), by Cleaning the
+Glass's definition: the fourth quarter, a margin of 25 or more with 12 to 9 minutes left, 20 or more with 9 to 6 left,
+10 or more after that, two or fewer starters on the floor across both clubs, and the game never coming back inside
+those lines before the final buzzer (garbage_start()). A stint is cut where garbage time starts, so none straddles it.
 
 Writes three Parquet tables to warehouse/<season>/:
   stints    one row per club per stint: the five, the opposing five, seconds, both sides' points and counts
@@ -180,6 +183,44 @@ def infer_starters(actions):
     return seen
 
 
+def gt_clock(margin, starters_on):
+    """The most time left on the fourth-quarter clock, in seconds, at which a margin is garbage time with this many
+    starters on the floor (of both clubs), or -1 when it never is: 25 points from 12:00, 20 from 9:00, 10 from 6:00."""
+    if starters_on > 2:
+        return -1
+    return 720 if margin >= 25 else 540 if margin >= 20 else 360 if margin >= 10 else -1
+
+
+def garbage_start(seq, starters):
+    """Where garbage time starts in a game's actions (play_order(), with starters {team: five}): (k, clock), garbage time
+    from action k on, at that many seconds left in the fourth quarter (at k's clock or below it, before the next action),
+    to the end of the game; or None. Garbage time is the stretch at the end of a game that ends in the fourth quarter
+    where every moment holds the condition of gt_clock(): walked back from the final buzzer to the last moment it failed."""
+    first = {p for five in starters.values() for p in five}
+    on = {t: set(v) for t, v in starters.items()}
+    state, score, per, clock = [], (0, 0), 1, 720.0
+    for a in seq:
+        t, team, p, c = a["action_type"], _v(a.get("team")), _v(a.get("player")), _v(a.get("clock"))
+        if int(a["period"]) != per:
+            per, clock = int(a["period"]), float(PERIOD_SEC(int(a["period"])))
+        clock = c if c is not None else clock
+        if t == "substitution" and team in on and p:
+            (on[team].add if a.get("sub_type") == "in" else on[team].discard)(p)
+        sh, sa = _v(a.get("score_home")), _v(a.get("score_away"))
+        score = (int(sh), int(sa)) if sh is not None and sa is not None else score
+        state.append((per, clock, abs(score[0] - score[1]), sum(len(v & first) for v in on.values())))
+    start, below = None, 0.0               # below: the clock at the next action (0 at the buzzer)
+    for k in range(len(state) - 1, -1, -1):
+        per, clk, margin, n = state[k]
+        top = gt_clock(margin, n)
+        if per != 4 or below > top:        # the condition fails at the bottom of this stretch: it starts after it
+            break
+        if top < clk:                      # it holds only from the 9:00 or 6:00 mark of this stretch on
+            return (k, float(top))
+        start, below = (k, clk), clk
+    return start
+
+
 def stints(actions, starters):
     """Stints of one game from its events (dicts, warehouse names) and {team: set of five players}. Returns (stints, problems)."""
     teams = list(starters)
@@ -188,9 +229,11 @@ def stints(actions, starters):
     if len(teams) != 2 or any(len(v) != 5 for v in on.values()):
         return out, [f"starters {[len(v) for v in on.values()]}"]
     zero = lambda: {t: {"pts": 0, "fga": 0, "oreb": 0, "tov": 0, "fta": 0} for t in teams}  # noqa: E731
-    cur, sec, per, clock, idx = zero(), 0.0, 1, 720.0, 0
+    cur, sec, per, clock, idx, gt = zero(), 0.0, 1, 720.0, 0, False
     home_team = None
     score = (0, 0)
+    seq = play_order(plays(actions))
+    start = garbage_start(seq, starters)
 
     def flush():
         nonlocal cur, sec, idx
@@ -198,13 +241,23 @@ def stints(actions, starters):
             return
         for t in teams:
             o = teams[1] if t == teams[0] else teams[0]
-            out.append({"team": t, "stint": idx, "players": sorted(on[t]), "opp_players": sorted(on[o]), "sec": round(sec, 1),
+            out.append({"team": t, "stint": idx, "gt": gt, "players": sorted(on[t]), "opp_players": sorted(on[o]), "sec": round(sec, 1),
                         "pts": cur[t]["pts"], "opp_pts": cur[o]["pts"], **{k: cur[t][k] for k in ("fga", "oreb", "tov", "fta")},
                         **{f"opp_{k}": cur[o][k] for k in ("fga", "oreb", "tov", "fta")}})
         idx += 1
         sec, cur = 0.0, zero()
 
-    for a in play_order(plays(actions)):
+    def garbage():
+        """Garbage time starts: the time up to its clock goes to the stint under way, which ends there."""
+        nonlocal sec, clock, gt
+        sec += max(clock - start[1], 0.0)
+        clock = min(clock, start[1])
+        flush()
+        gt = True
+
+    for i, a in enumerate(seq):
+        if start and not gt and i == start[0] + 1:
+            garbage()
         t, sub, team = a["action_type"], a.get("sub_type"), _v(a.get("team"))
         p, a_per, c = _v(a.get("player")), int(a["period"]), _v(a.get("clock"))
         if a_per != per:                          # whatever the clock said, the old period ran out
@@ -246,6 +299,8 @@ def stints(actions, starters):
             cur[team]["tov"] += 1
         elif t == "rebound" and sub == "offensive" and p:
             cur[team]["oreb"] += 1
+    if start and not gt:
+        garbage()
     sec += clock if per <= 4 or clock > 0 else 0   # a game ends at 0:00; any clock left in the last period still elapsed
     flush()
     return out, problems
@@ -323,6 +378,9 @@ def main(season, w=None, out=None):
         pts = sorted(sum(s["pts"] for s in sts if s["team"] == c) for c in {s["team"] for s in sts})
         if g in final and pts != final[g]:
             problems.append(f"game {g}: stint points {pts}, final {final[g]}")
+        gts = [k for k, s in enumerate(sts) if s["gt"]]
+        if gts and (gts != list(range(gts[0], len(sts))) or sum(sts[k]["sec"] for k in gts) / 2 > 720):
+            problems.append(f"game {g}: garbage time is not one stretch at the end of the fourth quarter")
         on, pm = seconds_on(sts), {}
         for s in sts:
             for p in s["players"]:
@@ -336,7 +394,7 @@ def main(season, w=None, out=None):
             bad[g] = problems
         else:
             rows += [{"game": g, **s} for s in sts]
-    cols = ["game", "team", "stint", "players", "opp_players", "sec", "pts", "opp_pts", *COUNTS, *(f"opp_{k}" for k in COUNTS)]
+    cols = ["game", "team", "stint", "gt", "players", "opp_players", "sec", "pts", "opp_pts", *COUNTS, *(f"opp_{k}" for k in COUNTS)]
     st = pd.DataFrame(rows, columns=cols)       # before opening night there are no games: the tables are written empty
     lu, oo = season_tables(st) if len(st) else (pd.DataFrame(columns=["team", "players"]), pd.DataFrame(columns=["team", "player"]))
     st.to_parquet(os.path.join(w, "stints.parquet"), index=False)

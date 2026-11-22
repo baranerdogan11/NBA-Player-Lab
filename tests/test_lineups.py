@@ -148,6 +148,50 @@ acts = [ev(1, "period", "start", None, None, 720.0), ev(2, "period", "end", None
 sts, problems = lineups.stints(acts, {H: set(range(10, 15)), A: set(range(20, 25))})
 checks["a game end logged in the next period adds no time"] = problems == [] and sum(s["sec"] for s in sts) / 2 == 720
 
+# hand-written: garbage time, Cleaning the Glass's definition. Three quarters leave HOM 30 up; in the fourth both clubs
+# send in four of their bench (two starters left on the floor between them) at a given clock
+
+
+def blowout(sub_at, q4):
+    """A game 80-50 after three quarters, the subs at sub_at in the fourth, then q4: [(clock, home, away)] scores."""
+    acts, k = [], 0
+
+    def add(per, t, sub, team, player, clock, h, a):
+        nonlocal k
+        k += 1
+        acts.append({**ev(k, t, sub, team, player, clock), "period": per, "score_home": h, "score_away": a})
+    for per in (1, 2, 3):
+        add(per, "period", "start", None, None, 720.0, *((0, 0) if per == 1 else (80, 50)))
+        if per == 1:
+            add(1, "2pt", "made", H, 10, 600.0, 80, 50)   # one action carries the score
+        add(per, "period", "end", None, None, 0.0, 80, 50)
+    add(4, "period", "start", None, None, 720.0, 80, 50)
+    h, a = 80, 50
+    for out_, in_ in ((10, 15), (11, 16), (12, 17), (13, 18), (20, 25), (21, 26), (22, 27), (23, 28)):
+        team = H if out_ < 20 else A
+        add(4, "substitution", "out", team, out_, sub_at, h, a)
+        add(4, "substitution", "in", team, in_, sub_at, h, a)
+    for clock, h, a in q4:
+        add(4, "2pt", "made", H if h > acts[-1]["score_home"] else A, 15 if h > acts[-1]["score_home"] else 25, clock, h, a)
+    add(4, "period", "end", None, None, 0.0, h, a)
+    return lineups.stints(acts, {H: set(range(10, 15)), A: set(range(20, 25))})
+
+
+def gt_of(sts):
+    g = [s for s in sts if s["gt"] and s["team"] == H]
+    return sum(s["sec"] for s in g), sum(s["pts"] for s in g), sum(s["opp_pts"] for s in g)
+
+
+sts, problems = blowout(480.0, [(300.0, 80, 52)])
+checks["garbage time starts when the starters leave a 30-point game at 8:00"] = problems == [] and gt_of(sts) == (480.0, 0, 2)
+checks["the stints still add up to the game and the score"] = sum(s["sec"] for s in sts) / 2 == 2880 and sum(s["pts"] for s in sts if s["team"] == H) == 80
+sts, problems = blowout(660.0, [(300.0, 80, 72), (100.0, 84, 72)])
+checks["a comeback inside the lines restarts garbage time, from the basket that ends it"] = problems == [] and gt_of(sts) == (100.0, 0, 0)
+sts, problems = blowout(660.0, [(650.0, 80, 58), (400.0, 80, 60)])
+checks["a 22-point game becomes garbage time at the 9:00 mark, between plays"] = problems == [] and gt_of(sts) == (540.0, 0, 2)
+sts, problems = blowout(660.0, [(650.0, 80, 58), (400.0, 80, 60), (30.0, 80, 71)])
+checks["a game that ends within 10 has no garbage time"] = problems == [] and gt_of(sts) == (0, 0, 0)
+
 # the site's JSON: one row per five per game, integers, adding up to the stints
 w2 = tempfile.mkdtemp()
 teams = [{"code": c} for c in st.team.unique()]
