@@ -81,6 +81,7 @@ a,button,select,.card{-webkit-tap-highlight-color:transparent}
 .panel>summary{cursor:pointer;list-style:none;-webkit-user-select:none;user-select:none}
 .panel>summary::-webkit-details-marker{display:none}
 .panel>summary h2{display:contents;font:inherit}
+.panel>summary .gt-tag{font:italic 400 14px/1 var(--serif);letter-spacing:0;text-transform:none;color:var(--muted)}
 .panel>summary::after{content:"";margin-left:auto;width:10px;height:10px;border-right:3px solid var(--ink);border-bottom:3px solid var(--ink);transform:translateY(2px) rotate(-135deg);transition:transform .2s}
 .panel:not([open])>summary::after{transform:translateY(-3px) rotate(45deg)}
 .panel>summary:focus-visible{outline:3px solid var(--A);outline-offset:-3px}
@@ -769,7 +770,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <div class="cline" id="clutch" hidden></div>
     <details class="panel" id="sc"><summary><h2 data-t="Shot chart">Shot chart</h2></summary><div class="pick"><select id="sc-game" data-kind="game" aria-label="Game" data-ta="Game"></select></div><div class="courts" id="sc-court"></div><div class="fm-h unast" id="sc-unast" hidden></div><div class="scroll zones" id="sc-zones"></div><div class="scroll zones" id="sc-types" hidden></div><div class="zones dist" id="sc-dist" hidden></div></details>
     <details class="panel" id="ft" hidden><summary><h2 data-t="Free throws">Free throws</h2></summary><div class="scroll"><table class="tbl" id="ft-tbl"></table></div></details>
-    <details class="panel" id="lu" hidden><summary><h2 data-t="Lineups">Lineups</h2></summary><div class="scroll"><table class="tbl" id="onoff"></table></div><div class="scroll"><table class="tbl" id="fives"></table></div></details>
+    <details class="panel" id="lu" hidden><summary><h2 data-t="Lineups">Lineups</h2><small class="gt-tag" hidden data-t="garbage time out">garbage time out</small></summary><div class="tabs"><button type="button" class="gt-sw" id="lu-gt" aria-pressed="false" data-t="Without garbage time">Without garbage time</button></div><div class="scroll"><table class="tbl" id="onoff"></table></div><div class="scroll"><table class="tbl" id="fives"></table></div></details>
     <details class="panel" id="duo" hidden><summary><h2 data-t="Duos">Duos</h2></summary><div class="fives" id="duo-cols"></div></details>
     <details class="panel" id="prof" hidden><summary><h2 data-t="Profile">Profile</h2><span class="crec" id="prof-grp"></span></summary><div class="prof" id="prof-body"></div></details>
     <details class="panel" id="sim" hidden><summary><h2 data-t="Similar role">Similar role</h2></summary><div class="sims" id="sims"></div></details>
@@ -1205,17 +1206,39 @@ const tenths = (q, sign) => q == null ? '–' : N(sign ? signed(fq(q)) : fq(q));
 const surname = n => n.split(/\s+/).slice(1).join(' ') || n;
 // a five as its faces and surnames (the player whose page it is left out)
 const fiveCell = (code, pids, name) => `<td class="l five"><span class="faces" style="${colours(code)}">${pids.map(p => face(p, name(p))).join('')}</span><span class="nm">${pids.map(p => EN(surname(name(p)))).join(' · ')}</span></td>`;
+// ---- Garbage time (lineups.py, Cleaning the Glass's definition): a lineup file's gt rows are the part of its rows played
+// in it. The Without garbage time switch takes them off the lineups, on/off and club ratings; off by default, remembered on
+// the device (pl-gt). Box scores, logs and Leaders always count every minute
+let GT_OUT = false;
+try { GT_OUT = localStorage.getItem('pl-gt') === 'out'; } catch (e) {}
+const gtSet = v => { GT_OUT = v; try { if (v) localStorage.setItem('pl-gt', 'out'); else localStorage.removeItem('pl-gt'); } catch (e) {} };
+// a lineup file's rows, the garbage time taken off when the switch is on
+const luRows = f => {
+  if (!GT_OUT || !f.gt || !f.gt.length) return f.rows;
+  const cut = new Map(f.gt.map(r => [`${r[0]},${r[1]}`, r]));
+  return f.rows.map(r => { const g = cut.get(`${r[0]},${r[1]}`); return g ? r.map((x, k) => k < 2 ? x : x - g[k]) : r; });
+};
+// a club's ratings.json totals without its garbage time; sec2 is twice the club's seconds (its gt ds are tenths of game time)
+const gtCut = c => {
+  if (!c.gt) return c;
+  const sub = (x, y) => Object.fromEntries(Object.entries(x).map(([k, v]) => [k, k in y ? v - y[k] : v]));
+  return {...c, for: sub(c.for, c.gt.for), against: sub(c.against, c.gt.against), sec2: 2 * c.sec - c.gt.ds};
+};
+let LU_ARGS = null;
 async function drawLineups(p, code, clubs, my) {
+  LU_ARGS = [p, code, clubs, my];
   const files = await Promise.all(clubs.map(c => Promise.all([get(`lineups/${c}.json`), get(`${c}.json`)]).catch(() => null)));
   if (stale(my)) return;
   const on = luZero(), tot = luZero(), units = [], names = {};
+  let seen = 0;
   for (const [i, pair] of files.entries()) {
     if (!pair) continue;
     const [f, club] = pair;
     for (const x of club.players) names[x.pid] = x.name;
     const mine = new Map(f.fives.map((five, k) => [k, five]).filter(([, five]) => five.includes(p.pid)));
     const by = {};
-    for (const r of f.rows) {
+    seen += f.rows.some(r => mine.has(r[1]));
+    for (const r of luRows(f)) {
       luAdd(tot, r);
       if (!mine.has(r[1])) continue;
       luAdd(on, r);
@@ -1223,17 +1246,19 @@ async function drawLineups(p, code, clubs, my) {
       luAdd(by[r[1]].u, r);
     }
   }
-  $('#lu').hidden = !on.ds;
-  if (!on.ds) return;
+  $('#lu').hidden = !seen;
+  $('#lu-gt').setAttribute('aria-pressed', String(GT_OUT));
+  $('#lu .gt-tag').hidden = !GT_OUT;
+  if (!seen) return;
   const off = Object.fromEntries(Object.keys(tot).map(k => [k, tot[k] - on[k]]));
   const ro = rates(on), rf = rates(off), dif = ro.map((x, k) => x != null && rf[k] != null ? x - rf[k] : null);
   const name = pid => names[pid] || pid;
   $('#onoff').setAttribute('style', tc(code));
   $('#onoff').innerHTML = `<thead><tr><th class="l"></th><th${def('pm')}>${t('+/-@stat')}</th><th${def('ortg poss')}>${t('ORtg@stat')}</th><th${def('drtg poss')}>${t('DRtg@stat')}</th><th${def('net')}>${t('Net@stat')}</th></tr></thead><tbody>`
-    + `<tr data-k="on"><td class="l">${t('On court')}</td><td>${N(signed(String(on.pts - on.opp)))}</td><td>${tenths(ro[0])}</td><td>${tenths(ro[1])}</td><td class="k">${tenths(ro[2], 1)}</td></tr>`
+    + `<tr data-k="on"><td class="l">${t('On court')}</td><td>${on.ds ? N(signed(String(on.pts - on.opp))) : '–'}</td><td>${tenths(ro[0])}</td><td>${tenths(ro[1])}</td><td class="k">${tenths(ro[2], 1)}</td></tr>`
     + `<tr data-k="off"><td class="l">${t('Off court')}</td><td>${off.ds ? N(signed(String(off.pts - off.opp))) : '–'}</td><td>${tenths(rf[0])}</td><td>${tenths(rf[1])}</td><td class="k">${tenths(rf[2], 1)}</td></tr>`
     + `<tr class="tot" data-k="diff"><td class="l"${def('onoff')}>${t('On − off')}</td><td></td><td>${tenths(dif[0], 1)}</td><td>${tenths(dif[1], 1)}</td><td class="k">${tenths(dif[2], 1)}</td></tr></tbody>`;
-  const top = units.sort((a, b) => b.u.ds - a.u.ds).slice(0, 5);
+  const top = units.filter(x => x.u.ds).sort((a, b) => b.u.ds - a.u.ds).slice(0, 5);
   $('#fives').setAttribute('style', tc(code));
   $('#fives').innerHTML = `<thead><tr><th class="l"${def('with')}>${t('With@stat')}</th><th${def('min')}>${t('MIN@stat')}</th><th${def('pm')}>${t('+/-@stat')}</th><th class="x"${def('ortg poss')}>${t('ORtg@stat')}</th><th class="x"${def('drtg poss')}>${t('DRtg@stat')}</th><th${def('net')}>${t('Net@stat')}</th></tr></thead><tbody>${top.map(({code: c, pids, u}) => {
     const [o, d, n] = rates(u);
@@ -1662,7 +1687,15 @@ async function renderStandings(view, my) {
   if (view === 'ratings' || view === 'factors') {
     const rt = await get('ratings.json');
     if (stale(my)) return;
-    $('#st-body').innerHTML = teamRatings(view, rt.teams, all);
+    // Ratings has the Without garbage time switch; the Four Factors need shots and rebounds the lineups do not split
+    const draw = () => {
+      const gt = view === 'ratings' && GT_OUT;
+      $('#st-body').innerHTML = (view === 'ratings' ? `<div class="tabs"><button type="button" class="gt-sw" id="st-gt" aria-pressed="${gt}">${t('Without garbage time')}</button></div>` : '')
+        + teamRatings(view, gt ? rt.teams.map(gtCut) : rt.teams, all);
+      const b = $('#st-gt');
+      if (b) b.addEventListener('click', () => { gtSet(!GT_OUT); draw(); });
+    };
+    draw();
     return;
   }
   if (view === 'map') {
@@ -1697,10 +1730,11 @@ const rankBy = (vals, dir) => { const shown = vals.filter(v => v != null); retur
 const signedK = k => k === 'net' || /^q\d$/.test(k);
 const rtShow = (k, q) => q == null ? '–' : signedK(k) ? N(signed(fq(q))) : /ftr$/.test(k) ? N(fq(q, 3).replace(/^0/, '')) : N(fq(q));
 const rtCell = (k, v, r) => `<td data-k="${k}"${r ? ` data-r="${r}"` : ''}${signedK(k) && v ? ` class="${v > 0 ? 'w' : 'lo'}"` : ''}><span class="v">${rtShow(k, v)}</span><small class="rk">${r || ''}</small></td>`;
+const sec2 = c => c.sec2 != null ? c.sec2 : 2 * c.sec;
 const teamVals = c => {
   const f = c.for, a = c.against, po = P100(f), pd = P100(a), ortg = po >= 100 ? rq(10000 * f.pts, po) : null, drtg = pd >= 100 ? rq(10000 * a.pts, pd) : null;
   const o = ff(f, a), d = ff(a, f);
-  return {ortg, drtg, net: ortg != null && drtg != null ? ortg - drtg : null, pace: c.sec ? rq(72 * (po + pd), c.sec) : null,
+  return {ortg, drtg, net: ortg != null && drtg != null ? ortg - drtg : null, pace: sec2(c) > 0 ? rq(144 * (po + pd), sec2(c)) : null,
     ...o, ...Object.fromEntries(Object.entries(d).map(([k, v]) => ['o' + k, v]))};
 };
 // ---- club style: how a club plays, each figure ranked among the clubs that have one (1 the most, not the best): pace (as
@@ -2613,6 +2647,7 @@ $('#ld-mteam').addEventListener('change', e => { location.hash = pmHash(e.target
 $('#ld-pm').addEventListener('click', e => { const b = e.target.closest('.lm-d'); if (b) pmPick(b); });
 $('#ld-pm').addEventListener('pointerover', e => { const b = e.target.closest('.lm-d'); if (b && e.pointerType === 'mouse') pmPick(b); });
 
+$('#lu-gt').addEventListener('click', () => { gtSet(!GT_OUT); if (LU_ARGS) drawLineups(...LU_ARGS); });
 $('#ld-rook').addEventListener('click', e => { const b = e.currentTarget; location.hash = `leaders/${b.dataset.stat}${b.getAttribute('aria-pressed') === 'true' ? '' : '/rookies'}`; });
 
 // ---- Trending: the change from a player's season Game Score average to his last five games' average, both in tenths
@@ -3092,6 +3127,7 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['passnet', '', 'Passing network', 'The club’s ten players most involved in its assists this season, given and received, on a ring in order of assists given, with an arrow from passer to scorer for each pair; thicker arrows carry more assists. Pairs with one assist show when one of the two is picked. Beside it, the club’s eight pairs with the most assists.', ''],
     ['sim', '', 'Similar role', 'The three players whose game looks most like his this season: usage, assist, turnover, offensive and defensive rebound, steal and block rates, three-point attempt rate and free-throw rate, each scaled across the league, from his own position group first. How well they shoot is left out, so a match is in style, not level. Players need 5 games and 15 minutes a game. Each one opens the two in Compare.', ''],
     ['onoff', '', 'On and off court', 'The club’s ratings with the player on the court, with the player off it, and the difference.', 'On − off'],
+    ['garbage', '', 'Garbage time', 'Minutes when the game was already decided, by Cleaning the Glass’s definition: the fourth quarter, a margin of 25 or more with 12 to 9 minutes left, 20 or more with 9 to 6 left and 10 or more after that, two or fewer starters on the court across both clubs, and the game never coming back inside those lines before the end. The Without garbage time switch leaves those minutes out of lineups, on and off court and club ratings; box scores, game logs and Leaders always count them.', ''],
     ['close', '', 'Close games', 'Finals decided by 10 points or fewer, overtime included, and the club’s wins and losses in them.', ''],
     ['closer', '', 'Closing five', 'In each close game, the five players of the club with the most time on the court in its last five minutes (all of the overtime when it went to one), from who played when; equal time goes to the player with more minutes in the game. The top three groups and every player who closed are listed.', ''],
     ['closed', 'G@stat', 'Games closed', 'Close games the group, or the player, closed, and the record in them.', ''],
