@@ -267,6 +267,16 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 .board .share svg{width:18px;height:18px}
 .share:active,.star:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
 .share[aria-busy="true"]{opacity:.6;cursor:progress}
+.take{display:flex;justify-content:flex-end;margin:-4px 0 10px}
+.tkrow{display:flex;align-items:flex-start;gap:12px}
+.tkrow .take{margin:0 0 0 auto}
+.tk{display:grid;place-items:center;width:36px;height:36px;padding:0;border:2px solid var(--ink);background:var(--paper);color:var(--ink);box-shadow:3px 3px 0 var(--ink);cursor:pointer}
+.tk svg{width:18px;height:18px}
+.tk:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.tk-menu{padding:6px;min-width:200px}
+.tk-menu button{padding:10px 8px;border:0;border-bottom:1px dotted var(--line);background:none;text-align:left;font-weight:700;cursor:pointer}
+.tk-menu button:last-child{border-bottom:0}
+.tk-menu button:hover,.tk-menu button:focus-visible{background:color-mix(in srgb,var(--riso-yellow) 45%,transparent);outline:0}
 .hero .star{right:60px}
 .star[aria-pressed="true"]{background:var(--riso-yellow);color:#1a1a1a}
 .star[aria-pressed="true"] path{fill:currentColor}
@@ -783,6 +793,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
   </section>
   <section class="pg" id="pg-standings" hidden>
     <div class="tabs" id="st-tabs" role="group" aria-label="Table" data-ta="Table"></div>
+    <div class="take"><button type="button" class="tk" id="st-take" aria-haspopup="menu" aria-expanded="false" aria-label="Take the table" data-ta="Take the table"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v11M7.5 8 12 3.5 16.5 8M8 11.5H6v9h12v-9h-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
     <div id="st-body"></div>
   </section>
   <section class="pg" id="pg-games" hidden>
@@ -825,7 +836,10 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
   </section>
   <section class="pg" id="pg-leaders" hidden>
     <div class="tabs" id="ld-tabs" role="group" aria-label="Stat" data-ta="Stat"></div>
-    <div class="tabs ld-only"><button type="button" id="ld-rook" aria-pressed="false" data-t="Rookies">Rookies</button></div>
+    <div class="tkrow">
+      <div class="tabs ld-only"><button type="button" id="ld-rook" aria-pressed="false" data-t="Rookies">Rookies</button></div>
+      <div class="take"><button type="button" class="tk" id="ld-take" aria-haspopup="menu" aria-expanded="false" aria-label="Take the table" data-ta="Take the table"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v11M7.5 8 12 3.5 16.5 8M8 11.5H6v9h12v-9h-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+    </div>
     <div class="tabs" id="ld-size" role="group" aria-label="Lineup" data-ta="Lineup" hidden></div>
     <div class="tabs" id="ld-aw" role="group" aria-label="Award" data-ta="Award" hidden></div>
     <section class="panel" id="ld-sec"><div class="scroll"><table class="tbl" id="ld"></table></div></section>
@@ -874,6 +888,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
 <footer class="foot"><span id="foot"></span> · <a href="#glossary" data-t="Glossary">Glossary</a> · <a href="#privacy" data-t="Privacy">Privacy</a></footer>
 <div class="veil" id="veil" hidden></div>
 <div class="def" id="def" role="dialog" hidden></div>
+<div class="menu tk-menu" id="tk-menu" role="menu" hidden><button type="button" role="menuitem" data-tk="copy" data-t="Copy table">Copy table</button><button type="button" role="menuitem" data-tk="csv" data-t="Download CSV">Download CSV</button><button type="button" role="menuitem" data-tk="png" data-t="Save image">Save image</button></div>
 <div class="menu" id="menu" hidden><input type="search" autocomplete="off" aria-label="Search" data-ta="Search"><ul role="listbox" tabindex="-1"></ul></div>
 <script>
 const META = /*META*/;
@@ -1020,6 +1035,7 @@ async function route() {
     const tab = page === 'game' ? 'games' : page;
     for (const el of $$('[data-pg]')) { if (el.dataset.pg === tab) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current'); }
     document.body.dataset.page = page;
+    if (page === 'leaders' || page === 'standings') tkSync(page);
     seen();
     const pg = $(`#pg-${page}`);
     pg.classList.remove('in'); void pg.offsetWidth; pg.classList.add('in');
@@ -2469,6 +2485,127 @@ document.addEventListener('click', async e => {
     b.setAttribute('aria-busy', 'false');
   }
 });
+
+// ---- Take the table: Leaders and Standings carry a button that copies the tables in view (tab-separated, for a sheet or a
+// chat), downloads them as CSV, or draws them as a picture. It reads the table cells themselves, so every value is the
+// string the page shows (the minus sign written as "-" in the text forms, so a sheet reads it as a number); a rank under
+// a value gets a column of its own, and logos, faces and form dots are left out
+// (read through an inert template: a cloned cell would load its logo, and the logo's onload would find no parent)
+const tkText = c => { const k = document.createElement('template'); k.innerHTML = c.innerHTML; k.content.querySelectorAll('.chip,.mark,.crest,.face,.form,.rk,.abbr,[aria-hidden="true"],svg,img').forEach(e => e.remove()); return (k.content.textContent || '').replace(/\s+/g, ' ').trim(); };
+const tkRank = c => { const r = c && c.querySelector && c.querySelector('.rk'); return r ? r.textContent.trim() : ''; };
+function tkGrid(tb) {
+  const at = [], nh = tb.tHead ? tb.tHead.rows.length : 1;
+  [...tb.rows].forEach((tr, r) => {
+    if (tr.querySelector('td.empty')) return;
+    at[r] = at[r] || [];
+    let c = 0;
+    for (const td of tr.cells) {
+      while (at[r][c] !== undefined) c++;
+      for (let i = 0; i < td.rowSpan; i++) for (let j = 0; j < td.colSpan; j++) (at[r + i] = at[r + i] || [])[c + j] = i || j ? null : td;
+      c += td.colSpan;
+    }
+  });
+  const rows = at.filter(Boolean), w = Math.max(...rows.map(r => r.length));
+  const ranked = [...Array(w).keys()].map(j => rows.slice(nh).some(r => tkRank(r[j])));
+  return rows.map((r, i) => [...Array(w).keys()].flatMap(j => {
+    const td = r[j], v = {s: td ? tkText(td) : '', l: !!td && td.classList.contains('l'), k: !!td && td.classList.contains('k'), w: !!td && td.classList.contains('w'), lo: !!td && td.classList.contains('lo'), h: i < nh};
+    return ranked[j] ? [v, {...v, s: i < nh ? (i === nh - 1 ? '#' : '') : tkRank(td), k: false, w: false, lo: false}] : [v];
+  }));
+}
+// the tables in view, each with its panel's heading, and the page's name with its picked tabs
+function tkTake(pg) {
+  const tables = $$(`#pg-${pg} table.tbl`).filter(tb => tb.offsetParent && tb.tBodies.length && [...tb.tBodies[0].rows].some(r => !r.querySelector('td.empty')));
+  const picked = $$(`#pg-${pg} .tabs:not([hidden]) [aria-current="true"], #pg-${pg} .tabs:not([hidden]) [aria-pressed="true"]`).filter(el => el.offsetParent).map(el => el.textContent.trim());
+  const title = [$(`#tb-${pg}`).textContent.trim(), ...picked].join(' · ');
+  return {title, file: `${ascii(title)}-${new Date().toISOString().slice(0, 10)}`, tables: tables.map(tb => {
+    const h = tb.closest('.panel') && tb.closest('.panel').querySelector('h2');
+    return {head: h ? h.textContent.trim() : '', rows: tkGrid(tb)};
+  })};
+}
+const tkSync = pg => { const b = $(`#${pg === 'leaders' ? 'ld' : 'st'}-take`); if (b) b.parentElement.hidden = !tkTake(pg).tables.length; };
+const tkPlain = (T, sep) => T.tables.map(x => [...(x.head ? [[x.head]] : []), ...x.rows.map(r => r.map(v => v.s.replace(/\u2212/g, '-')))]
+  .map(r => r.map(s => sep === ',' && /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s).join(sep)).join('\n')).join('\n\n') + '\n';
+// the picture: 1080 wide, as tall as the rows need, in the page's paper and ink; a wide table gets a smaller type
+function tkPaint(T) {
+  const pad = 48, room = CW - 2 * pad, rowH = 46, cv = document.createElement('canvas'), x = cv.getContext('2d');
+  let size = 24;
+  const widths = rows => { const w = []; rows.forEach(r => r.forEach((v, j) => { x.font = `${v.h || v.k ? 800 : 500} ${size}px ${SANS}`; w[j] = Math.max(w[j] || 0, x.measureText(v.s).width + size); })); return w; };
+  const fitAll = () => T.tables.every(t => widths(t.rows).reduce((a, b) => a + b, 0) <= room);
+  while (size > 12 && !fitAll()) size--;
+  const H = 190 + T.tables.reduce((a, t) => a + (t.head ? 60 : 0) + t.rows.length * rowH + 40, 0) + 90;
+  cv.width = CW; cv.height = H;
+  x.fillStyle = '#f3efe4'; x.fillRect(0, 0, CW, H);
+  x.fillStyle = '#1a1a1a'; x.fillRect(0, 0, CW, 150);
+  x.fillStyle = '#ff4fa5'; x.fillRect(0, 150, CW, 10);
+  x.fillStyle = '#f3efe4'; x.textAlign = 'left'; fit(x, T.title.toLocaleUpperCase(loc()), room, 52, 900); x.fillText(T.title.toLocaleUpperCase(loc()), pad, 92);
+  x.fillStyle = '#c9c1ad'; x.font = `650 22px ${SANS}`; x.fillText(t('{season} season', {season: META.season}), pad, 128);
+  let y = 200;
+  for (const tb of T.tables) {
+    if (tb.head) { x.fillStyle = '#0078b4'; x.fillRect(pad, y + 8, 14, 30); x.fillStyle = '#1a1a1a'; fit(x, tb.head, room - 30, 32, 900); x.fillText(tb.head, pad + 26, y + 34); y += 60; }
+    const w = widths(tb.rows), spare = (room - w.reduce((a, b) => a + b, 0)) / w.length;
+    tb.rows.forEach((r, i) => {
+      if (r[0].h) { x.fillStyle = '#1a1a1a'; x.fillRect(pad, y, room, rowH); } else if (i % 2) { x.fillStyle = 'rgba(26,26,26,.06)'; x.fillRect(pad, y, room, rowH); }
+      let cx = pad;
+      r.forEach((v, j) => {
+        const cw = w[j] + spare;
+        x.font = `${v.h || v.k ? 800 : 500} ${size}px ${SANS}`;
+        x.fillStyle = v.h ? '#f3efe4' : v.w ? '#0a7d4f' : v.lo ? '#d6246e' : v.k ? '#0078b4' : '#1a1a1a';
+        x.textAlign = v.l ? 'left' : 'center';
+        x.fillText(v.s, v.l ? cx + size / 2 : cx + cw / 2, y + rowH / 2 + size * .36);
+        cx += cw;
+      });
+      y += rowH;
+    });
+    x.fillStyle = '#1a1a1a'; x.fillRect(pad, y, room, 3);
+    y += 40;
+  }
+  x.beginPath(); x.arc(pad + 15, H - 45, 15, 0, 2 * Math.PI); x.fillStyle = '#ff4fa5'; x.fill();
+  x.fillStyle = '#1a1a1a'; x.font = `750 28px ${SANS}`; x.textAlign = 'left'; x.fillText('NBA Player Lab', pad + 44, H - 35);
+  const url = link(location.hash.slice(1)).replace(/^https?:\/\//, '');
+  x.fillStyle = '#6b665c'; x.textAlign = 'right'; fit(x, url, room - 300, 22, 600); x.fillText(url, CW - pad, H - 36);
+  // drawn and turned to a file in one go, so a phone still counts the tap when the share sheet opens
+  const bin = atob(cv.toDataURL('image/png').split(',')[1]), bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new File([bytes], `${T.file}.png`, {type: 'image/png'});
+}
+let TK_AT = null;
+const tkClose = () => { const m = $('#tk-menu'); if (m.hidden) return; m.hidden = true; if (TK_AT) { TK_AT.setAttribute('aria-expanded', 'false'); TK_AT = null; } };
+async function tkDo(kind, item) {
+  const pg = TK_AT && TK_AT.id === 'ld-take' ? 'leaders' : 'standings', T = tkTake(pg);
+  if (kind === 'copy') {
+    const text = tkPlain(T, '\t');
+    try { await navigator.clipboard.writeText(text); } catch (err) {
+      const ta = document.createElement('textarea'); ta.value = text; document.body.append(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    }
+    item.textContent = t('Copied');
+    await new Promise(ok => setTimeout(ok, 900));
+    item.textContent = t('Copy table');
+  } else if (kind === 'csv') {
+    save(new File(['\ufeff' + tkPlain(T, ',')], `${T.file}.csv`, {type: 'text/csv'}));
+  } else {
+    const f = tkPaint(T);
+    if (navigator.canShare && navigator.canShare({files: [f]})) {
+      try { await navigator.share({files: [f], title: `${T.title} · NBA Player Lab`}); } catch (err) { if (err.name !== 'AbortError') save(f); }
+    } else save(f);
+  }
+  tkClose();
+}
+document.addEventListener('click', e => {
+  const m = $('#tk-menu'), b = e.target.closest('.tk'), item = e.target.closest('[data-tk]');
+  if (item) { tkDo(item.dataset.tk, item); return; }
+  if (!b) { if (!e.target.closest('#tk-menu')) tkClose(); return; }
+  if (TK_AT === b) { tkClose(); return; }
+  tkClose();
+  TK_AT = b;
+  b.setAttribute('aria-expanded', 'true');
+  m.hidden = false;
+  const r = b.getBoundingClientRect();
+  m.style.top = `${r.bottom + 8}px`;
+  m.style.left = `${Math.max(10, r.right - m.offsetWidth)}px`;
+  m.querySelector('button').focus();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && TK_AT) { const b = TK_AT; tkClose(); b.focus(); } });
+window.addEventListener('hashchange', tkClose);
 
 // ---- Leaders: per game, or a percentage with the league's own minimums prorated to the games played (FG 300 makes,
 // 3P 82, FT 125 over 82 games); per-game boards need 70% of the club's games, usage, RAPM and the foul boards (fouls
