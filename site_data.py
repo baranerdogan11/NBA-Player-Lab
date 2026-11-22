@@ -19,10 +19,14 @@ Files under <out>/ (out is teams/<season>/):
   lineups/<CODE>.json  the club's fives (lineups.py): {"code", "games": [gid, ...], "fives": [[pid x 5], ...], "rows":
                     [[g, f, ds, pts, opp_pts, fga, oreb, tov, fta, opp_fga, opp_oreb, opp_tov, opp_fta], ...]}, one row
                     per five per game: g indexes games (tip-off order), f fives, ds is tenths of a second; the page sums
-                    the rows and derives every rating with rdiv
+                    the rows and derives every rating with rdiv; and "gt": the part of those rows played in garbage time
+                    (lineups.garbage_start()), same layout, a row for each five and game that had some, so the page can
+                    leave it out (check_garbage())
   ratings.json      each club's season totals and its opponents' over its finals, from the official team box scores:
                     {"teams": [{"code", "gp", "sec", "for": {RT keys}, "against": {RT keys}, "style": {STYLE keys}}, ...]},
                     sec the club's seconds (five players' worth, 14400 a regulation game), tov with the team turnovers;
+                    gt: {"ds", "for", "against"}, the club's garbage time summed from its lineup gt rows, ds tenths of
+                    a second of game time, for and against its points and LU_COUNTS;
                     style (style_totals()) from the players' box lines in the club's finals: psec their seconds, bench
                     the seconds of those who did not start, hin the sum of height in inches times seconds over the
                     players with a known height and hsec their seconds; the page derives ratings, pace, the Four
@@ -444,6 +448,7 @@ def write_ratings(out, teams, rows):
     style = style_totals(out)
     for c in tot.values():
         c["style"] = style.get(c["code"], dict.fromkeys(STYLE, 0))
+        c["gt"] = garbage_totals(out, c["code"])
     _dump(os.path.join(out, "ratings.json"), {"teams": list(tot.values())})
 
 
@@ -502,16 +507,57 @@ def write_lineups(out, teams, rows):
     for code, rs in by_team.items():
         rs.sort(key=lambda r: (r["time"], r["gid"]))
         games = list(dict.fromkeys(r["gid"] for r in rs))
-        fives, units = {}, {}
+        fives, units, gt = {}, {}, {}
         for r in rs:
             five = tuple(sorted(str(p) for p in r["players"]))
-            u = units.setdefault((r["gid"], fives.setdefault(five, len(fives))), {"ds": 0, **{k: 0 for k in keys}})
-            u["ds"] += int(round(10 * r["sec"]))
-            for k in keys:
-                u[k] += int(r[k])
+            key = (r["gid"], fives.setdefault(five, len(fives)))
+            for us in (units, gt) if r.get("gt") else (units,):
+                u = us.setdefault(key, {"ds": 0, **{k: 0 for k in keys}})
+                u["ds"] += int(round(10 * r["sec"]))
+                for k in keys:
+                    u[k] += int(r[k])
+        rows = lambda us: [[games.index(g), i, u["ds"], *(u[k] for k in keys)] for (g, i), u in us.items()]  # noqa: E731
         with open(os.path.join(out, "lineups", f"{code}.json"), "w") as f:
-            json.dump({"code": code, "games": games, "fives": [list(x) for x in fives],
-                       "rows": [[games.index(g), i, u["ds"], *(u[k] for k in keys)] for (g, i), u in units.items()]}, f, separators=(",", ":"))
+            json.dump({"code": code, "games": games, "fives": [list(x) for x in fives], "rows": rows(units), "gt": rows(gt)}, f, separators=(",", ":"))
+
+
+def garbage_totals(out, code):
+    """The club's garbage time from its lineup gt rows: {"ds", "for": {pts, LU_COUNTS}, "against": {...}}."""
+    path = os.path.join(out, "lineups", f"{code}.json")
+    rows = json.load(open(path)).get("gt", []) if os.path.exists(path) else []
+    col = lambda i: sum(r[i] for r in rows)  # noqa: E731
+    return {"ds": col(2), "for": {"pts": col(3), **{k: col(5 + j) for j, k in enumerate(LU_COUNTS)}},
+            "against": {"pts": col(4), **{k: col(9 + j) for j, k in enumerate(LU_COUNTS)}}}
+
+
+def check_garbage(out, teams):
+    """Raises unless every club's garbage time is part of its lineup rows and mirrors its opponents': each gt row has
+    the row of the same five and game, no value above it; a game's garbage time is as long for both clubs, each side's
+    points and counts the other's opponent figures; and ratings.json's gt is the sum of the gt rows."""
+    files, by_game = {}, {}
+    for t in teams:
+        path = os.path.join(out, "lineups", f"{t['code']}.json")
+        if os.path.exists(path):
+            files[t["code"]] = json.load(open(path))
+    for code, lu in files.items():
+        whole = {(r[0], r[1]): r for r in lu["rows"]}
+        for r in lu.get("gt", []):
+            w = whole.get((r[0], r[1]))
+            if w is None or any(x > y for x, y in zip(r[2:], w[2:])) or min(r[2:]) < 0:
+                raise ValueError(f"{code}: garbage time {r} is not part of its lineup row {w}")
+            g = by_game.setdefault(lu["games"][r[0]], {}).setdefault(code, [0] * 11)
+            for i, x in enumerate(r[2:]):
+                g[i] += x
+    for gid, side in by_game.items():
+        if len(side) != 2:
+            raise ValueError(f"game {gid}: garbage time for {sorted(side)} only")
+        (a, x), (b, y) = side.items()
+        if x[0] != y[0] or x[1:3] != y[2:0:-1] or x[3:7] != y[7:11] or x[7:11] != y[3:7]:
+            raise ValueError(f"game {gid}: {a} garbage time {x} does not mirror {b}'s {y}")
+    rt = json.load(open(os.path.join(out, "ratings.json")))["teams"]
+    for c in rt:
+        if c.get("gt") != garbage_totals(out, c["code"]):
+            raise ValueError(f"ratings.json {c['code']}: gt {c.get('gt')}, lineup gt rows {garbage_totals(out, c['code'])}")
 
 
 # the league's best units (Leaders): every club's five-man and two-man units over the season, summed from its lineup
@@ -709,5 +755,6 @@ if __name__ == "__main__":
     check_style(out)
     write_league_lineups(out, teams)
     check_league_lineups(out, teams)
+    check_garbage(out, teams)
     print(f"{SEASON}: site JSON written to {out}")
     raise SystemExit(quarantine.exit_code(wh))

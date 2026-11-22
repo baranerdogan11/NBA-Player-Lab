@@ -16,9 +16,9 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "tests", "fixtures"))
 import site_fixture  # noqa: E402
 from rounding import rnd  # noqa: E402
-from site_data import (HIGHS, LEAGUE_FLOOR, RT, STATS, STREAKS, check_highs, check_league_lineups, check_ratings, check_streaks, check_style, check_totals,  # noqa: E402
+from site_data import (HIGHS, LEAGUE_FLOOR, RT, STATS, STREAKS, check_garbage, check_highs, check_league_lineups, check_ratings, check_streaks, check_style, check_totals,  # noqa: E402
                        doubles, game_score, inches, streaks,
-                       write_league_lineups, write_lineups, write_ratings, write_site)
+                       garbage_totals, write_league_lineups, write_lineups, write_ratings, write_site)
 
 checks = {}
 out = tempfile.mkdtemp()
@@ -81,6 +81,39 @@ def gate(*held):
 
 
 checks["the ratings gate passes when the lineups add up to the box scores"] = gate()
+
+
+def garbage_gate():
+    try:
+        check_garbage(out, teams)
+        return True
+    except ValueError:
+        return False
+
+
+gt_files = {t["code"]: load(f"lineups/{t['code']}.json") for t in idx["teams"]}
+blowouts = {g["gid"] for g in games if g["final"] and site_fixture.garbage(g)}
+checks["garbage time rows cover the blowouts' late fourth quarters and nothing else"] = blowouts and all(
+    {f["games"][r[0]] for r in f["gt"]} == {g for g in blowouts if g in f["games"]} and all(r[2] == 3600 for r in f["gt"]) for f in gt_files.values())
+checks["ratings carry each club's garbage time, summed from its gt rows"] = all(rt[c]["gt"] == garbage_totals(out, c) for c in rt) and any(rt[c]["gt"]["ds"] for c in rt)
+checks["the garbage time gate passes on the written files"] = garbage_gate()
+code = next(c for c, f in gt_files.items() if f["gt"])
+bad = json.loads(json.dumps(gt_files[code]))
+whole = next(r for r in bad["rows"] if r[:2] == bad["gt"][0][:2])
+bad["gt"][0][3] = whole[3] + 1   # more garbage-time points than the five scored in the game
+json.dump(bad, open(os.path.join(out, "lineups", f"{code}.json"), "w"))
+checks["the garbage time gate fails on garbage time beyond its lineup row"] = not garbage_gate()
+bad = json.loads(json.dumps(gt_files[code]))
+bad["gt"][0][2] -= 1             # a tenth of a second the opponents' garbage time does not have
+bad["rows"][[r[:2] for r in bad["rows"]].index(bad["gt"][0][:2])][2] -= 1
+json.dump(bad, open(os.path.join(out, "lineups", f"{code}.json"), "w"))
+checks["the garbage time gate fails when a game's two sides disagree"] = not garbage_gate()
+write_lineups(out, teams, units)
+_g = load("ratings.json")
+_g["teams"][0]["gt"]["for"]["pts"] += 1
+json.dump(_g, open(os.path.join(out, "ratings.json"), "w"))
+checks["the garbage time gate fails when ratings.json's gt is not the gt rows'"] = not garbage_gate()
+write_ratings(out, teams, site_fixture.team_lines(games, lines))
 
 
 def style_gate():
