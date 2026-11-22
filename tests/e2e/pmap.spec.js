@@ -1,7 +1,7 @@
 // The player map: every player on the usage board's floor has his face at his USG% (across) and TS% (up) as the USG%
 // and TS% boards show them; the scale is the whole pool's, so a position filter keeps each face where it was; a face
 // picked shows those two values with their ranks among the faces shown, the highest usage picked on arrival; it fits
-// a phone without a sideways scroll and reads in Turkish.
+// a phone without a sideways scroll and reads in Turkish. A club picker narrows it to one club, with or without a position.
 /* global get */
 import {test, expect} from '@playwright/test';
 import {PHONE, prepare, settled, go, noSidewaysScroll} from './site.js';
@@ -64,6 +64,39 @@ test('each face stands at the player\'s USG% and TS% from the boards, and a filt
   }
   const pos = await page.evaluate(async pids => { const L = (await get('leaders.json')).players; return pids.map(p => L.find(x => x.pid === p).pos); }, g.map(f => f.pid));
   for (const p of pos) expect(p[0]).toBe('G');
+  expect(problems, 'the page reported errors').toEqual([]);
+});
+
+test('the club filter keeps the position filter, and both keep every face where it was', async ({page}) => {
+  const problems = await prepare(page);
+  await page.goto('./?l#leaders/map');
+  await settled(page);
+  await page.waitForFunction(ready);
+  const all = await faces(page);
+  const L = await page.evaluate(async () => (await get('leaders.json')).players.map(p => [p.pid, p.team, p.pos]));
+  const by = Object.fromEntries(L.map(([pid, c, pos]) => [pid, {c, pos}]));
+  const club = by[all[0].pid].c;
+  // the club picker, then guards: the hash carries both, every face is a guard of that club, each where it was
+  await page.click('#ld-map .pick .sel');
+  await page.click(`#menu [role="option"][data-v="${club}"]`);
+  await page.waitForFunction(c => location.hash === `#leaders/map/all/${c}` && !!document.querySelector('#ld-pmap-card a'), club);
+  const c1 = await faces(page);
+  expect(c1.length).toBeGreaterThan(0);
+  for (const f of c1) expect(by[f.pid].c).toBe(club);
+  expect(c1.length).toBe(all.filter(f => by[f.pid].c === club).length);
+  expect(await page.getAttribute('#ld-pos a[href$="/G/' + club + '"]', 'aria-current')).toBe('false');
+  await go(page, `#leaders/map/G/${club}`, () => document.querySelector('#ld-pos [aria-current="true"]')?.getAttribute('href') === `#leaders/map/G/${location.hash.split('/').pop()}`);
+  const c2 = await faces(page);
+  for (const f of c2) {
+    expect([by[f.pid].c, (by[f.pid].pos || '')[0]]).toEqual([club, 'G']);
+    const was = all.find(x => x.pid === f.pid);
+    expect(Math.abs(f.x - was.x) + Math.abs(f.y - was.y), `${f.pid} stays put`).toBeLessThan(0.002);
+  }
+  expect(await page.$eval('#ld-mteam', s => s.value)).toBe(club);
+  // back to every club, still guards
+  await page.click('#ld-map .pick .sel');
+  await page.click('#menu [role="option"][data-v=""]');
+  await page.waitForFunction(() => location.hash === '#leaders/map/G');
   expect(problems, 'the page reported errors').toEqual([]);
 });
 
