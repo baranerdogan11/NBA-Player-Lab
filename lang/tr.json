@@ -714,5 +714,10 @@
  "Forwards": "Forvetler",
  "Centres": "Pivotlar",
  "Position": "Mevki",
- "All teams": "Tüm takımlar"
+ "All teams": "Tüm takımlar",
+ "Take the table": "Tabloyu al",
+ "Copy table": "Tabloyu kopyala",
+ "Download CSV": "CSV indir",
+ "Save image": "Görseli kaydet",
+ "Copied": "Kopyalandı"
 }
