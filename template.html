@@ -11,12 +11,12 @@
 <style>
 /* game night program: a two-ink risograph print on paper (after NovusGFX 26-risograph, MIT). Each club prints in its own
    two inks: --A is its first colour sunk until it reads as text on paper (lifted on the dark sheet), --B its second colour
-   for fills; pages without a club print in the house riso blue and fluoro pink */
+   for fills; pages without a club print in the house riso blue and fluoro pink. Any ink set as text stands 4.5:1 on its sheet */
 :root{
   --paper:#f3efe4;--paper-dark:#e6dfcb;--fluoro-pink:#ff4fa5;--riso-blue:#0078b4;--riso-yellow:#f6d800;--ink:#1a1a1a;
   --ink2:#3a3a3a;--muted:#6b665c;--line:rgba(26,26,26,.28);--rule:var(--ink);--grain:rgba(0,0,0,.05);--blend:multiply;
-  --A:var(--riso-blue);--B:var(--fluoro-pink);--onB:var(--ink);--orange:var(--A);
-  --good:#0a7d4f;--bad:#d6246e;--off:rgba(26,26,26,.3);
+  --A:#0072ab;--B:var(--fluoro-pink);--onB:var(--ink);--orange:var(--A);
+  --good:#0a7d4f;--bad:#cb2269;--off:rgba(26,26,26,.3);
   --sans:"Helvetica Neue","Akzidenz-Grotesk",Arial,sans-serif;--serif:"Times New Roman",Garamond,serif;
   --spring:cubic-bezier(.2,.9,.25,1);
   color-scheme:light;
@@ -183,7 +183,7 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 .zones{max-width:560px;margin:14px auto 0}
 .zones i{display:inline-block;width:10px;height:10px;margin-right:8px;border:1.5px solid var(--ink);vertical-align:-1px}
 .zones i.hi{background:#ff4fa5}
-.zones i.lo{background:#0078b4}
+.zones i.lo{background:repeating-linear-gradient(45deg,#0078b4 0 2px,transparent 2px 4px)}
 .unast{max-width:560px;margin:14px auto -6px}
 .dist .fm-h{margin:0 0 10px}.dist .fm-h span:last-child{text-align:right}
 .dist td.bars{width:34%;min-width:70px;padding-top:6px;padding-bottom:6px}
@@ -541,7 +541,7 @@ html[data-theme="dark"] .pn{--i:var(--nn)}
 @media (max-width:47.5em){.tape{grid-template-columns:auto minmax(0,1fr) 5.2em minmax(0,1fr) auto;column-gap:6px}.tape .v{font-size:.875rem}.tape .lb{font-size:.6562rem;letter-spacing:.06em}.tape .hd .nm{display:none}.pv-form .rec{font-size:1.625rem}}
 
 /* the opening page: the house poster in yellow and blue, then the latest night's tickets and three leader lists */
-.intro{min-height:250px;--A:var(--riso-blue);--B:var(--riso-yellow)}
+.intro{min-height:250px;--A:#0072ab;--B:var(--riso-yellow)}
 html[data-theme="dark"] .intro{--A:#0078b4}
 .intro .badge{width:150px;height:150px}
 .intro .badge i{width:80%;height:80%;border-radius:50%;background:var(--fluoro-pink);mix-blend-mode:multiply;box-shadow:10px 8px 0 var(--riso-blue);background-image:linear-gradient(90deg,transparent 48.5%,rgba(26,26,26,.6) 48.5% 51.5%,transparent 51.5%),radial-gradient(circle at 50% -40%,transparent 62%,rgba(26,26,26,.6) 62% 64.5%,transparent 64.5%),radial-gradient(circle at 50% 140%,transparent 62%,rgba(26,26,26,.6) 62% 64.5%,transparent 64.5%)}
@@ -687,7 +687,9 @@ a.lead{text-decoration:none;min-height:340px}
 /* details: form squares on Standings, W/L marks in the game log, the winner's crest */
 .form{display:inline-flex;gap:2px;margin-left:8px;vertical-align:middle}
 .form b{width:6px;height:6px;background:var(--good)}
-.form b.lo{background:var(--bad)}
+.form b.lo{background:none;box-shadow:inset 0 0 0 1.5px var(--bad)}
+/* on a club's ink (the club page's hero) the run prints in the paper colour, wins solid, losses empty */
+.facts .form b{width:8px;height:8px;background:currentColor}.facts .form b.lo{background:none;box-shadow:inset 0 0 0 1.5px currentColor}
 #ld tbody tr:nth-child(-n+3) td:first-child{font-weight:900;font-size:1.0625rem}
 .tbl a.w,.tbl a.lo{display:inline-block;padding:1px 7px;border:1.5px solid currentColor}
 .board .side.won .crest{box-shadow:0 0 0 0 transparent}
@@ -744,6 +746,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
     <a class="lg" id="lg-btn" href="#league" data-pg="league" aria-label="My league" data-ta="My league" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v4a5 5 0 0 1-10 0zM7 6H4v1a4 4 0 0 0 3.5 4M17 6h3v1a4 4 0 0 1-3.5 4M12 13v4M8 20h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
     <button type="button" data-lang="en" aria-pressed="false" aria-label="English">EN</button>
     <button type="button" data-lang="tr" aria-pressed="false" aria-label="Türkçe">TR</button>
+    <button type="button" id="units" aria-pressed="false" data-ta="Metric units" aria-label="Metric units">FT</button>
     <button type="button" id="theme" aria-pressed="false" data-ta="Dark mode" aria-label="Dark mode"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
   </div>
 </header>
@@ -756,6 +759,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
   <a id="tb-leaders" href="#leaders" data-pg="leaders"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10M12 20V4M19 20v-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span data-t="Leaders">Leaders</span></a>
 </nav>
 <div class="wipe" id="wipe" aria-hidden="true"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><pattern id="zh" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="16" fill="#0078b4"/></pattern></defs></svg>
 <main class="wrap">
   <div class="fail" id="fail" hidden><b data-t="Data unavailable">Data unavailable</b><span id="fail-sub"></span><button type="button" id="retry" data-t="Retry">Retry</button></div>
   <section class="pg" id="pg-home" hidden>
@@ -899,6 +903,11 @@ const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 let LANG = 'en';
 try { LANG = localStorage.getItem('pl-lang') === 'tr' ? 'tr' : 'en'; } catch (e) {}
+// heights and distances in metric (cm, m) or imperial (feet, inches) units: the reader's pick (pl-units) when there is one,
+// else the language's (metric in Turkish, imperial in English)
+let UNIT_PICK = null;
+try { const u = localStorage.getItem('pl-units'); UNIT_PICK = u === 'metric' || u === 'imperial' ? u : null; } catch (e) {}
+const MET = () => UNIT_PICK ? UNIT_PICK === 'metric' : LANG === 'tr';
 
 // a string in the reader's language: TR maps the English text to Turkish; "Games@page" style keys carry a context the English drops
 // (a Turkish string the dictionary lacks is noted in MISSING, which the browser tests check is empty)
@@ -958,9 +967,12 @@ const tname = code => team(code) ? `${team(code).city} ${team(code).name}` : cod
 // and its second colour for fills (--b), its first instead when the second is near white, a grey for a black-and-white club
 const lum = hex => { const f = x => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }; const [r, g, b] = [1, 3, 5].map(i => f(parseInt(hex.slice(i, i + 2), 16))); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
 const mixHex = (h, k, f) => '#' + [1, 3, 5].map(i => Math.round(parseInt(h.slice(i, i + 2), 16) * (1 - f) + parseInt(k.slice(i, i + 2), 16) * f).toString(16).padStart(2, '0')).join('');
-const toward = (h, k, ok) => { let f = 0, x = h; while (!ok(x) && f < 1) { f += 0.05; x = mixHex(h, k, f); } return x; };
+const toward = (h, k, ok) => { let f = 0, x = h; while (!ok(x) && f < 1) { f += 0.025; x = mixHex(h, k, f); } return x; };
+// an ink reads as text when it stands 4.5:1 (WCAG AA) against the sheet it prints on: the paper, or the dark sheet
+const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+const onPaper = h => toward(h, '#000000', x => contrast(x, '#f3efe4') >= 4.5), onSheet = h => toward(h, '#ffffff', x => contrast(x, '#1d1b18') >= 4.5);
 const inks = ([c1, c2]) => { const b = lum(c2) <= 0.7 ? c2 : lum(c1) < 0.03 ? '#b8b8b8' : c1;
-  return `--ap:${toward(c1, '#000000', x => lum(x) <= 0.18)};--an:${toward(c1, '#ffffff', x => lum(x) >= 0.2)};--b:${b};--on2:${light(b) ? '#1a1a1a' : '#f3efe4'}`; };
+  return `--ap:${onPaper(c1)};--an:${onSheet(c1)};--b:${b};--on2:${light(b) ? '#1a1a1a' : '#f3efe4'}`; };
 const colours = code => team(code) ? `--c1:${team(code).colors[0]};--c2:${team(code).colors[1]};${inks(team(code).colors)}` : '';
 const tc = code => team(code) ? `--tc:${team(code).colors[0]};${inks(team(code).colors)}` : '';
 
@@ -1065,9 +1077,15 @@ const ZN = ['Restricted area', 'Paint', 'Mid-range', 'Corner 3', 'Above the brea
 const TN = ['Pull-ups and step-backs', 'Other jumpers', 'Floaters', 'Drives and layups', 'Hooks', 'Cuts and alley-oops', 'Putbacks and tips', 'Dunks'];
 // distance bands (shots.py BANDS and band(), on the shot row's seventh field, tenths of a foot): four of twos, three of threes
 const BN = ['0-3 ft', '3-10 ft', '10-16 ft', '16 ft to the arc', 'Arc to 27 ft', '27-30 ft', '30+ ft'], DEEP = 270;
+// the same bands in metres (3, 10, 16, 27 and 30 feet to a tenth of a metre); the bands themselves stay in feet
+const BNM = ['0-0.9 m', '0.9-3.0 m', '3.0-4.9 m', '4.9 m to the arc', 'Arc to 8.2 m', '8.2-9.1 m', '9.1+ m'];
+const bandName = b => t((MET() ? BNM : BN)[b]);
 const band = (d, z) => z >= 3 ? (d < DEEP ? 4 : d < 300 ? 5 : 6) : d < 30 ? 0 : d < 100 ? 1 : d < 160 ? 2 : 3;
-// an average distance in feet to one decimal from a sum of tenths of a foot over n attempts
-const feet = (sum, n) => n ? t('{d} ft', {d: N(fq(rq(sum, 10 * n)))}) : '–';
+// an average distance from a sum of tenths of a foot over n attempts, rounded once to a tenth: in feet, or in metres
+// (a tenth of a foot is 0.03048 m)
+const feet = (sum, n) => !n ? '–' : MET() ? t('{d} m', {d: N(fq(rq(3048 * sum, 100000 * n)))}) : t('{d} ft', {d: N(fq(rq(sum, 10 * n)))});
+// a roster height (6'8", or the feed's 6-8) as it stands, or in whole centimetres (2.54 cm to the inch, rounded once)
+const tall = h => { const m = /^(\d+)\D+(\d+)/.exec(h || ''); return MET() && m ? `${rq(254 * (12 * +m[1] + +m[2]), 100, 0)} cm` : h; };
 const ZD = ['M-40 52.5V0A40 40 0 0 1 40 0V52.5Z', 'M-80 52.5V-137.5H80V52.5ZM-40 52.5V0A40 40 0 0 1 40 0V52.5Z',
   'M-220 52.5V-89.5A237.5 237.5 0 0 1 220-89.5V52.5ZM-80 52.5V-137.5H80V52.5Z', 'M-250 52.5V-89.5H-220V52.5ZM250 52.5V-89.5H220V52.5Z',
   'M-250-89.5H-220A237.5 237.5 0 0 1 220-89.5H250V-417.5H-250Z'];
@@ -1077,10 +1095,11 @@ const zoneHeat = (mine, lg) => mine.map(([m, n], z) => {
   const d = rq(100 * m, n) - rq(100 * lg[z][0], lg[z][1]);
   return d > 0 ? 'hi' : d < 0 ? 'lo' : '';
 });
+// a zone worse than the league prints in blue stripes (#zh, under the masthead), one better in solid pink, so the two differ without colour
 function court(code, shots, heat = [], tap = null) {
   const [c1, c2] = team(code) ? team(code).colors : ['#333333', '#999999'];
   const lane = light(c2) ? c1 : '#fff', ln = (c, w = 3) => `fill="none" stroke="${c}" stroke-width="${w}"`;
-  const tint = heat.map((h, z) => h ? `<path class="z-${h}" data-z="${z}" d="${ZD[z]}" fill="${h === 'hi' ? '#ff4fa5' : '#0078b4'}" fill-rule="evenodd"/>` : '').join('');
+  const tint = heat.map((h, z) => h ? `<path class="z-${h}" data-z="${z}" d="${ZD[z]}" fill="${h === 'hi' ? '#ff4fa5' : 'url(#zh)'}" fill-rule="evenodd"/>` : '').join('');
   shots = shots.filter(s => s[1] != null);
   if (tap) TAPS[tap.key] = {shots, info: tap.info};
   const made = shots.filter(s => s[3]).map(([, x, y]) => `<circle cx="${x}" cy="${-y}" r="6.5"/>`).join('');
@@ -1180,7 +1199,7 @@ const drawShots = () => {
   $('#sc-dist').hidden = !k.bf || !n;
   $('#sc-dist').innerHTML = k.bf && n ? `<div class="fm-h"><span${def('dist')}>${t('Average distance')}</span><span><b id="sc-avg">${feet(k.shots.reduce((a, s) => a + s[6], 0), n)}</b> · ${t('League')} <span id="sc-lavg">${feet(bl.sum, ln)}</span></span></div>`
     + `<div class="scroll"><table class="tbl" style="${tc(k.code)}"><thead><tr><th class="l"${def('dband zones')}>${t('Distance')}</th><th class="l"${def('dshare')}>${t('Share@att')}</th><th${def('fg')}>${t('FG@stat')}</th><th${def('fgp')}>${t('FG%@stat')}</th><th${def('dleague')}>${t('League')}</th></tr></thead><tbody>${k.bf.map(([m, a], b) =>
-    `<tr data-band="${b}"><td class="l">${t(BN[b])}</td><td class="bars" aria-hidden="true"><i style="width:${100 * a / n}%"></i><i style="width:${ln ? 100 * bl.fga[b] / ln : 0}%"></i></td><td>${m}-${a}</td><td class="k">${a ? pct(m, a) : '–'}</td><td>${bl.bands[b][1] ? pct(...bl.bands[b]) : '–'}</td></tr>`).join('')}</tbody></table></div>` : '';
+    `<tr data-band="${b}"><td class="l">${bandName(b)}</td><td class="bars" aria-hidden="true"><i style="width:${100 * a / n}%"></i><i style="width:${ln ? 100 * bl.fga[b] / ln : 0}%"></i></td><td>${m}-${a}</td><td class="k">${a ? pct(m, a) : '–'}</td><td>${bl.bands[b][1] ? pct(...bl.bands[b]) : '–'}</td></tr>`).join('')}</tbody></table></div>` : '';
 };
 $('#sc-game').addEventListener('change', () => { drawShots(); prime('player'); });
 
@@ -1196,7 +1215,7 @@ const zoneGrade = (m, n, lg, against) => {
 function zoneCourt(code, zs, lg, against) {
   const c1 = team(code) ? team(code).colors[0] : '#333333', ln = (w = 3) => `fill="none" stroke="#1a1a1a" stroke-width="${w}"`;
   const g = zs.map(([m, n], z) => zoneGrade(m, n, lg[z], against));
-  const fills = zs.map((_, z) => g[z] ? `<path class="zg" data-z="${z}" data-g="${g[z]}" d="${ZD[z]}" fill="${g[z] > 0 ? '#ff4fa5' : '#0078b4'}" fill-opacity="${[0, .28, .55, .85][Math.abs(g[z])]}" fill-rule="evenodd"/>` : '').join('');
+  const fills = zs.map((_, z) => g[z] ? `<path class="zg" data-z="${z}" data-g="${g[z]}" d="${ZD[z]}" fill="${g[z] > 0 ? '#ff4fa5' : 'url(#zh)'}" fill-opacity="${[0, .28, .55, .85][Math.abs(g[z])]}" fill-rule="evenodd"/>` : '').join('');
   const lab = ([m, n], z) => {
     const [x, y] = ZTXT[z], p = n ? `${pct(m, n)}%` : '–', title = `<title>${esc(`${t(ZN[z])} · ${m}-${n}`)}</title>`;
     if (z === 3) return [-x, x].map(cx => `<text class="zp" data-z="${z}" x="${cx}" y="${y}" transform="rotate(-90 ${cx} ${y})" font-size="17">${title}${p}</text>`).join('');
@@ -1209,7 +1228,7 @@ function zoneCourt(code, zs, lg, against) {
     + `<path d="M-30 12.5h60" ${ln(5)}/><circle r="7.5" ${ln(2.5)}/><rect x="-250" y="-417.5" width="500" height="470" ${ln(5)}/>`
     + `<g class="zl" text-anchor="middle" fill="#1a1a1a" stroke="${FLOOR}" stroke-width="5" paint-order="stroke" stroke-linejoin="round">${zs.map(lab).join('')}</g></svg>`;
 }
-const zoneKey = () => `<div class="zkey"><span${def('zgrade')}>${t('Worse than the league')}</span>${[-3, -2, -1, 0, 1, 2, 3].map(k => `<i style="background:${k ? `${k > 0 ? '#ff4fa5' : '#0078b4'}${['', '47', '8c', 'd9'][Math.abs(k)]}` : FLOOR}"></i>`).join('')}<span>${t('Better than the league')}</span></div>`;
+const zoneKey = () => `<div class="zkey"><span${def('zgrade')}>${t('Worse than the league')}</span>${[-3, -2, -1, 0, 1, 2, 3].map(k => `<i style="background:${k > 0 ? `#ff4fa5${['', '47', '8c', 'd9'][k]}` : k < 0 ? `repeating-linear-gradient(45deg,#0078b4${['', '47', '8c', 'd9'][-k]} 0 3px,${FLOOR} 3px 6px)` : FLOOR}"></i>`).join('')}<span>${t('Better than the league')}</span></div>`;
 
 // ---- Lineups (lineups.py): each club's fives, one row of integer totals per five per game. A rating is points per 100
 // possessions (FGA − OREB + TOV + 0.44 FTA, so 100 × possessions is an integer), rounded once to tenths by rq; net and
@@ -1419,7 +1438,7 @@ async function renderPlayer(code, pid, my, gid) {
   remember(`${code}/${p.pid}`);
   leagueBadge(p.pid);
   const s = p.s, a = age(p.born), me = L.find(x => x.pid === p.pid);
-  hero.innerHTML = `<div class="badge">${face(p.pid, p.name, true)}</div><div class="who"><div class="tag"><a href="#team/${esc(code)}">${logo(code, 'mark')}${EN(tname(code))}</a>${p.pos ? ` · ${esc(p.pos)}` : ''}${p.rookie ? ` · <span class="rook">${t('Rookie')}</span>` : ''}</div><h1>${EN(p.name)}</h1><div class="facts">${p.country ? `<span data-k="from">${t('From')} <b>${esc(country(p.country))}</b></span>` : ''}${p.draft ? `<span data-k="draft">${drafted(p.draft)}</span>` : ''}${p.height ? `<span>${t('Height')} <b>${esc(p.height)}</b></span>` : ''}${a != null ? `<span>${t('Age')} <b>${a}</b></span>` : ''}<span${def('gp')}>${t('Games')} <b>${s.gp}</b></span><span${def('min')}>${t('Minutes')} <b>${mpg(s.sec, s.gp)}</b></span>${me && me.run ? `<span data-k="dd"${def('dd')}>${t('DD@stat')} <b>${me.dd}</b></span><span data-k="td"${def('td')}>${t('TD@stat')} <b>${me.td}</b></span>` : ''}</div>${runChips(me, ladderChip(AW, p.pid))}</div>${p.jersey !== '' && p.jersey != null ? `<div class="num" aria-hidden="true">${esc(p.jersey)}</div>` : ''}${STAR_BTN(p.pid)}${SHARE_BTN('player')}`;
+  hero.innerHTML = `<div class="badge">${face(p.pid, p.name, true)}</div><div class="who"><div class="tag"><a href="#team/${esc(code)}">${logo(code, 'mark')}${EN(tname(code))}</a>${p.pos ? ` · ${esc(p.pos)}` : ''}${p.rookie ? ` · <span class="rook">${t('Rookie')}</span>` : ''}</div><h1>${EN(p.name)}</h1><div class="facts">${p.country ? `<span data-k="from">${t('From')} <b>${esc(country(p.country))}</b></span>` : ''}${p.draft ? `<span data-k="draft">${drafted(p.draft)}</span>` : ''}${p.height ? `<span data-k="height">${t('Height')} <b>${esc(tall(p.height))}</b></span>` : ''}${a != null ? `<span>${t('Age')} <b>${a}</b></span>` : ''}<span${def('gp')}>${t('Games')} <b>${s.gp}</b></span><span${def('min')}>${t('Minutes')} <b>${mpg(s.sec, s.gp)}</b></span>${me && me.run ? `<span data-k="dd"${def('dd')}>${t('DD@stat')} <b>${me.dd}</b></span><span data-k="td"${def('td')}>${t('TD@stat')} <b>${me.td}</b></span>` : ''}</div>${runChips(me, ladderChip(AW, p.pid))}</div>${p.jersey !== '' && p.jersey != null ? `<div class="num" aria-hidden="true">${esc(p.jersey)}</div>` : ''}${STAR_BTN(p.pid)}${SHARE_BTN('player')}`;
   const tiles = [['PTS', avg(s.pts, s.gp)], ['REB', avg(s.reb, s.gp)], ['AST', avg(s.ast, s.gp)], ['STL', avg(s.stl, s.gp)], ['BLK', avg(s.blk, s.gp)], ['TOV', avg(s.tov, s.gp)],
     ['FG%', pct(s.fgm, s.fga)], ['3P%', pct(s.fg3m, s.fg3a)], ['FT%', pct(s.ftm, s.fta)], ['TS%', ts(s.pts, s.fga, s.fta)], ['+/-', N(signed(rdiv(s.pm, s.gp)))], ['MIN', mpg(s.sec, s.gp)]];
   // on the page, five a row: scoring and defence, shooting with the free-throw rate, then fouls drawn and committed
@@ -1683,7 +1702,7 @@ function records(G) {
 const winPct = (w, gp) => { const v = rdiv(w * 1000, gp, 0); return v == null ? '–' : N(v === '1000' ? '1.000' : `.${v.padStart(3, '0')}`); };
 const streak = s => { if (!s.length) return '–'; const last = s[s.length - 1]; let n = 0; for (let i = s.length - 1; i >= 0 && s[i] === last; i--) n++; return `${last ? t('W') : t('L')}${n}`; };
 const l10 = s => { const x = s.slice(-10); return `${x.filter(Boolean).length}-${x.filter(v => !v).length}`; };
-const dots = s => s.length ? `<i class="form">${s.slice(-10).map(w => `<b class="${w ? 'w' : 'lo'}"></b>`).join('')}</i>` : '';
+const dots = s => s.length ? `<i class="form" role="img" aria-label="${s.slice(-10).map(w => t(w ? 'W' : 'L')).join(' ')}">${s.slice(-10).map(w => `<b class="${w ? 'w' : 'lo'}"></b>`).join('')}</i>` : '';
 async function renderStandings(view, my) {
   const G = (await get('games.json')).games;
   if (stale(my)) return;
@@ -1764,10 +1783,10 @@ const STYLE_DEF = {pace: 'pace poss srank', tpar: 'tpar srank', paint: 'paint sr
 const styleVals = (c, z) => {
   const f = c.for, s = c.style, za = z ? z.for.reduce((n, x) => n + x[1], 0) : 0;
   return {pace: teamVals(c).pace, tpar: f.fga ? rq(100 * f.fg3a, f.fga) : null, paint: za ? rq(100 * (z.for[0][1] + z.for[1][1]), za) : null,
-    astr: f.fgm ? rq(100 * f.ast, f.fgm) : null, cftr: f.fga ? rq(f.fta, f.fga, 3) : null, size: s.hsec ? rq(s.hin, s.hsec) : null, bench: s.psec ? rq(100 * s.bench, s.psec) : null};
+    astr: f.fgm ? rq(100 * f.ast, f.fgm) : null, cftr: f.fga ? rq(f.fta, f.fga, 3) : null, size: s.hsec ? MET() ? rq(254 * s.hin, 100 * s.hsec) : rq(s.hin, s.hsec) : null, bench: s.psec ? rq(100 * s.bench, s.psec) : null};
 };
 const styleAll = (rt, zl) => Object.fromEntries(rt.teams.filter(c => c.style && c.gp).map(c => [c.code, styleVals(c, zl && zl.teams && zl.teams[c.code])]));
-const styleShow = (k, q) => q == null ? '–' : k === 'cftr' ? N(fq(q, 3).replace(/^0/, '')) : k === 'size' ? N(`${Math.floor(q / 120)}'${fq(q % 120)}"`) : k === 'pace' ? N(fq(q)) : `${N(fq(q))}%`;
+const styleShow = (k, q) => q == null ? '–' : k === 'cftr' ? N(fq(q, 3).replace(/^0/, '')) : k === 'size' ? MET() ? `${N(fq(q))} cm` : N(`${Math.floor(q / 120)}'${fq(q % 120)}"`) : k === 'pace' ? N(fq(q)) : `${N(fq(q))}%`;
 const styleRows = (code, V) => STYLE_COLS.map(([k, l, dir]) => {
   const all = Object.values(V).map(v => v[k]), n = all.filter(v => v != null).length, v = V[code] ? V[code][k] : null, r = rankBy(all, dir)(v);
   return `<div data-k="${k}"><span class="lb"${def(STYLE_DEF[k])}>${t(l + '@stat')}</span><span class="v">${styleShow(k, v)}</span><span class="bar"><i style="width:${r ? (100 * (n + 1 - r) / n).toFixed(1) : 0}%"></i></span><small class="rk"${r ? ` data-r="${r}"` : ''}>${r || ''}</small></div>`;
@@ -1963,8 +1982,8 @@ async function renderTeam(code, my) {
 // from passer to scorer for every pair between them (bent to the passer's left, so A → B and B → A stay apart), and beside
 // it the club's top eight pairs. A player's tap keeps only his arrows: out in the club's first ink, in in its second
 const NET_R = 112, NET_N = 10, NET_TOP = 8;
-// the second ink for strokes: the club's second colour sunk until it reads on paper, lifted until it reads on the dark sheet
-const netInk = code => { const c2 = team(code).colors[1]; return `--np:${toward(c2, '#000000', x => lum(x) <= 0.25)};--nn:${toward(c2, '#ffffff', x => lum(x) >= 0.2)}`; };
+// the second ink for strokes and counts: the club's second colour sunk until it reads on paper, lifted until it reads on the dark sheet
+const netInk = code => { const c2 = team(code).colors[1]; return `--np:${onPaper(c2)};--nn:${onSheet(c2)}`; };
 // a surname of more than nine letters goes onto two lines at the space or hyphen nearest its middle
 const netWrap = s => {
   if (s.length <= 9) return [s];
@@ -2584,7 +2603,7 @@ function tkPaint(T) {
       r.forEach((v, j) => {
         const cw = w[j] + spare;
         x.font = `${v.h || v.k ? 800 : 500} ${size}px ${SANS}`;
-        x.fillStyle = v.h ? '#f3efe4' : v.w ? '#0a7d4f' : v.lo ? '#d6246e' : v.k ? '#0078b4' : '#1a1a1a';
+        x.fillStyle = v.h ? '#f3efe4' : v.w ? '#0a7d4f' : v.lo ? '#cb2269' : v.k ? '#0072ab' : '#1a1a1a';
         x.textAlign = v.l ? 'left' : 'center';
         x.fillText(v.s, v.l ? cx + size / 2 : cx + cw / 2, y + rowH / 2 + size * .36);
         cx += cw;
@@ -3306,7 +3325,7 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['gb', 'GB@stat', 'Games behind', 'How far a club trails the leader of its table.', '((leader W − W) + (L − leader L)) ÷ 2'],
     ['home', '', 'Home', 'Wins and losses at home.', ''],
     ['away', '', 'Away', 'Wins and losses on the road.', ''],
-    ['l10', 'L10@stat', 'Last ten games', 'Wins and losses over the last ten games; the squares run oldest first.', ''],
+    ['l10', 'L10@stat', 'Last ten games', 'Wins and losses over the last ten games; the squares run oldest first, a win filled and a loss empty.', ''],
     ['strk', 'STRK@stat', 'Streak', 'The current run of wins or losses.', ''],
     ['rec', 'Record@stat', 'Win-loss record', 'Wins and losses after that game.', ''],
     ['ppg', 'PPG@stat', 'Points per game', 'Points scored per game.', ''],
@@ -3324,9 +3343,9 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
   ['Shot chart', [
     ['dots', '', 'Dots and crosses', 'Every field-goal attempt at its spot: a dot is a make, a cross a miss.', ''],
     ['zones', '', 'Zones', 'Each attempt falls in one of five zones: restricted area (within 4 feet of the rim), paint, mid-range, corner three and above-the-break three. The two three-point zones add up to the box score’s threes. The distance bands split the same attempts by how far out they were.', ''],
-    ['heat', '', 'Hot and cold zones', 'From five attempts in a zone, it prints pink when the player’s FG% there beats the league’s and blue when it trails.', ''],
+    ['heat', '', 'Hot and cold zones', 'From five attempts in a zone, it prints solid pink when the player’s FG% there beats the league’s and in blue stripes when it trails.', ''],
     ['league', '', 'League', 'The whole league’s FG% in the zone over the season.', ''],
-    ['zgrade', '', 'Club zones', 'On the club page, each zone’s FG% on offense and the FG% opponents shoot there on defense, shaded against the league’s: pink where the club does better, blue where it does worse, deeper at 1.5, 4 and 8 points apart.', ''],
+    ['zgrade', '', 'Club zones', 'On the club page, each zone’s FG% on offense and the FG% opponents shoot there on defense, shaded against the league’s: solid pink where the club does better, blue stripes where it does worse, deeper at 1.5, 4 and 8 points apart.', ''],
     ['astd', 'AST’D%@stat', 'Assisted share', 'The share of the player’s makes in the zone that a team-mate is credited with an assist on.', 'Assisted makes ÷ FGM'],
     ['unast', '', 'Unassisted makes', 'Makes with no assist credited: off the dribble, in the post, and putbacks too.', 'FGM − assisted makes'],
     ['stype', '', 'Shot types', 'How each attempt came, from the play-by-play’s description of the shot: pull-ups and step-backs, other jumpers, floaters, drives and layups, hooks, cuts and alley-oops, putbacks and tips, and dunks. Every attempt has one type, so they add up to the box score’s FG. Jump shots the play-by-play describes no further are other jumpers; it does not say which were catch-and-shoot.', ''],
@@ -3387,12 +3406,20 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['left', 'Left@stat', 'Games left', 'The player’s club games still to play this week.', ''],
   ]],
 ]);
+const GLOSS_M = /** @type {Record<string, string>} */ ({
+  zones: 'Each attempt falls in one of five zones: restricted area (within 1.2 metres of the rim), paint, mid-range, corner three and above-the-break three. The two three-point zones add up to the box score’s threes. The distance bands split the same attempts by how far out they were.',
+  dband: 'How far from the rim each attempt was, in metres, from the play-by-play: twos from 0-0.9, 0.9-3.0 and 3.0-4.9 metres and from 4.9 metres to the three-point line, threes from the line to 8.2 metres, 8.2-9.1 metres and 9.1 metres and beyond (the bands are drawn in feet: 3, 10, 16, 27 and 30). Twos and threes never share a band, so the bands add up to the box score’s FG and 3P. Distances are kept to a tenth of a foot and can differ slightly from NBA.com’s; the zones split the same attempts by area.',
+  dist: 'How far from the rim the attempts were on average, in metres.',
+  deep: 'Threes from 8.2 metres (27 feet) out and beyond. 27 feet is a convention, about a metre behind the line at the top of the key; the NBA draws no line there.',
+  'floor-range': 'Deep threes: 10 attempts from 8.2 metres out, most made first. Average distance: 100 field-goal attempts.'});
 const DEF = Object.fromEntries(GLOSS.flatMap(([, rows]) => rows.map(r => [r[0], r])));
 // the attributes that make a label open its definitions (ids separated by spaces, the first one named in full)
 const def = ids => ids ? ` data-def="${ids}" tabindex="0"` : '';
 // a stat's abbreviation and name, the abbreviation left out when the reader's language spells it as the name
 const defName = r => { const ab = r[1] ? t(r[1]) : '', nm = t(r[2]); return ab && ab !== nm ? `<b>${esc(ab)}</b> ${esc(nm)}` : `<b>${esc(nm)}</b>`; };
-const defBody = r => `<span>${esc(t(r[3]))}</span>${r[4] ? `<code>${esc(t(r[4]))}</code>` : ''}`;
+// an entry's text, in metric units where they differ (GLOSS_M)
+const defText = r => t((MET() && GLOSS_M[r[0]]) || r[3]);
+const defBody = r => `<span>${esc(defText(r))}</span>${r[4] ? `<code>${esc(t(r[4]))}</code>` : ''}`;
 // the Leaders boards: each one's stat and its floor
 const LEAD_DEF = {map: 'usg ts floor-busy', pts: 'pts floor-pg', reb: 'reb floor-pg', ast: 'ast floor-pg', stl: 'stl floor-pg', blk: 'blk floor-pg', fg3m: 'fg3 floor-pg', min: 'min floor-pg',
   fg: 'fgp floor-pg floor-fg', fg3: 'fg3p floor-pg floor-fg3', ft: 'ftp floor-pg floor-ft', ts: 'ts floor-pg floor-fg', usg: 'usg floor-pg floor-busy', uast: 'unast floor-pg floor-unast', fd: 'fd floor-pg floor-busy', ftar: 'ftar floor-pg floor-busy', pf36: 'pf36 floor-pg floor-busy',
@@ -3422,7 +3449,7 @@ function openDef(el) {
   const ids = el.dataset.def.split(' ').filter(id => DEF[id]);
   if (!ids.length) return;
   const [first, ...more] = ids.map(id => DEF[id]);
-  DEF_BOX.innerHTML = `<p class="def-h">${defName(first)}</p><p>${defBody(first)}</p>${more.map(r => `<p class="def-x">${esc(t(r[3]))}</p>`).join('')}<a href="#glossary/${first[0]}">${t('Glossary')}</a>`;
+  DEF_BOX.innerHTML = `<p class="def-h">${defName(first)}</p><p>${defBody(first)}</p>${more.map(r => `<p class="def-x">${esc(defText(r))}</p>`).join('')}<a href="#glossary/${first[0]}">${t('Glossary')}</a>`;
   DEF_BOX.setAttribute('aria-label', t(first[2]));
   DEF_BOX.hidden = false;
   DEF_AT = el;
@@ -3468,11 +3495,19 @@ function applyLang() {
   for (const el of $$('[data-t]')) el.textContent = t(el.dataset.t);
   for (const el of $$('[data-ta]')) el.setAttribute('aria-label', t(el.dataset.ta));
   for (const b of $$('[data-lang]')) b.setAttribute('aria-pressed', String(b.dataset.lang === LANG));
+  $('#units').setAttribute('aria-pressed', String(MET()));
+  $('#units').textContent = MET() ? 'M' : 'FT';
   if (IDX) $('#foot').textContent = t('Data: NBA official box scores and play-by-play. Built {d}.', {d: new Intl.DateTimeFormat(loc(), {dateStyle: 'medium', timeStyle: 'short'}).format(new Date(IDX.built))});
 }
 for (const b of $$('[data-lang]')) b.addEventListener('click', () => {
   LANG = b.dataset.lang;
   try { localStorage.setItem('pl-lang', LANG); } catch (e) {}
+  applyLang();
+  route();
+});
+$('#units').addEventListener('click', () => {
+  UNIT_PICK = MET() ? 'imperial' : 'metric';
+  try { localStorage.setItem('pl-units', UNIT_PICK); } catch (e) {}
   applyLang();
   route();
 });
