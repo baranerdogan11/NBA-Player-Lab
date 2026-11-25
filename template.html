@@ -183,7 +183,7 @@ html[data-theme="dark"] :is(.chip.on,.mark,.crest.on) img{inset:12%;width:76%;he
 .zones{max-width:560px;margin:14px auto 0}
 .zones i{display:inline-block;width:10px;height:10px;margin-right:8px;border:1.5px solid var(--ink);vertical-align:-1px}
 .zones i.hi{background:#ff4fa5}
-.zones i.lo{background:#0078b4}
+.zones i.lo{background:repeating-linear-gradient(45deg,#0078b4 0 2px,transparent 2px 4px)}
 .unast{max-width:560px;margin:14px auto -6px}
 .dist .fm-h{margin:0 0 10px}.dist .fm-h span:last-child{text-align:right}
 .dist td.bars{width:34%;min-width:70px;padding-top:6px;padding-bottom:6px}
@@ -686,7 +686,9 @@ a.lead{text-decoration:none;min-height:340px}
 /* details: form squares on Standings, W/L marks in the game log, the winner's crest */
 .form{display:inline-flex;gap:2px;margin-left:8px;vertical-align:middle}
 .form b{width:6px;height:6px;background:var(--good)}
-.form b.lo{background:var(--bad)}
+.form b.lo{background:none;box-shadow:inset 0 0 0 1.5px var(--bad)}
+/* on a club's ink (the club page's hero) the run prints in the paper colour, wins solid, losses empty */
+.facts .form b{width:8px;height:8px;background:currentColor}.facts .form b.lo{background:none;box-shadow:inset 0 0 0 1.5px currentColor}
 #ld tbody tr:nth-child(-n+3) td:first-child{font-weight:900;font-size:17px}
 .tbl a.w,.tbl a.lo{display:inline-block;padding:1px 7px;border:1.5px solid currentColor}
 .board .side.won .crest{box-shadow:0 0 0 0 transparent}
@@ -756,6 +758,7 @@ html.swap,html.swap *{transition:background-color .3s,color .3s}
   <a id="tb-leaders" href="#leaders" data-pg="leaders"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10M12 20V4M19 20v-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span data-t="Leaders">Leaders</span></a>
 </nav>
 <div class="wipe" id="wipe" aria-hidden="true"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><pattern id="zh" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="16" fill="#0078b4"/></pattern></defs></svg>
 <main class="wrap">
   <div class="fail" id="fail" hidden><b data-t="Data unavailable">Data unavailable</b><span id="fail-sub"></span><button type="button" id="retry" data-t="Retry">Retry</button></div>
   <section class="pg" id="pg-home" hidden>
@@ -1091,10 +1094,11 @@ const zoneHeat = (mine, lg) => mine.map(([m, n], z) => {
   const d = rq(100 * m, n) - rq(100 * lg[z][0], lg[z][1]);
   return d > 0 ? 'hi' : d < 0 ? 'lo' : '';
 });
+// a zone worse than the league prints in blue stripes (#zh, under the masthead), one better in solid pink, so the two differ without colour
 function court(code, shots, heat = [], tap = null) {
   const [c1, c2] = team(code) ? team(code).colors : ['#333333', '#999999'];
   const lane = light(c2) ? c1 : '#fff', ln = (c, w = 3) => `fill="none" stroke="${c}" stroke-width="${w}"`;
-  const tint = heat.map((h, z) => h ? `<path class="z-${h}" data-z="${z}" d="${ZD[z]}" fill="${h === 'hi' ? '#ff4fa5' : '#0078b4'}" fill-rule="evenodd"/>` : '').join('');
+  const tint = heat.map((h, z) => h ? `<path class="z-${h}" data-z="${z}" d="${ZD[z]}" fill="${h === 'hi' ? '#ff4fa5' : 'url(#zh)'}" fill-rule="evenodd"/>` : '').join('');
   shots = shots.filter(s => s[1] != null);
   if (tap) TAPS[tap.key] = {shots, info: tap.info};
   const made = shots.filter(s => s[3]).map(([, x, y]) => `<circle cx="${x}" cy="${-y}" r="6.5"/>`).join('');
@@ -1210,7 +1214,7 @@ const zoneGrade = (m, n, lg, against) => {
 function zoneCourt(code, zs, lg, against) {
   const c1 = team(code) ? team(code).colors[0] : '#333333', ln = (w = 3) => `fill="none" stroke="#1a1a1a" stroke-width="${w}"`;
   const g = zs.map(([m, n], z) => zoneGrade(m, n, lg[z], against));
-  const fills = zs.map((_, z) => g[z] ? `<path class="zg" data-z="${z}" data-g="${g[z]}" d="${ZD[z]}" fill="${g[z] > 0 ? '#ff4fa5' : '#0078b4'}" fill-opacity="${[0, .28, .55, .85][Math.abs(g[z])]}" fill-rule="evenodd"/>` : '').join('');
+  const fills = zs.map((_, z) => g[z] ? `<path class="zg" data-z="${z}" data-g="${g[z]}" d="${ZD[z]}" fill="${g[z] > 0 ? '#ff4fa5' : 'url(#zh)'}" fill-opacity="${[0, .28, .55, .85][Math.abs(g[z])]}" fill-rule="evenodd"/>` : '').join('');
   const lab = ([m, n], z) => {
     const [x, y] = ZTXT[z], p = n ? `${pct(m, n)}%` : '–', title = `<title>${esc(`${t(ZN[z])} · ${m}-${n}`)}</title>`;
     if (z === 3) return [-x, x].map(cx => `<text class="zp" data-z="${z}" x="${cx}" y="${y}" transform="rotate(-90 ${cx} ${y})" font-size="17">${title}${p}</text>`).join('');
@@ -1223,7 +1227,7 @@ function zoneCourt(code, zs, lg, against) {
     + `<path d="M-30 12.5h60" ${ln(5)}/><circle r="7.5" ${ln(2.5)}/><rect x="-250" y="-417.5" width="500" height="470" ${ln(5)}/>`
     + `<g class="zl" text-anchor="middle" fill="#1a1a1a" stroke="${FLOOR}" stroke-width="5" paint-order="stroke" stroke-linejoin="round">${zs.map(lab).join('')}</g></svg>`;
 }
-const zoneKey = () => `<div class="zkey"><span${def('zgrade')}>${t('Worse than the league')}</span>${[-3, -2, -1, 0, 1, 2, 3].map(k => `<i style="background:${k ? `${k > 0 ? '#ff4fa5' : '#0078b4'}${['', '47', '8c', 'd9'][Math.abs(k)]}` : FLOOR}"></i>`).join('')}<span>${t('Better than the league')}</span></div>`;
+const zoneKey = () => `<div class="zkey"><span${def('zgrade')}>${t('Worse than the league')}</span>${[-3, -2, -1, 0, 1, 2, 3].map(k => `<i style="background:${k > 0 ? `#ff4fa5${['', '47', '8c', 'd9'][k]}` : k < 0 ? `repeating-linear-gradient(45deg,#0078b4${['', '47', '8c', 'd9'][-k]} 0 3px,${FLOOR} 3px 6px)` : FLOOR}"></i>`).join('')}<span>${t('Better than the league')}</span></div>`;
 
 // ---- Lineups (lineups.py): each club's fives, one row of integer totals per five per game. A rating is points per 100
 // possessions (FGA − OREB + TOV + 0.44 FTA, so 100 × possessions is an integer), rounded once to tenths by rq; net and
@@ -1697,7 +1701,7 @@ function records(G) {
 const winPct = (w, gp) => { const v = rdiv(w * 1000, gp, 0); return v == null ? '–' : N(v === '1000' ? '1.000' : `.${v.padStart(3, '0')}`); };
 const streak = s => { if (!s.length) return '–'; const last = s[s.length - 1]; let n = 0; for (let i = s.length - 1; i >= 0 && s[i] === last; i--) n++; return `${last ? t('W') : t('L')}${n}`; };
 const l10 = s => { const x = s.slice(-10); return `${x.filter(Boolean).length}-${x.filter(v => !v).length}`; };
-const dots = s => s.length ? `<i class="form">${s.slice(-10).map(w => `<b class="${w ? 'w' : 'lo'}"></b>`).join('')}</i>` : '';
+const dots = s => s.length ? `<i class="form" role="img" aria-label="${s.slice(-10).map(w => t(w ? 'W' : 'L')).join(' ')}">${s.slice(-10).map(w => `<b class="${w ? 'w' : 'lo'}"></b>`).join('')}</i>` : '';
 async function renderStandings(view, my) {
   const G = (await get('games.json')).games;
   if (stale(my)) return;
@@ -3320,7 +3324,7 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
     ['gb', 'GB@stat', 'Games behind', 'How far a club trails the leader of its table.', '((leader W − W) + (L − leader L)) ÷ 2'],
     ['home', '', 'Home', 'Wins and losses at home.', ''],
     ['away', '', 'Away', 'Wins and losses on the road.', ''],
-    ['l10', 'L10@stat', 'Last ten games', 'Wins and losses over the last ten games; the squares run oldest first.', ''],
+    ['l10', 'L10@stat', 'Last ten games', 'Wins and losses over the last ten games; the squares run oldest first, a win filled and a loss empty.', ''],
     ['strk', 'STRK@stat', 'Streak', 'The current run of wins or losses.', ''],
     ['rec', 'Record@stat', 'Win-loss record', 'Wins and losses after that game.', ''],
     ['ppg', 'PPG@stat', 'Points per game', 'Points scored per game.', ''],
@@ -3338,9 +3342,9 @@ const GLOSS = /** @type {[string, string[][]][]} */ ([
   ['Shot chart', [
     ['dots', '', 'Dots and crosses', 'Every field-goal attempt at its spot: a dot is a make, a cross a miss.', ''],
     ['zones', '', 'Zones', 'Each attempt falls in one of five zones: restricted area (within 4 feet of the rim), paint, mid-range, corner three and above-the-break three. The two three-point zones add up to the box score’s threes. The distance bands split the same attempts by how far out they were.', ''],
-    ['heat', '', 'Hot and cold zones', 'From five attempts in a zone, it prints pink when the player’s FG% there beats the league’s and blue when it trails.', ''],
+    ['heat', '', 'Hot and cold zones', 'From five attempts in a zone, it prints solid pink when the player’s FG% there beats the league’s and in blue stripes when it trails.', ''],
     ['league', '', 'League', 'The whole league’s FG% in the zone over the season.', ''],
-    ['zgrade', '', 'Club zones', 'On the club page, each zone’s FG% on offense and the FG% opponents shoot there on defense, shaded against the league’s: pink where the club does better, blue where it does worse, deeper at 1.5, 4 and 8 points apart.', ''],
+    ['zgrade', '', 'Club zones', 'On the club page, each zone’s FG% on offense and the FG% opponents shoot there on defense, shaded against the league’s: solid pink where the club does better, blue stripes where it does worse, deeper at 1.5, 4 and 8 points apart.', ''],
     ['astd', 'AST’D%@stat', 'Assisted share', 'The share of the player’s makes in the zone that a team-mate is credited with an assist on.', 'Assisted makes ÷ FGM'],
     ['unast', '', 'Unassisted makes', 'Makes with no assist credited: off the dribble, in the post, and putbacks too.', 'FGM − assisted makes'],
     ['stype', '', 'Shot types', 'How each attempt came, from the play-by-play’s description of the shot: pull-ups and step-backs, other jumpers, floaters, drives and layups, hooks, cuts and alley-oops, putbacks and tips, and dunks. Every attempt has one type, so they add up to the box score’s FG. Jump shots the play-by-play describes no further are other jumpers; it does not say which were catch-and-shoot.', ''],
