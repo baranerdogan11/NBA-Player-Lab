@@ -11,12 +11,12 @@
 <style>
 /* game night program: a two-ink risograph print on paper (after NovusGFX 26-risograph, MIT). Each club prints in its own
    two inks: --A is its first colour sunk until it reads as text on paper (lifted on the dark sheet), --B its second colour
-   for fills; pages without a club print in the house riso blue and fluoro pink */
+   for fills; pages without a club print in the house riso blue and fluoro pink. Any ink set as text stands 4.5:1 on its sheet */
 :root{
   --paper:#f3efe4;--paper-dark:#e6dfcb;--fluoro-pink:#ff4fa5;--riso-blue:#0078b4;--riso-yellow:#f6d800;--ink:#1a1a1a;
   --ink2:#3a3a3a;--muted:#6b665c;--line:rgba(26,26,26,.28);--rule:var(--ink);--grain:rgba(0,0,0,.05);--blend:multiply;
-  --A:var(--riso-blue);--B:var(--fluoro-pink);--onB:var(--ink);--orange:var(--A);
-  --good:#0a7d4f;--bad:#d6246e;--off:rgba(26,26,26,.3);
+  --A:#0072ab;--B:var(--fluoro-pink);--onB:var(--ink);--orange:var(--A);
+  --good:#0a7d4f;--bad:#cb2269;--off:rgba(26,26,26,.3);
   --sans:"Helvetica Neue","Akzidenz-Grotesk",Arial,sans-serif;--serif:"Times New Roman",Garamond,serif;
   --spring:cubic-bezier(.2,.9,.25,1);
   color-scheme:light;
@@ -540,7 +540,7 @@ html[data-theme="dark"] .pn{--i:var(--nn)}
 @media (max-width:760px){.tape{grid-template-columns:auto minmax(0,1fr) 5.2em minmax(0,1fr) auto;column-gap:6px}.tape .v{font-size:14px}.tape .lb{font-size:9.5px;letter-spacing:.06em}.tape .hd .nm{display:none}.pv-form .rec{font-size:26px}}
 
 /* the opening page: the house poster in yellow and blue, then the latest night's tickets and three leader lists */
-.intro{min-height:250px;--A:var(--riso-blue);--B:var(--riso-yellow)}
+.intro{min-height:250px;--A:#0072ab;--B:var(--riso-yellow)}
 html[data-theme="dark"] .intro{--A:#0078b4}
 .intro .badge{width:150px;height:150px}
 .intro .badge i{width:80%;height:80%;border-radius:50%;background:var(--fluoro-pink);mix-blend-mode:multiply;box-shadow:10px 8px 0 var(--riso-blue);background-image:linear-gradient(90deg,transparent 48.5%,rgba(26,26,26,.6) 48.5% 51.5%,transparent 51.5%),radial-gradient(circle at 50% -40%,transparent 62%,rgba(26,26,26,.6) 62% 64.5%,transparent 64.5%),radial-gradient(circle at 50% 140%,transparent 62%,rgba(26,26,26,.6) 62% 64.5%,transparent 64.5%)}
@@ -957,9 +957,12 @@ const tname = code => team(code) ? `${team(code).city} ${team(code).name}` : cod
 // and its second colour for fills (--b), its first instead when the second is near white, a grey for a black-and-white club
 const lum = hex => { const f = x => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }; const [r, g, b] = [1, 3, 5].map(i => f(parseInt(hex.slice(i, i + 2), 16))); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
 const mixHex = (h, k, f) => '#' + [1, 3, 5].map(i => Math.round(parseInt(h.slice(i, i + 2), 16) * (1 - f) + parseInt(k.slice(i, i + 2), 16) * f).toString(16).padStart(2, '0')).join('');
-const toward = (h, k, ok) => { let f = 0, x = h; while (!ok(x) && f < 1) { f += 0.05; x = mixHex(h, k, f); } return x; };
+const toward = (h, k, ok) => { let f = 0, x = h; while (!ok(x) && f < 1) { f += 0.025; x = mixHex(h, k, f); } return x; };
+// an ink reads as text when it stands 4.5:1 (WCAG AA) against the sheet it prints on: the paper, or the dark sheet
+const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+const onPaper = h => toward(h, '#000000', x => contrast(x, '#f3efe4') >= 4.5), onSheet = h => toward(h, '#ffffff', x => contrast(x, '#1d1b18') >= 4.5);
 const inks = ([c1, c2]) => { const b = lum(c2) <= 0.7 ? c2 : lum(c1) < 0.03 ? '#b8b8b8' : c1;
-  return `--ap:${toward(c1, '#000000', x => lum(x) <= 0.18)};--an:${toward(c1, '#ffffff', x => lum(x) >= 0.2)};--b:${b};--on2:${light(b) ? '#1a1a1a' : '#f3efe4'}`; };
+  return `--ap:${onPaper(c1)};--an:${onSheet(c1)};--b:${b};--on2:${light(b) ? '#1a1a1a' : '#f3efe4'}`; };
 const colours = code => team(code) ? `--c1:${team(code).colors[0]};--c2:${team(code).colors[1]};${inks(team(code).colors)}` : '';
 const tc = code => team(code) ? `--tc:${team(code).colors[0]};${inks(team(code).colors)}` : '';
 
@@ -1962,8 +1965,8 @@ async function renderTeam(code, my) {
 // from passer to scorer for every pair between them (bent to the passer's left, so A → B and B → A stay apart), and beside
 // it the club's top eight pairs. A player's tap keeps only his arrows: out in the club's first ink, in in its second
 const NET_R = 112, NET_N = 10, NET_TOP = 8;
-// the second ink for strokes: the club's second colour sunk until it reads on paper, lifted until it reads on the dark sheet
-const netInk = code => { const c2 = team(code).colors[1]; return `--np:${toward(c2, '#000000', x => lum(x) <= 0.25)};--nn:${toward(c2, '#ffffff', x => lum(x) >= 0.2)}`; };
+// the second ink for strokes and counts: the club's second colour sunk until it reads on paper, lifted until it reads on the dark sheet
+const netInk = code => { const c2 = team(code).colors[1]; return `--np:${onPaper(c2)};--nn:${onSheet(c2)}`; };
 // a surname of more than nine letters goes onto two lines at the space or hyphen nearest its middle
 const netWrap = s => {
   if (s.length <= 9) return [s];
@@ -2583,7 +2586,7 @@ function tkPaint(T) {
       r.forEach((v, j) => {
         const cw = w[j] + spare;
         x.font = `${v.h || v.k ? 800 : 500} ${size}px ${SANS}`;
-        x.fillStyle = v.h ? '#f3efe4' : v.w ? '#0a7d4f' : v.lo ? '#d6246e' : v.k ? '#0078b4' : '#1a1a1a';
+        x.fillStyle = v.h ? '#f3efe4' : v.w ? '#0a7d4f' : v.lo ? '#cb2269' : v.k ? '#0072ab' : '#1a1a1a';
         x.textAlign = v.l ? 'left' : 'center';
         x.fillText(v.s, v.l ? cx + size / 2 : cx + cw / 2, y + rowH / 2 + size * .36);
         cx += cw;
