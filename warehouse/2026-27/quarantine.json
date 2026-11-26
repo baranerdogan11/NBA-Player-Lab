@@ -8,6 +8,13 @@
    "first_seen": "2026-11-21T03:06:05Z"
   },
   {
+   "game": "0022600061",
+   "gate": "flow",
+   "scope": "flow",
+   "reason": "game 0022600061: play-by-play score after period 3 is [92, 82], periods say [92, 81]",
+   "first_seen": "2026-11-26T04:11:31Z"
+  },
+  {
    "game": "0022600142",
    "gate": "lineups",
    "scope": "lineups",
