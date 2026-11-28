@@ -217,6 +217,26 @@ DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
 URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600334
 END:VEVENT
 BEGIN:VEVENT
+UID:0022601211@nba-player-lab
+DTSTAMP:20261207T020000Z
+DTSTART:20261207T020000Z
+DURATION:PT2H30M
+SUMMARY:Kings @ Nuggets
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1211
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601211
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601225@nba-player-lab
+DTSTAMP:20261211T030000Z
+DTSTART:20261211T030000Z
+DURATION:PT2H30M
+SUMMARY:Timberwolves @ Kings
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1225
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601225
+END:VEVENT
+BEGIN:VEVENT
 UID:0022600354@nba-player-lab
 DTSTAMP:20261214T020000Z
 DTSTART:20261214T020000Z

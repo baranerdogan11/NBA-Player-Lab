@@ -237,6 +237,26 @@ DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
 URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600340
 END:VEVENT
 BEGIN:VEVENT
+UID:0022601206@nba-player-lab
+DTSTAMP:20261206T220000Z
+DTSTART:20261206T220000Z
+DURATION:PT2H30M
+SUMMARY:Bucks @ Jazz
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1206
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601206
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601224@nba-player-lab
+DTSTAMP:20261211T030000Z
+DTSTART:20261211T030000Z
+DURATION:PT2H30M
+SUMMARY:Jazz @ Lakers
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1224
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601224
+END:VEVENT
+BEGIN:VEVENT
 UID:0022600347@nba-player-lab
 DTSTAMP:20261213T023000Z
 DTSTART:20261213T023000Z

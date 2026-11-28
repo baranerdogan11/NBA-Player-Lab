@@ -217,6 +217,16 @@ DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
 URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600327
 END:VEVENT
 BEGIN:VEVENT
+UID:0022601201@nba-player-lab
+DTSTAMP:20261206T003000Z
+DTSTART:20261206T003000Z
+DURATION:PT2H30M
+SUMMARY:Celtics @ Pistons
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1201
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601201
+END:VEVENT
+BEGIN:VEVENT
 UID:0022600351@nba-player-lab
 DTSTAMP:20261213T220000Z
 DTSTART:20261213T220000Z

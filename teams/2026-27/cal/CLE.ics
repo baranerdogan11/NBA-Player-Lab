@@ -227,6 +227,26 @@ DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
 URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600338
 END:VEVENT
 BEGIN:VEVENT
+UID:0022601207@nba-player-lab
+DTSTAMP:20261206T230000Z
+DTSTART:20261206T230000Z
+DURATION:PT2H30M
+SUMMARY:Magic @ Cavaliers
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1207
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601207
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601220@nba-player-lab
+DTSTAMP:20261211T003000Z
+DTSTART:20261211T003000Z
+DURATION:PT2H30M
+SUMMARY:Cavaliers @ Heat
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1220
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601220
+END:VEVENT
+BEGIN:VEVENT
 UID:0022600344@nba-player-lab
 DTSTAMP:20261213T010000Z
 DTSTART:20261213T010000Z

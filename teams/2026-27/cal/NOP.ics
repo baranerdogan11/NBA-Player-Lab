@@ -237,6 +237,26 @@ DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
 URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600332
 END:VEVENT
 BEGIN:VEVENT
+UID:0022601215@nba-player-lab
+DTSTAMP:20261208T010000Z
+DTSTART:20261208T010000Z
+DURATION:PT2H30M
+SUMMARY:Warriors @ Pelicans
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1215
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601215
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601219@nba-player-lab
+DTSTAMP:20261211T003000Z
+DTSTART:20261211T003000Z
+DURATION:PT2H30M
+SUMMARY:Pelicans @ Nets
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1219
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601219
+END:VEVENT
+BEGIN:VEVENT
 UID:0022600354@nba-player-lab
 DTSTAMP:20261214T020000Z
 DTSTART:20261214T020000Z

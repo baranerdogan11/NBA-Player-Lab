@@ -217,6 +217,16 @@ DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
 URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600330
 END:VEVENT
 BEGIN:VEVENT
+UID:0022601203@nba-player-lab
+DTSTAMP:20261205T023000Z
+DTSTART:20261205T023000Z
+DURATION:PT2H30M
+SUMMARY:Spurs @ Mavericks
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1203
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601203
+END:VEVENT
+BEGIN:VEVENT
 UID:0022600360@nba-player-lab
 DTSTAMP:20261215T010000Z
 DTSTART:20261215T010000Z

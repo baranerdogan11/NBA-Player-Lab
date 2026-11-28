@@ -227,6 +227,26 @@ DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
 URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600333
 END:VEVENT
 BEGIN:VEVENT
+UID:0022601210@nba-player-lab
+DTSTAMP:20261207T000000Z
+DTSTART:20261207T000000Z
+DURATION:PT2H30M
+SUMMARY:Lakers @ Thunder
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1210
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601210
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601222@nba-player-lab
+DTSTAMP:20261211T020000Z
+DTSTART:20261211T020000Z
+DURATION:PT2H30M
+SUMMARY:Thunder @ Suns
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1222
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601222
+END:VEVENT
+BEGIN:VEVENT
 UID:0022600350@nba-player-lab
 DTSTAMP:20261213T203000Z
 DTSTART:20261213T203000Z

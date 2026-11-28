@@ -217,6 +217,26 @@ DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
 URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022600338
 END:VEVENT
 BEGIN:VEVENT
+UID:0022601214@nba-player-lab
+DTSTAMP:20261208T010000Z
+DTSTART:20261208T010000Z
+DURATION:PT2H30M
+SUMMARY:Nets @ Bulls
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1214
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601214
+END:VEVENT
+BEGIN:VEVENT
+UID:0022601217@nba-player-lab
+DTSTAMP:20261211T000000Z
+DTSTART:20261211T000000Z
+DURATION:PT2H30M
+SUMMARY:Bulls @ Magic
+DESCRIPTION:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/002260
+ 1217
+URL:https://baranerdogan11.github.io/NBA-Player-Lab/?l#game/0022601217
+END:VEVENT
+BEGIN:VEVENT
 UID:0022600352@nba-player-lab
 DTSTAMP:20261213T230000Z
 DTSTART:20261213T230000Z
